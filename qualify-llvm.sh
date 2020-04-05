@@ -164,10 +164,11 @@ function kmake() {(
 )}
 
 
-# Setup config file from test/configs/<distro>
 # Use config script in kernel source to enable/disable options
 function modify_config() {
+    set -x
     "${LINUX_SRC}"/scripts/config --file "${OUT:?}"/.config "${@}"
+    set +x
 }
 
 
