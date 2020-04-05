@@ -206,8 +206,8 @@ function build_arm32_kernels() {
     # Upstream
     kmake "${KMAKE_ARGS[@]}" distclean multi_v5_defconfig
     if [[ ${LLVM_VER_CODE} -lt 120000 ]]; then
-        LOG_COMMENT=" (minus CONFIG_FTRACE)"
-        modify_config -d CONFIG_FTRACE
+        LOG_COMMENT=" (minus CONFIG_TRACING)"
+        modify_config -d CONFIG_TRACING
     fi
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
     log "arm32 multi_v5_defconfig${LOG_COMMENT} exit code: ${?}"
