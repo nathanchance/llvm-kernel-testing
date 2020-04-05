@@ -205,6 +205,7 @@ function build_arm32_kernels() {
 
     # Upstream
     kmake "${KMAKE_ARGS[@]}" distclean multi_v5_defconfig
+    # https://github.com/ClangBuiltLinux/linux/issues/954
     if [[ ${LLVM_VER_CODE} -lt 120000 ]]; then
         LOG_COMMENT=" (minus CONFIG_TRACING)"
         modify_config -d CONFIG_TRACING
