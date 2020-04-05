@@ -197,17 +197,22 @@ function setup_config() {
 
 # Build arm32 kernels
 function build_arm32_kernels() {
-    local CROSS_COMPILE KMAKE_ARGS
+    local CROSS_COMPILE KMAKE_ARGS LOG_COMMENT
     CROSS_COMPILE=arm-linux-gnueabi-
     KMAKE_ARGS=( "ARCH=arm" "CROSS_COMPILE=${CROSS_COMPILE}" "KCONFIG_ALLCONFIG=${BASE}/configs/le.config" )
 
     header "Building arm32 kernels"
 
     # Upstream
-    kmake "${KMAKE_ARGS[@]}" distclean multi_v5_defconfig all
-    log "arm32 multi_v5_defconfig exit code: ${?}"
+    kmake "${KMAKE_ARGS[@]}" distclean multi_v5_defconfig
+    if [[ ${LLVM_VER_CODE} -lt 120000 ]]; then
+        LOG_COMMENT=" (minus CONFIG_FTRACE)"
+        modify_config -d CONFIG_FTRACE
+    fi
+    kmake "${KMAKE_ARGS[@]}" olddefconfig all
+    log "arm32 multi_v5_defconfig${LOG_COMMENT} exit code: ${?}"
     qemu_boot_kernel arm32_v5
-    log "arm32 multi_v5_defconfig qemu boot exit code: ${?}"
+    log "arm32 multi_v5_defconfig${LOG_COMMENT} qemu boot exit code: ${?}"
 
     # https://github.com/ClangBuiltLinux/linux/issues/732
     LD=${CROSS_COMPILE}ld kmake "${KMAKE_ARGS[@]}" distclean aspeed_g5_defconfig all
