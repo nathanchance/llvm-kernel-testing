@@ -242,6 +242,11 @@ function build_arm32_kernels() {
     setup_config fedora/armv7hl.config
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
     log "armv7hl fedora config exit code: ${?}"
+
+    # OpenSUSE
+    setup_config opensuse/armv7hl.config
+    kmake "${KMAKE_ARGS[@]}" olddefconfig all
+    log "armv7hl opensuse config exit code: ${?}"
 }
 
 
@@ -273,6 +278,11 @@ function build_arm64_kernels() {
     setup_config fedora/aarch64.config
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
     log "arm64 fedora config exit code: ${?}"
+
+    # OpenSUSE
+    setup_config opensuse/arm64.config
+    kmake "${KMAKE_ARGS[@]}" olddefconfig all
+    log "arm64 opensuse config exit code: ${?}"
 }
 
 
@@ -358,6 +368,12 @@ function build_powerpc_kernels() {
     LD=${CROSS_COMPILE}ld OBJDUMP=${CROSS_COMPILE}objdump \
         kmake "${KMAKE_ARGS[@]}" olddefconfig all
     log "ppc64le fedora config${LOG_COMMENT} exit code: ${?}"
+
+    # OpenSUSE
+    setup_config opensuse/ppc64le.config
+    LD=${CROSS_COMPILE}ld OBJDUMP=${CROSS_COMPILE}objdump \
+        kmake "${KMAKE_ARGS[@]}" olddefconfig all
+    log "ppc64le opensuse config exit code: ${?}"
 }
 
 
@@ -404,6 +420,14 @@ function build_s390x_kernels() {
     OBJDUMP=${CROSS_COMPILE}objdump \
         kmake "${KMAKE_ARGS[@]}" olddefconfig all
     log "s390x fedora config exit code: ${?}"
+
+    # OpenSUSE
+    setup_config opensuse/s390x.config
+    LD=${CROSS_COMPILE}ld \
+    OBJCOPY=${CROSS_COMPILE}objcopy \
+    OBJDUMP=${CROSS_COMPILE}objdump \
+        kmake "${KMAKE_ARGS[@]}" olddefconfig all
+    log "s390x opensuse config exit code: ${?}"
 }
 
 
@@ -456,6 +480,17 @@ function build_x86_64_kernels() {
     setup_config fedora/x86_64.config
     kmake olddefconfig all
     log "x86_64 fedora config exit code: ${?}"
+
+    # OpenSUSE
+    setup_config opensuse/x86_64.config
+    # https://github.com/ClangBuiltLinux/linux/issues/515
+    if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
+        LOG_COMMENT=" (minus CONFIG_STM)"
+        modify_config -d CONFIG_STM
+    fi
+    # https://github.com/ClangBuiltLinux/linux/issues/514
+    OBJCOPY=objcopy kmake olddefconfig all
+    log "x86_64 opensuse config${LOG_COMMENT} exit code: ${?}"
 }
 
 
