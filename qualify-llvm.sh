@@ -287,9 +287,6 @@ function build_arm64_kernels() {
 
 
 # Build mips kernels
-# Non-working LLVM tools outline:
-#   * ld.lld (https://github.com/ClangBuiltLinux/linux/issues/786)
-# We enable CONFIG_BLK_DEV_INITRD to properly boot in QEMU
 function build_mips_kernels() {
     local CROSS_COMPILE KMAKE_ARGS
     CROSS_COMPILE=mipsel-linux-gnu-
