@@ -374,6 +374,23 @@ function build_powerpc_kernels() {
 }
 
 
+# Build riscv kernels
+function build_riscv_kernels() {
+    local KMAKE_ARGS
+    KMAKE_ARGS=( "ARCH=riscv" "CROSS_COMPILE=riscv64-linux-gnu-" )
+
+    # riscv did not build properly for Linux prior to 5.7 and there is an
+    # inordinate amount of spam about '-save-restore' before LLVM 11: https://llvm.org/pr44853
+    if [[ ${LNX_VER_CODE} -lt 507000 || ${LLVM_VER_CODE} -lt 110000 ]]; then
+        header "Skipping riscv kernels"
+        return 0
+    fi
+
+    kmake "${KMAKE_ARGS[@]}" LLVM_IAS=1 distclean defconfig all
+    log "riscv64 defconfig exit code: ${?}"
+}
+
+
 # Build s390x kernels
 # Non-working LLVM tools outline:
 #   * ld.lld
