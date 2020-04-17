@@ -368,6 +368,8 @@ function build_powerpc_kernels() {
 
     # OpenSUSE
     setup_config opensuse/ppc64le.config
+    # https://github.com/ClangBuiltLinux/linux/issues/944
+    [[ ${LLVM_VER_CODE} -lt 100001 ]] && modify_config -d ${CTOD}
     LD=${CROSS_COMPILE}ld OBJDUMP=${CROSS_COMPILE}objdump \
         kmake "${KMAKE_ARGS[@]}" olddefconfig all
     log "ppc64le opensuse config exit code: ${?}"
