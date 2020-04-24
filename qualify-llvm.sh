@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-
 # Get the absolute location of the tc-build repo
 BASE=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)
 [[ -z ${BASE} ]] && exit 1
@@ -24,34 +23,31 @@ function die() {
     exit "${2:-33}"
 }
 
-
 # Prints a header describing a section of the script
 function header() {
     BORDER="====$(for _ in $(seq ${#1}); do printf '='; done)===="
     printf '\033[1m\n%s\n%s\n%s\n\n\033[0m' "${BORDER}" "==  ${1}  ==" "${BORDER}"
 }
 
-
 # Logs message to current log
 function log() {
-    echo "${1}" >> "${BLD_LOG}"
+    echo "${1}" >>"${BLD_LOG}"
 }
-
 
 # Parse inputs to the script
 function parse_parameters() {
-    BLD_LLVM_ARGS=( )
-    while (( ${#} )); do
+    BLD_LLVM_ARGS=()
+    while ((${#})); do
         case ${1} in
-            -b|--llvm-branch) shift && LLVM_BRANCH=${1} ;;
-            -d|--debug) set -x ;;
-            -j|--jobs) shift && JOBS=${1} ;;
-            -j*) JOBS=${1/-j} ;;
-            -l|--linux-src) shift && LINUX_SRC=$(readlink -f "${1}") ;;
-            --lto=*|-n|--no-update|--pgo) BLD_LLVM_ARGS=( "${BLD_LLVM_ARGS[@]}" "${1}" ) ;;
-            --lto) shift && BLD_LLVM_ARGS=( "${BLD_LLVM_ARGS[@]}" --lto "${1}" ) ;;
-            -s|--skip-tc-build) SKIP_TC_BUILD=true ;;
-            -t|--tc-prefix) shift && TC_PREFIX=$(readlink -f "${1}") ;;
+            -b | --llvm-branch) shift && LLVM_BRANCH=${1} ;;
+            -d | --debug) set -x ;;
+            -j | --jobs) shift && JOBS=${1} ;;
+            -j*) JOBS=${1/-j/} ;;
+            -l | --linux-src) shift && LINUX_SRC=$(readlink -f "${1}") ;;
+            --lto=* | -n | --no-update | --pgo) BLD_LLVM_ARGS=("${BLD_LLVM_ARGS[@]}" "${1}") ;;
+            --lto) shift && BLD_LLVM_ARGS=("${BLD_LLVM_ARGS[@]}" --lto "${1}") ;;
+            -s | --skip-tc-build) SKIP_TC_BUILD=true ;;
+            -t | --tc-prefix) shift && TC_PREFIX=$(readlink -f "${1}") ;;
             --test-lto-cfi-kernel) TEST_LTO_CFI_KERNEL=true ;;
             *) die "Invalid parameter '${1}'" ;;
         esac
@@ -60,7 +56,6 @@ function parse_parameters() {
 
     [[ -z ${TC_PREFIX} ]] && TC_PREFIX=${BASE}/toolchain
 }
-
 
 # Builds the tools that we are testing
 function build_llvm_binutils() {
@@ -72,16 +67,15 @@ function build_llvm_binutils() {
     git -C "${TC_BLD}" pull --rebase || die "Error updating tc-build" "${?}"
 
     "${TC_BLD}"/build-llvm.py --assertions \
-                              --branch "${LLVM_BRANCH:=llvmorg-10.0.0}" \
-                              --check-targets clang lld llvm \
-                              --install-folder "${TC_PREFIX}" \
-                              "${BLD_LLVM_ARGS[@]}" || \
+        --branch "${LLVM_BRANCH:=llvmorg-10.0.0}" \
+        --check-targets clang lld llvm \
+        --install-folder "${TC_PREFIX}" \
+        "${BLD_LLVM_ARGS[@]}" ||
         die "build-llvm.py failed" "${?}"
 
-    "${TC_BLD}"/build-binutils.py --install-folder "${TC_PREFIX}" || \
+    "${TC_BLD}"/build-binutils.py --install-folder "${TC_PREFIX}" ||
         die "build-binutils.py failed" "${?}"
 }
-
 
 # Download the kernel source that we are testing if LINUX_SOURCE wasn't specified
 function dwnld_kernel_src() {
@@ -94,13 +88,15 @@ function dwnld_kernel_src() {
     # If we don't have the source tarball, download and verify it
     if [[ ! -f ${LINUX_TARBALL} ]]; then
         curl -LSso "${LINUX_TARBALL}" https://cdn.kernel.org/pub/linux/kernel/v5.x/"${LINUX_TARBALL##*/}"
-        ( cd "${LINUX_TARBALL%/*}" || exit ${?}; sha256sum -c "${BASE}/${LINUX_TARBALL##*/}".sha256 --quiet ) || \
+        (
+            cd "${LINUX_TARBALL%/*}" || exit ${?}
+            sha256sum -c "${BASE}/${LINUX_TARBALL##*/}".sha256 --quiet
+        ) ||
             die "Linux tarball verification failed! Please remove '${LINUX_TARBALL}' and try again."
     fi
 
     [[ -d ${LINUX_SRC} ]] || { tar -C "${LINUX_SRC%/*}" -xf "${LINUX_TARBALL}" || die "Error extracting ${LINUX_TARBALL}." "${?}"; }
 }
-
 
 # Download/update boot-utils repo
 function dwnld_update_boot_utils() {
@@ -111,10 +107,9 @@ function dwnld_update_boot_utils() {
     git -C "${BOOT_UTILS}" pull
 }
 
-
 # Get what CONFIG_LOCALVERSION_AUTO spits out without actually enabling it in every config
 # Designed to avoid running make due to overhead
-function get_config_localversion_auto {(
+function get_config_localversion_auto() { (
     [[ -d ${LINUX_SRC}/.git ]] || return 0
     cd "${LINUX_SRC}" || exit ${?}
 
@@ -122,8 +117,7 @@ function get_config_localversion_auto {(
     touch include/config/auto.conf
     CONFIG_LOCALVERSION_AUTO=y ./scripts/setlocalversion
     rm -rf include/config
-)}
-
+); }
 
 # Print clang, binutils, and kernel versions being tested into the build log
 function log_tc_lnx_ver() {
@@ -131,38 +125,36 @@ function log_tc_lnx_ver() {
         "${TC_PREFIX}"/bin/clang --version | head -n1
         "${TC_PREFIX}"/bin/as --version | head -n1
         echo "Linux $(make -C "${LINUX_SRC}" -s kernelversion)$(get_config_localversion_auto)"
-    } > "${BLD_LOG}"
+    } >"${BLD_LOG}"
 }
 
-
 # make wrapper for the kernel so we can set all variables that we need
-function kmake() {(
+function kmake() { (
     set -x
     time PATH=${TC_PREFIX}/bin:${PATH} \
         make -C "${LINUX_SRC}" \
-             -j"${JOBS:=$(nproc)}" \
-             -s \
-             AR="${AR:-llvm-ar}" \
-             CC="${CC:-clang}" \
-             HOSTAR="${HOSTAR:-llvm-ar}" \
-             HOSTCC="${HOSTCC:-clang}" \
-             HOSTCXX="${HOSTCXX:-clang++}" \
-             HOSTLD="${HOSTLD:-ld.lld}" \
-             HOSTLDFLAGS="${HOSTLDFLAGS--fuse-ld=lld}" \
-             LD="${LD:-ld.lld}" \
-             O=out \
-             NM="${NM:-llvm-nm}" \
-             OBJCOPY="${OBJCOPY:-llvm-objcopy}" \
-             OBJDUMP="${OBJDUMP:-llvm-objdump}" \
-             OBJSIZE="${OBJSIZE:-llvm-size}" \
-             READELF="${READELF:-llvm-readelf}" \
-             STRIP="${LLVM_STRIP:-llvm-strip}" \
-             "${@}"
+        -j"${JOBS:=$(nproc)}" \
+        -s \
+        AR="${AR:-llvm-ar}" \
+        CC="${CC:-clang}" \
+        HOSTAR="${HOSTAR:-llvm-ar}" \
+        HOSTCC="${HOSTCC:-clang}" \
+        HOSTCXX="${HOSTCXX:-clang++}" \
+        HOSTLD="${HOSTLD:-ld.lld}" \
+        HOSTLDFLAGS="${HOSTLDFLAGS--fuse-ld=lld}" \
+        LD="${LD:-ld.lld}" \
+        O=out \
+        NM="${NM:-llvm-nm}" \
+        OBJCOPY="${OBJCOPY:-llvm-objcopy}" \
+        OBJDUMP="${OBJDUMP:-llvm-objdump}" \
+        OBJSIZE="${OBJSIZE:-llvm-size}" \
+        READELF="${READELF:-llvm-readelf}" \
+        STRIP="${LLVM_STRIP:-llvm-strip}" \
+        "${@}"
     RET=${?}
     set +x
     exit ${RET}
-)}
-
+); }
 
 # Use config script in kernel source to enable/disable options
 function modify_config() {
@@ -170,7 +162,6 @@ function modify_config() {
     "${LINUX_SRC}"/scripts/config --file "${OUT:?}"/.config "${@}"
     set +x
 }
-
 
 # Set up an out of tree config
 function setup_config() {
@@ -195,12 +186,11 @@ function setup_config() {
     esac
 }
 
-
 # Build arm32 kernels
 function build_arm32_kernels() {
     local CROSS_COMPILE KMAKE_ARGS LOG_COMMENT
     CROSS_COMPILE=arm-linux-gnueabi-
-    KMAKE_ARGS=( "ARCH=arm" "CROSS_COMPILE=${CROSS_COMPILE}" "KCONFIG_ALLCONFIG=${BASE}/configs/le.config" )
+    KMAKE_ARGS=("ARCH=arm" "CROSS_COMPILE=${CROSS_COMPILE}" "KCONFIG_ALLCONFIG=${BASE}/configs/le.config")
 
     header "Building arm32 kernels"
 
@@ -249,11 +239,10 @@ function build_arm32_kernels() {
     log "armv7hl opensuse config exit code: ${?}"
 }
 
-
 # Build arm64 kernels
 function build_arm64_kernels() {
     local KMAKE_ARGS
-    KMAKE_ARGS=( "ARCH=arm64" "CROSS_COMPILE=aarch64-linux-gnu-" "KCONFIG_ALLCONFIG=${BASE}/configs/le.config" )
+    KMAKE_ARGS=("ARCH=arm64" "CROSS_COMPILE=aarch64-linux-gnu-" "KCONFIG_ALLCONFIG=${BASE}/configs/le.config")
 
     header "Building arm64 kernels"
 
@@ -285,12 +274,11 @@ function build_arm64_kernels() {
     log "arm64 opensuse config exit code: ${?}"
 }
 
-
 # Build mips kernels
 function build_mips_kernels() {
     local CROSS_COMPILE KMAKE_ARGS
     CROSS_COMPILE=mipsel-linux-gnu-
-    KMAKE_ARGS=( "ARCH=mips" "CROSS_COMPILE=${CROSS_COMPILE}" )
+    KMAKE_ARGS=("ARCH=mips" "CROSS_COMPILE=${CROSS_COMPILE}")
 
     header "Building mips kernels"
 
@@ -308,7 +296,6 @@ function build_mips_kernels() {
     log "mips malta_kvm_guest_defconfig plus CONFIG_CPU_BIG_ENDIAN=y qemu boot exit code: ${?}"
 }
 
-
 # Build powerpc kernels
 # Non-working LLVM tools outline:
 #   * ld.lld
@@ -319,7 +306,7 @@ function build_mips_kernels() {
 function build_powerpc_kernels() {
     local CROSS_COMPILE CTOD KMAKE_ARGS LOG_COMMENT
     CROSS_COMPILE=powerpc-linux-gnu-
-    KMAKE_ARGS=( "ARCH=powerpc" "CROSS_COMPILE=${CROSS_COMPILE}" )
+    KMAKE_ARGS=("ARCH=powerpc" "CROSS_COMPILE=${CROSS_COMPILE}")
 
     header "Building powerpc kernels"
 
@@ -335,7 +322,7 @@ function build_powerpc_kernels() {
     log "powerpc pseries_defconfig qemu boot exit code: ${?}"
 
     CROSS_COMPILE=powerpc64-linux-gnu-
-    KMAKE_ARGS=( "ARCH=powerpc" "CROSS_COMPILE=${CROSS_COMPILE}" )
+    KMAKE_ARGS=("ARCH=powerpc" "CROSS_COMPILE=${CROSS_COMPILE}")
 
     kmake "${KMAKE_ARGS[@]}" distclean powernv_defconfig all
     log "powerpc powernv_defconfig exit code: ${?}"
@@ -375,11 +362,10 @@ function build_powerpc_kernels() {
     log "ppc64le opensuse config exit code: ${?}"
 }
 
-
 # Build riscv kernels
 function build_riscv_kernels() {
     local KMAKE_ARGS
-    KMAKE_ARGS=( "ARCH=riscv" "CROSS_COMPILE=riscv64-linux-gnu-" )
+    KMAKE_ARGS=("ARCH=riscv" "CROSS_COMPILE=riscv64-linux-gnu-")
 
     # riscv did not build properly for Linux prior to 5.7 and there is an
     # inordinate amount of spam about '-save-restore' before LLVM 11: https://llvm.org/pr44853
@@ -392,7 +378,6 @@ function build_riscv_kernels() {
     log "riscv64 defconfig exit code: ${?}"
 }
 
-
 # Build s390x kernels
 # Non-working LLVM tools outline:
 #   * ld.lld
@@ -404,7 +389,7 @@ function build_s390x_kernels() {
     # For some reason, -Waddress-of-packed-member does not get disabled...
     # Disable it so that real issues/errors can be found
     # TODO: Investigate and file a bug or fix
-    KMAKE_ARGS=( "ARCH=s390" "CROSS_COMPILE=${CROSS_COMPILE}" "KCFLAGS=-Wno-address-of-packed-member" )
+    KMAKE_ARGS=("ARCH=s390" "CROSS_COMPILE=${CROSS_COMPILE}" "KCFLAGS=-Wno-address-of-packed-member")
 
     # s390 did not build properly until Linux 5.6
     if [[ ${LNX_VER_CODE} -lt 506000 ]]; then
@@ -416,36 +401,35 @@ function build_s390x_kernels() {
 
     # Upstream
     LD=${CROSS_COMPILE}ld \
-    OBJCOPY=${CROSS_COMPILE}objcopy \
-    OBJDUMP=${CROSS_COMPILE}objdump \
+        OBJCOPY=${CROSS_COMPILE}objcopy \
+        OBJDUMP=${CROSS_COMPILE}objdump \
         kmake "${KMAKE_ARGS[@]}" distclean defconfig all
     log "s390x defconfig exit code: ${?}"
 
     # Debian
     setup_config debian/s390x.config
     LD=${CROSS_COMPILE}ld \
-    OBJCOPY=${CROSS_COMPILE}objcopy \
-    OBJDUMP=${CROSS_COMPILE}objdump \
+        OBJCOPY=${CROSS_COMPILE}objcopy \
+        OBJDUMP=${CROSS_COMPILE}objdump \
         kmake "${KMAKE_ARGS[@]}" olddefconfig all
     log "s390x debian config exit code: ${?}"
 
     # Fedora
     setup_config fedora/s390x.config
     LD=${CROSS_COMPILE}ld \
-    OBJCOPY=${CROSS_COMPILE}objcopy \
-    OBJDUMP=${CROSS_COMPILE}objdump \
+        OBJCOPY=${CROSS_COMPILE}objcopy \
+        OBJDUMP=${CROSS_COMPILE}objdump \
         kmake "${KMAKE_ARGS[@]}" olddefconfig all
     log "s390x fedora config exit code: ${?}"
 
     # OpenSUSE
     setup_config opensuse/s390x.config
     LD=${CROSS_COMPILE}ld \
-    OBJCOPY=${CROSS_COMPILE}objcopy \
-    OBJDUMP=${CROSS_COMPILE}objdump \
+        OBJCOPY=${CROSS_COMPILE}objcopy \
+        OBJDUMP=${CROSS_COMPILE}objdump \
         kmake "${KMAKE_ARGS[@]}" olddefconfig all
     log "s390x opensuse config exit code: ${?}"
 }
-
 
 # Build x86_64 kernels
 function build_x86_64_kernels() {
@@ -509,11 +493,10 @@ function build_x86_64_kernels() {
     log "x86_64 opensuse config${LOG_COMMENT} exit code: ${?}"
 }
 
-
 # Build Sami Tolvanen's LTO/CFI tree
 function build_lto_cfi_kernels() {
     local KMAKE_ARGS
-    KMAKE_ARGS=( "ARCH=arm64" "CROSS_COMPILE=aarch64-linux-gnu-" )
+    KMAKE_ARGS=("ARCH=arm64" "CROSS_COMPILE=aarch64-linux-gnu-")
 
     header "Building LTO/CFI kernels"
 
@@ -522,18 +505,18 @@ function build_lto_cfi_kernels() {
     OUT=${LINUX_SRC}/out
     rm -rf "${LINUX_SRC}"
     curl -LSso "${LINUX_SRC}.zip" https://github.com/samitolvanen/linux/archive/clang-cfi.zip
-    ( cd "${SRC}" && unzip -q "${LINUX_SRC}.zip" )
+    (cd "${SRC}" && unzip -q "${LINUX_SRC}.zip")
     rm -rf "${LINUX_SRC}.zip"
 
     # arm64
     kmake "${KMAKE_ARGS[@]}" distclean defconfig
     modify_config -e LTO_CLANG \
-                  -e CFI_CLANG \
-                  -e FTRACE \
-                  -e FUNCTION_TRACER \
-                  -e DYNAMIC_FTRACE \
-                  -e LOCK_TORTURE_TEST \
-                  -e RCU_TORTURE_TEST
+        -e CFI_CLANG \
+        -e FTRACE \
+        -e FUNCTION_TRACER \
+        -e DYNAMIC_FTRACE \
+        -e LOCK_TORTURE_TEST \
+        -e RCU_TORTURE_TEST
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
     log "arm64 defconfig (plus CONFIG_{LTO,CFI}_CLANG and CONFIG_DYNAMIC_FTRACE_WITH_REGS) exit code: ${?}"
     qemu_boot_kernel arm64
@@ -542,15 +525,14 @@ function build_lto_cfi_kernels() {
     # x86_64
     kmake distclean defconfig
     modify_config -e LTO_CLANG \
-                  -e CFI_CLANG \
-                  -e LOCK_TORTURE_TEST \
-                  -e RCU_TORTURE_TEST
+        -e CFI_CLANG \
+        -e LOCK_TORTURE_TEST \
+        -e RCU_TORTURE_TEST
     kmake olddefconfig all
     log "x86_64 defconfig (plus CONFIG_{LTO,CFI}_CLANG) exit code: ${?}"
     qemu_boot_kernel x86_64
     log "x86_64 defconfig (plus CONFIG_{LTO,CFI}_CLANG) qemu boot exit code: ${?}"
 }
-
 
 # Print LLVM/clang version as a 5-6 digit number (e.g. clang 11.0.0 will be 110000)
 function create_llvm_ver_code() {
@@ -562,14 +544,12 @@ function create_llvm_ver_code() {
     LLVM_VER_CODE=$(printf "%d%02d%02d" "${MAJOR}" "${MINOR}" "${PATCHLEVEL}")
 }
 
-
 # Print Linux version as a 6 digit number (e.g. Linux 5.6.2 will be 506002)
 function create_lnx_ver_code() {
     LNX_VER=$(make -C "${LINUX_SRC}" -s kernelversion | sed 's/-rc.*//')
-    IFS=. read -ra LNX_VER <<< "${LNX_VER}"
+    IFS=. read -ra LNX_VER <<<"${LNX_VER}"
     LNX_VER_CODE=$(printf "%d%02d%03d" "${LNX_VER[@]}")
 }
-
 
 # Build kernels with said toolchains
 function build_kernels() {
@@ -586,15 +566,13 @@ function build_kernels() {
     ${TEST_LTO_CFI_KERNEL:=false} && build_lto_cfi_kernels
 }
 
-
 # Boot the kernel in QEMU
 function qemu_boot_kernel() {
     "${SRC}"/boot-utils/boot-qemu.sh -a "${1:?}" -k "${OUT}"
 }
 
-
 # Show the results from the build log and show total script runtime
-function report_results {
+function report_results() {
     header "Toolchain and kernel information"
     head -n3 "${BLD_LOG}"
     header "List of successes"
