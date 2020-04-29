@@ -583,7 +583,7 @@ function report_results() {
         echo "${FAILS}"
     fi
     echo
-    echo "Total script runtime: $(python -c "import datetime; print(str(datetime.timedelta(seconds=int($(date +%s) - ${START_TIME}))))")"
+    echo "Total script runtime: $(python3 -c "import datetime; print(str(datetime.timedelta(seconds=int($(date +%s) - ${START_TIME}))))")"
 }
 
 parse_parameters "${@}"
