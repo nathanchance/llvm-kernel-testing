@@ -195,15 +195,13 @@ function build_arm32_kernels() {
     header "Building arm32 kernels"
 
     # Upstream
-    # https://github.com/ClangBuiltLinux/linux/issues/1001
-    [[ ${LLVM_VER_CODE} -ge 110000 ]] && ARM32_V5_OBJCOPY=${CROSS_COMPILE}objcopy
-    OBJCOPY=${ARM32_V5_OBJCOPY:=llvm-objcopy} kmake "${KMAKE_ARGS[@]}" distclean multi_v5_defconfig
+    kmake "${KMAKE_ARGS[@]}" distclean multi_v5_defconfig
     # https://github.com/ClangBuiltLinux/linux/issues/954
-    if [[ ${LLVM_VER_CODE} -lt 110000 ]]; then
+    if [[ ${LLVM_VER_CODE} -lt 120000 ]]; then
         LOG_COMMENT=" (minus CONFIG_TRACING, CONFIG_OPROFILE, and CONFIG_RCU_TRACE)"
         modify_config -d CONFIG_TRACING -d CONFIG_OPROFILE -d CONFIG_RCU_TRACE
     fi
-    OBJCOPY=${ARM32_V5_OBJCOPY} kmake "${KMAKE_ARGS[@]}" olddefconfig all
+    kmake "${KMAKE_ARGS[@]}" olddefconfig all
     log "arm32 multi_v5_defconfig${LOG_COMMENT} exit code: ${?}"
     qemu_boot_kernel arm32_v5
     log "arm32 multi_v5_defconfig${LOG_COMMENT} qemu boot exit code: ${?}"
