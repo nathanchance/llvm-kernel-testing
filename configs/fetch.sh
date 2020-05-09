@@ -25,8 +25,8 @@ function fetch_debian_config() { (
     TMP_DIR=$(mktemp -d -p "${PWD}")
     cd "${TMP_DIR}" || exit ${?}
 
-    PACK_VER=5.4.0-4
-    KER_VER=5.4.19-1
+    PACK_VER=5.6.0-1
+    KER_VER=5.6.7-1
     case ${1} in
         amd64 | arm64) URL=linux-signed-${1}/linux-image-${PACK_VER}-${1}_${KER_VER}_${1}.deb ;;
         armmp) URL=linux/linux-image-${PACK_VER}-${1}_${KER_VER}_armhf.deb ;;
@@ -44,7 +44,7 @@ function fetch_debian_config() { (
 
 # Fedora
 function fetch_fedora_config() {
-    curl -LSso fedora/"${1:?}".config 'https://git.kernel.org/pub/scm/linux/kernel/git/jwboyer/fedora.git/plain/fedora/configs/kernel-5.6.0-'"${1}"'.config?h=kernel-5.6.0-300.fc32'
+    curl -LSso fedora/"${1:?}".config 'https://git.kernel.org/pub/scm/linux/kernel/git/jwboyer/fedora.git/plain/fedora/configs/kernel-5.6.11-'"${1}"'.config?h=kernel-5.6.11-300.fc32'
 }
 
 # OpenSUSE
