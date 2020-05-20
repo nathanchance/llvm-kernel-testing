@@ -67,7 +67,7 @@ function build_llvm_binutils() {
     git -C "${TC_BLD}" pull --rebase || die "Error updating tc-build" "${?}"
 
     "${TC_BLD}"/build-llvm.py --assertions \
-        --branch "${LLVM_BRANCH:=release/10.x}" \
+        --branch "${LLVM_BRANCH:=llvmorg-10.0.1-rc1}" \
         --check-targets clang lld llvm \
         --install-folder "${TC_PREFIX}" \
         "${BLD_LLVM_ARGS[@]}" ||
