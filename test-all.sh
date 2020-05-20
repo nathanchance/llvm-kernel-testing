@@ -14,7 +14,7 @@ rm -rf "${SRC}"/logs
 
 # LLVM 11.0.0 and mainline + LTO/CFI kernel
 [[ -d ${SRC}/linux ]] || git -C "${SRC}" clone git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
-(cd "${SRC}"/linux-next && git pull --rebase)
+(cd "${SRC}"/linux && git pull --rebase)
 "${BASE}"/qualify-llvm.sh --linux-src "${SRC}"/linux --skip-tc-build --test-lto-cfi-kernel
 
 # LLVM 11.0.0 and latest stable + LTS kernel
