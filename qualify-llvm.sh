@@ -456,9 +456,12 @@ function build_x86_64_kernels() {
 
     kmake distclean allyesconfig
     # https://github.com/ClangBuiltLinux/linux/issues/678
-    modify_config -d CONFIG_SENSORS_APPLESMC
+    if [[ ${LNX_VER_CODE} -lt 508000 ]]; then
+        LOG_COMMENT=" (minus CONFIG_SENSORS_APPLESMC)"
+        modify_config -d CONFIG_SENSORS_APPLESMC
+    fi
     kmake olddefconfig all KCFLAGS=-O3
-    log "x86_64 allyesconfig at -O3 (minus CONFIG_SENSORS_APPLESMC) exit code: ${?}"
+    log "x86_64 allyesconfig at -O3${LOG_COMMENT} exit code: ${?}"
 
     # Arch Linux
     setup_config archlinux/x86_64.config
