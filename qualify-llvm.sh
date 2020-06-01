@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Get the absolute location of the tc-build repo
-BASE=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)
+BASE=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 [[ -z ${BASE} ]] && exit 1
 
 # Folder setup
