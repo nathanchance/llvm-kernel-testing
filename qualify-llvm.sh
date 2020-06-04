@@ -133,8 +133,7 @@ function kmake() { (
     set -x
     time PATH=${TC_PREFIX}/bin:${PATH} \
         make -C "${LINUX_SRC}" \
-        -j"${JOBS:=$(nproc)}" \
-        -s \
+        -skj"${JOBS:=$(nproc)}" \
         AR="${AR:-llvm-ar}" \
         CC="${CC:-clang}" \
         HOSTAR="${HOSTAR:-llvm-ar}" \
