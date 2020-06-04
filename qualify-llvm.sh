@@ -380,6 +380,23 @@ function build_riscv_kernels() {
     # inordinate amount of spam about '-save-restore' before LLVM 11: https://llvm.org/pr44853
     if [[ ${LNX_VER_CODE} -lt 507000 || ${LLVM_VER_CODE} -lt 110000 ]]; then
         header "Skipping riscv kernels"
+        echo "Reasons:"
+        if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
+            echo
+            echo "RISC-V needs the following fixes from Linux 5.7 to build properly:"
+            echo
+            echo '  * https://git.kernel.org/linus/52e7c52d2ded5908e6a4f8a7248e5fa6e0d6809a'
+            echo '  * https://git.kernel.org/linus/fdff9911f266951b14b20e25557278b5b3f0d90d'
+            echo '  * https://git.kernel.org/linus/abc71bf0a70311ab294f97a7f16e8de03718c05a'
+            echo
+            echo "Provide a kernel tree with Linux 5.7 or newer to build RISC-V kernels"
+        fi
+        if [[ ${LLVM_VER_CODE} -lt 110000 ]]; then
+            echo
+            echo "RISC-V needs a patch from LLVM 11 to build without a massive amount of warnings."
+            echo
+            echo "https://github.com/llvm/llvm-project/commit/07f7c00208b393296f8f27d6cd3cec2b11d86fd8"
+        fi
         return 0
     fi
 
@@ -403,6 +420,8 @@ function build_s390x_kernels() {
     # s390 did not build properly until Linux 5.6
     if [[ ${LNX_VER_CODE} -lt 506000 ]]; then
         header "Skipping s390x kernels"
+        echo "Reason: s390 kernels did not build properly until Linux 5.6"
+        echo "        https://lore.kernel.org/lkml/your-ad-here.call-01580230449-ext-6884@work.hours/"
         return 0
     fi
 
