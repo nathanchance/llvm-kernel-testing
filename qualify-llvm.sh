@@ -555,7 +555,8 @@ function build_lto_cfi_kernels() {
 
     # arm64
     kmake "${KMAKE_ARGS[@]}" distclean defconfig
-    modify_config -e LTO_CLANG \
+    modify_config \
+        -e LTO_CLANG \
         -e CFI_CLANG \
         -e FTRACE \
         -e FUNCTION_TRACER \
@@ -569,7 +570,8 @@ function build_lto_cfi_kernels() {
 
     # x86_64
     kmake distclean defconfig
-    modify_config -e LTO_CLANG \
+    modify_config \
+        -e LTO_CLANG \
         -e CFI_CLANG \
         -e LOCK_TORTURE_TEST \
         -e RCU_TORTURE_TEST
