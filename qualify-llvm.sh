@@ -209,6 +209,8 @@ function build_arm32_kernels() {
     if [[ ${LLVM_VER_CODE} -lt 100001 ]]; then
         LOG_COMMENT=" (minus CONFIG_TRACING, CONFIG_OPROFILE, and CONFIG_RCU_TRACE)"
         modify_config -d CONFIG_TRACING -d CONFIG_OPROFILE -d CONFIG_RCU_TRACE
+    else
+        unset LOG_COMMENT
     fi
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
     log "arm32 multi_v5_defconfig${LOG_COMMENT} exit code: ${?}"
@@ -351,6 +353,8 @@ function build_powerpc_kernels() {
         CTOD=CONFIG_DRM_AMD_DC
         LOG_COMMENT=" (minus ${CTOD})"
         modify_config -d ${CTOD}
+    else
+        unset LOG_COMMENT
     fi
     LD=${CROSS_COMPILE}ld OBJDUMP=${CROSS_COMPILE}objdump \
         kmake "${KMAKE_ARGS[@]}" olddefconfig all
@@ -477,6 +481,8 @@ function build_x86_64_kernels() {
     if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
         LOG_COMMENT=" (minus CONFIG_STM and CONFIG_TEST_MEMCAT_P)"
         modify_config -d CONFIG_STM -d CONFIG_TEST_MEMCAT_P
+    else
+        unset LOG_COMMENT
     fi
     kmake olddefconfig all
     log "x86_64 allmodconfig${LOG_COMMENT} exit code: ${?}"
@@ -489,6 +495,8 @@ function build_x86_64_kernels() {
     if [[ ${LNX_VER_CODE} -lt 508000 ]]; then
         LOG_COMMENT=" (minus CONFIG_SENSORS_APPLESMC)"
         modify_config -d CONFIG_SENSORS_APPLESMC
+    else
+        unset LOG_COMMENT
     fi
     kmake olddefconfig all KCFLAGS=-O3
     log "x86_64 allyesconfig at -O3${LOG_COMMENT} exit code: ${?}"
@@ -499,6 +507,8 @@ function build_x86_64_kernels() {
     if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
         LOG_COMMENT=" (minus CONFIG_STM)"
         modify_config -d CONFIG_STM
+    else
+        unset LOG_COMMENT
     fi
     kmake olddefconfig all
     log "x86_64 archlinux config${LOG_COMMENT} exit code: ${?}"
@@ -520,6 +530,8 @@ function build_x86_64_kernels() {
     if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
         LOG_COMMENT=" (minus CONFIG_STM)"
         modify_config -d CONFIG_STM
+    else
+        unset LOG_COMMENT
     fi
     # https://github.com/ClangBuiltLinux/linux/issues/514
     OBJCOPY=objcopy kmake olddefconfig all
