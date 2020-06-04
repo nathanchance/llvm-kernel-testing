@@ -178,10 +178,20 @@ function setup_config() {
         # signing keys in their source
         debian/*) modify_config -d CONFIG_SYSTEM_TRUSTED_KEYS ;;
 
-        # Fedora enables BTF, which does not work with Linux 5.6
-        # https://github.com/ClangBuiltLinux/linux/issues/871
-        # Once 5.7 is out, we can make this depend on pahole being available
-        fedora/*) modify_config -d CONFIG_DEBUG_INFO_BTF ;;
+        # Fedora and OpenSUSE enable BTF, which has to be handled in a special manner:
+        #
+        #   * pahole needs to be available
+        #
+        #   * The kernel needs https://git.kernel.org/linus/90ceddcb495008ac8ba7a3dce297841efcd7d584,
+        #     which is first available in 5.7: https://github.com/ClangBuiltLinux/linux/issues/871
+        #
+        # If either of those conditions are false, we need to disable this config so
+        # that the build does not error.
+        fedora/* | opensuse/*)
+            if ! (command -v pahole &>/dev/null && [[ ${LNX_VER_CODE} -ge 507000 ]]); then
+                modify_config -d CONFIG_DEBUG_INFO_BTF
+            fi
+            ;;
     esac
 }
 
