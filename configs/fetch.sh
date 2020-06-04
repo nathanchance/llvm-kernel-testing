@@ -49,7 +49,7 @@ function fetch_fedora_config() {
 
 # OpenSUSE
 function fetch_opensuse_config() {
-    curl -LSso opensuse/"${1:?}".config https://github.com/openSUSE/kernel-source/raw/vanilla/config/"${1}"/vanilla
+    curl -LSso opensuse/"${1:?}".config https://github.com/openSUSE/kernel-source/raw/stable/config/"${1}"/default
 }
 
 # Fetch configs for requested distros
