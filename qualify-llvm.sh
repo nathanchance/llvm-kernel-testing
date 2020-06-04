@@ -49,6 +49,7 @@ function parse_parameters() {
             -s | --skip-tc-build) SKIP_TC_BUILD=true ;;
             -t | --tc-prefix) shift && TC_PREFIX=$(readlink -f "${1}") ;;
             --test-lto-cfi-kernel) TEST_LTO_CFI_KERNEL=true ;;
+            *=*) export "${1:?}" ;;
             *) die "Invalid parameter '${1}'" ;;
         esac
         shift
