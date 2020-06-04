@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Get the absolute location of the tc-build repo
+# Get the absolute location of this repo
 BASE=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 [[ -z ${BASE} ]] && exit 1
 
