@@ -136,10 +136,10 @@ function kmake() { (
         make -C "${LINUX_SRC}" \
         -skj"${JOBS:=$(nproc)}" \
         AR="${AR:-llvm-ar}" \
-        CC="${CC:-clang}" \
+        CC="${CC:-${CCACHE:+ccache }clang}" \
         HOSTAR="${HOSTAR:-llvm-ar}" \
-        HOSTCC="${HOSTCC:-clang}" \
-        HOSTCXX="${HOSTCXX:-clang++}" \
+        HOSTCC="${HOSTCC:-${CCACHE:+ccache }clang}" \
+        HOSTCXX="${HOSTCXX:-${CCACHE:+ccache }clang++}" \
         HOSTLD="${HOSTLD:-ld.lld}" \
         HOSTLDFLAGS="${HOSTLDFLAGS--fuse-ld=lld}" \
         LD="${LD:-ld.lld}" \
@@ -601,6 +601,8 @@ function create_lnx_ver_code() {
 
 # Build kernels with said toolchains
 function build_kernels() {
+    # Use ccache by default
+    CCACHE=$(command -v ccache)
     OUT=${LINUX_SRC}/out
     create_lnx_ver_code
     create_llvm_ver_code
