@@ -142,6 +142,7 @@ function kmake() { (
         HOSTCXX="${HOSTCXX:-${CCACHE:+ccache }clang++}" \
         HOSTLD="${HOSTLD:-ld.lld}" \
         HOSTLDFLAGS="${HOSTLDFLAGS--fuse-ld=lld}" \
+        ${KCFLAGS:+KCFLAGS="${KCFLAGS}"} \
         LD="${LD:-ld.lld}" \
         O=out \
         NM="${NM:-llvm-nm}" \
