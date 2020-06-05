@@ -301,7 +301,7 @@ function build_mips_kernels() {
     log "mips malta_kvm_guest_defconfig qemu boot exit code: ${?}"
 
     # https://github.com/ClangBuiltLinux/linux/issues/1025
-    [[ ${LNX_VER_CODE} -ge 508000 ]] && MIPS_BE_LD=${CROSS_COMPILE}ld
+    [[ -f ${LINUX_SRC}/arch/mips/vdso/Kconfig ]] && MIPS_BE_LD=${CROSS_COMPILE}ld
     LD=${MIPS_BE_LD:=ld.lld} kmake "${KMAKE_ARGS[@]}" distclean malta_kvm_guest_defconfig
     modify_config -d CONFIG_CPU_LITTLE_ENDIAN -e CONFIG_CPU_BIG_ENDIAN
     LD=${MIPS_BE_LD} kmake "${KMAKE_ARGS[@]}" olddefconfig all
