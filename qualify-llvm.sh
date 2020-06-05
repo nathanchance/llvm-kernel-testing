@@ -145,6 +145,17 @@ function log_tc_lnx_ver() {
     } >"${BLD_LOG}"
 }
 
+# Set tool variables based on availability
+function set_tool_vars() {
+    CCACHE=$(command -v ccache)
+    PCOMP=()
+    if grep -q "override GZIP=" "${LINUX_SRC}"/Makefile; then
+        command -v pbzip2 &>/dev/null && PCOMP=("${PCOMP[@]}" BZIP2=pbzip2)
+        command -v pigz &>/dev/null && PCOMP=("${PCOMP[@]}" GZIP=pigz)
+        command -v pixz &>/dev/null && PCOMP=("${PCOMP[@]}" LZMA=pixz XZ=pixz)
+    fi
+}
+
 # make wrapper for the kernel so we can set all variables that we need
 function kmake() { (
     set -x
@@ -160,13 +171,14 @@ function kmake() { (
         HOSTLDFLAGS="${HOSTLDFLAGS--fuse-ld=lld}" \
         ${KCFLAGS:+KCFLAGS="${KCFLAGS}"} \
         LD="${LD:-ld.lld}" \
-        O="${OUT#${LINUX_SRC}/*}" \
         NM="${NM:-llvm-nm}" \
+        O="${OUT#${LINUX_SRC}/*}" \
         OBJCOPY="${OBJCOPY:-llvm-objcopy}" \
         OBJDUMP="${OBJDUMP:-llvm-objdump}" \
         OBJSIZE="${OBJSIZE:-llvm-size}" \
         READELF="${READELF:-llvm-readelf}" \
         STRIP="${LLVM_STRIP:-llvm-strip}" \
+        ${PCOMP:+"${PCOMP[@]}"} \
         "${@}"
     RET=${?}
     set +x
@@ -627,8 +639,8 @@ function create_lnx_ver_code() {
 
 # Build kernels with said toolchains
 function build_kernels() {
-    # Use ccache by default
-    CCACHE=$(command -v ccache)
+    set_tool_vars
+    log_tc_lnx_ver
     create_lnx_ver_code
     create_llvm_ver_code
 
@@ -663,6 +675,5 @@ parse_parameters "${@}"
 build_llvm_binutils
 dwnld_kernel_src
 dwnld_update_boot_utils
-log_tc_lnx_ver
 build_kernels
 report_results
