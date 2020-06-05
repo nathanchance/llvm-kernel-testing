@@ -249,6 +249,9 @@ function build_arm32_kernels() {
     kmake "${KMAKE_ARGS[@]}" distclean allmodconfig all
     log "arm32 allmodconfig exit code: ${?}"
 
+    kmake "${KMAKE_ARGS[@]}" distclean allnoconfig all
+    log "arm32 allnoconfig exit code: ${?}"
+
     kmake "${KMAKE_ARGS[@]}" distclean allyesconfig all
     log "arm32 allyesconfig exit code: ${?}"
 
@@ -283,6 +286,9 @@ function build_arm64_kernels() {
 
     kmake "${KMAKE_ARGS[@]}" distclean allmodconfig all
     log "arm64 allmodconfig exit code: ${?}"
+
+    kmake "${KMAKE_ARGS[@]}" distclean allnoconfig all
+    log "arm64 allnoconfig exit code: ${?}"
 
     kmake "${KMAKE_ARGS[@]}" distclean allyesconfig all
     log "arm64 allyesconfig exit code: ${?}"
@@ -346,6 +352,9 @@ function build_powerpc_kernels() {
     log "powerpc ppc44x_defconfig exit code: ${?}"
     qemu_boot_kernel ppc32
     log "powerpc ppc44x_defconfig qemu boot exit code: ${?}"
+
+    kmake "${KMAKE_ARGS[@]}" distclean allnoconfig all
+    log "powerpc allnoconfig exit code: ${?}"
 
     LD=${CROSS_COMPILE}ld kmake "${KMAKE_ARGS[@]}" distclean pseries_defconfig all
     log "powerpc pseries_defconfig exit code: ${?}"
