@@ -9,7 +9,8 @@ SRC=${BASE}/src
 TC_BLD=${SRC}/tc-build
 
 # Logging for the script
-BLD_LOG=${BASE}/logs/$(date +%Y%m%d-%H%M).log
+BLD_LOG_DIR=${BASE}/logs/$(date +%Y%m%d-%H%M)
+BLD_LOG=${BLD_LOG_DIR}/results.log
 
 # Start tracking script runtime
 START_TIME=$(date +%s)
@@ -31,7 +32,7 @@ function header() {
 
 # Logs message to current log
 function log() {
-    echo "${1}" >>"${BLD_LOG}"
+    printf "%b\n" "${1}" >>"${BLD_LOG}"
 }
 
 # Parse inputs to the script
@@ -179,10 +180,10 @@ function kmake() { (
         READELF="${READELF:-llvm-readelf}" \
         STRIP="${LLVM_STRIP:-llvm-strip}" \
         ${PCOMP:+"${PCOMP[@]}"} \
-        "${@}"
-    RET=${?}
+        "${@}" |& tee "${BLD_LOG_DIR}/${KLOG}.log"
+    RET=${PIPESTATUS[0]}
     set +x
-    exit ${RET}
+    exit "${RET}"
 ); }
 
 # Use config script in kernel source to enable/disable options
@@ -225,6 +226,16 @@ function setup_config() {
     esac
 }
 
+function results() {
+    if [[ ${1} -eq 0 ]]; then
+        echo "successful"
+    else
+        echo "failed"
+        [[ -z ${QEMU} ]] && grep "error:\|warning:\|undefined" "${BLD_LOG_DIR}/${KLOG}.log"
+    fi
+    echo
+}
+
 # Build arm32 kernels
 function build_arm32_kernels() {
     local CROSS_COMPILE KMAKE_ARGS LOG_COMMENT
@@ -234,6 +245,7 @@ function build_arm32_kernels() {
     header "Building arm32 kernels"
 
     # Upstream
+    KLOG=arm32-multi_v5_defconfig
     kmake "${KMAKE_ARGS[@]}" distclean multi_v5_defconfig
     # https://github.com/ClangBuiltLinux/linux/issues/954
     if [[ ${LLVM_VER_CODE} -lt 100001 ]]; then
@@ -243,44 +255,52 @@ function build_arm32_kernels() {
         unset LOG_COMMENT
     fi
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "arm32 multi_v5_defconfig${LOG_COMMENT} exit code: ${?}"
+    log "arm32 multi_v5_defconfig${LOG_COMMENT} $(results "${?}")"
     qemu_boot_kernel arm32_v5
-    log "arm32 multi_v5_defconfig${LOG_COMMENT} qemu boot exit code: ${?}"
+    log "arm32 multi_v5_defconfig${LOG_COMMENT} qemu boot $(QEMU=1 results "${?}")"
 
     # https://github.com/ClangBuiltLinux/linux/issues/732
+    KLOG=arm32-aspeed_g5_defconfig
     LD=${CROSS_COMPILE}ld kmake "${KMAKE_ARGS[@]}" distclean aspeed_g5_defconfig all
-    log "arm32 aspeed_g5_defconfig exit code: ${?}"
+    log "arm32 aspeed_g5_defconfig $(results "${?}")"
     qemu_boot_kernel arm32_v6
-    log "arm32 aspeed_g5_defconfig qemu boot exit code: ${?}"
+    log "arm32 aspeed_g5_defconfig qemu boot $(QEMU=1 results "${?}")"
 
+    KLOG=arm32-multi_v7_defconfig
     kmake "${KMAKE_ARGS[@]}" distclean multi_v7_defconfig all
-    log "arm32 multi_v7_defconfig exit code: ${?}"
+    log "arm32 multi_v7_defconfig $(results "${?}")"
     qemu_boot_kernel arm32_v7
-    log "arm32 multi_v7_defconfig qemu boot exit code: ${?}"
+    log "arm32 multi_v7_defconfig qemu boot $(QEMU=1 results "${?}")"
 
+    KLOG=arm32-allmodconfig
     kmake "${KMAKE_ARGS[@]}" distclean allmodconfig all
-    log "arm32 allmodconfig exit code: ${?}"
+    log "arm32 allmodconfig $(results "${?}")"
 
+    KLOG=arm32-allnoconfig
     kmake "${KMAKE_ARGS[@]}" distclean allnoconfig all
-    log "arm32 allnoconfig exit code: ${?}"
+    log "arm32 allnoconfig $(results "${?}")"
 
+    KLOG=arm32-allyesconfig
     kmake "${KMAKE_ARGS[@]}" distclean allyesconfig all
-    log "arm32 allyesconfig exit code: ${?}"
+    log "arm32 allyesconfig $(results "${?}")"
 
     # Debian
+    KLOG=arm32-debian
     setup_config debian/armmp.config
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "arm32 debian config exit code: ${?}"
+    log "arm32 debian config $(results "${?}")"
 
     # Fedora
+    KLOG=arm32-fedora
     setup_config fedora/armv7hl.config
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "armv7hl fedora config exit code: ${?}"
+    log "armv7hl fedora config $(results "${?}")"
 
     # OpenSUSE
+    KLOG=arm32-opensuse
     setup_config opensuse/armv7hl.config
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "armv7hl opensuse config exit code: ${?}"
+    log "armv7hl opensuse config $(results "${?}")"
 }
 
 # Build arm64 kernels
@@ -291,34 +311,41 @@ function build_arm64_kernels() {
     header "Building arm64 kernels"
 
     # Upstream
+    KLOG=arm64-defconfig
     kmake "${KMAKE_ARGS[@]}" distclean defconfig all
-    log "arm64 defconfig exit code: ${?}"
+    log "arm64 defconfig exit code: $(results "${?}")"
     qemu_boot_kernel arm64
-    log "arm64 defconfig qemu boot exit code: ${?}"
+    log "arm64 defconfig qemu boot $(QEMU=1 results "${?}")"
 
+    KLOG=arm64-allmodconfig
     kmake "${KMAKE_ARGS[@]}" distclean allmodconfig all
-    log "arm64 allmodconfig exit code: ${?}"
+    log "arm64 allmodconfig $(results "${?}")"
 
+    KLOG=arm64-allnoconfig
     kmake "${KMAKE_ARGS[@]}" distclean allnoconfig all
-    log "arm64 allnoconfig exit code: ${?}"
+    log "arm64 allnoconfig $(results "${?}")"
 
+    KLOG=arm64-allyesconfig
     kmake "${KMAKE_ARGS[@]}" distclean allyesconfig all
-    log "arm64 allyesconfig exit code: ${?}"
+    log "arm64 allyesconfig $(results "${?}")"
 
     # Debian
+    KLOG=arm64-debian
     setup_config debian/arm64.config
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "arm64 debian config exit code: ${?}"
+    log "arm64 debian config $(results "${?}")"
 
     # Fedora
+    KLOG=arm64-fedora
     setup_config fedora/aarch64.config
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "arm64 fedora config exit code: ${?}"
+    log "arm64 fedora config $(results "${?}")"
 
     # OpenSUSE
+    KLOG=arm64-opensuse
     setup_config opensuse/arm64.config
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "arm64 opensuse config exit code: ${?}"
+    log "arm64 opensuse config $(results "${?}")"
 }
 
 # Build mips kernels
@@ -330,19 +357,21 @@ function build_mips_kernels() {
     header "Building mips kernels"
 
     # Upstream
+    KLOG=mipsel
     kmake "${KMAKE_ARGS[@]}" distclean malta_kvm_guest_defconfig all
-    log "mips malta_kvm_guest_defconfig exit code: ${?}"
+    log "mips malta_kvm_guest_defconfig $(results "${?}")"
     qemu_boot_kernel mipsel
-    log "mips malta_kvm_guest_defconfig qemu boot exit code: ${?}"
+    log "mips malta_kvm_guest_defconfig qemu boot $(QEMU=1 results "${?}")"
 
     # https://github.com/ClangBuiltLinux/linux/issues/1025
+    KLOG=mips
     [[ -f ${LINUX_SRC}/arch/mips/vdso/Kconfig ]] && MIPS_BE_LD=${CROSS_COMPILE}ld
     LD=${MIPS_BE_LD:=ld.lld} kmake "${KMAKE_ARGS[@]}" distclean malta_kvm_guest_defconfig
     modify_config -d CONFIG_CPU_LITTLE_ENDIAN -e CONFIG_CPU_BIG_ENDIAN
     LD=${MIPS_BE_LD} kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "mips malta_kvm_guest_defconfig plus CONFIG_CPU_BIG_ENDIAN=y exit code: ${?}"
+    log "mips malta_kvm_guest_defconfig plus CONFIG_CPU_BIG_ENDIAN=y $(results "${?}")"
     qemu_boot_kernel mips
-    log "mips malta_kvm_guest_defconfig plus CONFIG_CPU_BIG_ENDIAN=y qemu boot exit code: ${?}"
+    log "mips malta_kvm_guest_defconfig plus CONFIG_CPU_BIG_ENDIAN=y qemu boot $(QEMU=1 results "${?}")"
 }
 
 # Build powerpc kernels
@@ -360,32 +389,38 @@ function build_powerpc_kernels() {
     header "Building powerpc kernels"
 
     # Upstream
+    KLOG=powerpc-ppc44x_defconfig
     kmake "${KMAKE_ARGS[@]}" distclean ppc44x_defconfig all
-    log "powerpc ppc44x_defconfig exit code: ${?}"
+    log "powerpc ppc44x_defconfig $(results "${?}")"
     qemu_boot_kernel ppc32
-    log "powerpc ppc44x_defconfig qemu boot exit code: ${?}"
+    log "powerpc ppc44x_defconfig qemu boot $(QEMU=1 results "${?}")"
 
+    KLOG=powerpc-allnoconfig
     kmake "${KMAKE_ARGS[@]}" distclean allnoconfig all
-    log "powerpc allnoconfig exit code: ${?}"
+    log "powerpc allnoconfig $(results "${?}")"
 
+    KLOG=powerpc64-pseries_defconfig
     LD=${CROSS_COMPILE}ld kmake "${KMAKE_ARGS[@]}" distclean pseries_defconfig all
-    log "powerpc pseries_defconfig exit code: ${?}"
+    log "powerpc pseries_defconfig $(results "${?}")"
     qemu_boot_kernel ppc64
-    log "powerpc pseries_defconfig qemu boot exit code: ${?}"
+    log "powerpc pseries_defconfig qemu boot $(QEMU=1 results "${?}")"
 
     CROSS_COMPILE=powerpc64-linux-gnu-
     KMAKE_ARGS=("ARCH=powerpc" "CROSS_COMPILE=${CROSS_COMPILE}")
 
+    KLOG=powerpc64le-powernv_defconfig
     kmake "${KMAKE_ARGS[@]}" distclean powernv_defconfig all
-    log "powerpc powernv_defconfig exit code: ${?}"
+    log "powerpc powernv_defconfig $(results "${?}")"
     qemu_boot_kernel ppc64le
-    log "powerpc powernv_defconfig qemu boot exit code: ${?}"
+    log "powerpc powernv_defconfig qemu boot $(QEMU=1 results "${?}")"
 
+    KLOG=powerpc64le-defconfig
     LD=${CROSS_COMPILE}ld OBJDUMP=${CROSS_COMPILE}objdump \
         kmake "${KMAKE_ARGS[@]}" distclean ppc64le_defconfig all
-    log "powerpc ppc64le_defconfig exit code: ${?}"
+    log "powerpc ppc64le_defconfig $(results "${?}")"
 
     # Debian
+    KLOG=powerpc64le-debian
     setup_config debian/powerpc64le.config
     # https://github.com/ClangBuiltLinux/linux/issues/944
     if [[ ${LLVM_VER_CODE} -lt 100001 ]]; then
@@ -397,23 +432,25 @@ function build_powerpc_kernels() {
     fi
     LD=${CROSS_COMPILE}ld OBJDUMP=${CROSS_COMPILE}objdump \
         kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "ppc64le debian config${LOG_COMMENT} exit code: ${?}"
+    log "ppc64le debian config${LOG_COMMENT} $(results "${?}")"
 
     # Fedora
+    KLOG=powerpc64le-fedora
     setup_config fedora/ppc64le.config
     # https://github.com/ClangBuiltLinux/linux/issues/944
     [[ ${LLVM_VER_CODE} -lt 100001 ]] && modify_config -d ${CTOD}
     LD=${CROSS_COMPILE}ld OBJDUMP=${CROSS_COMPILE}objdump \
         kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "ppc64le fedora config${LOG_COMMENT} exit code: ${?}"
+    log "ppc64le fedora config${LOG_COMMENT} $(results "${?}")"
 
     # OpenSUSE
+    KLOG=powerpc64le-opensuse
     setup_config opensuse/ppc64le.config
     # https://github.com/ClangBuiltLinux/linux/issues/944
     [[ ${LLVM_VER_CODE} -lt 100001 ]] && modify_config -d ${CTOD}
     LD=${CROSS_COMPILE}ld OBJDUMP=${CROSS_COMPILE}objdump \
         kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "ppc64le opensuse config exit code: ${?}"
+    log "ppc64le opensuse config $(results "${?}")"
 }
 
 # Build riscv kernels
@@ -445,8 +482,9 @@ function build_riscv_kernels() {
         return 0
     fi
 
+    KLOG=riscv-defconfig
     kmake "${KMAKE_ARGS[@]}" LLVM_IAS=1 distclean defconfig all
-    log "riscv64 defconfig exit code: ${?}"
+    log "riscv64 defconfig exit code: $(results "${?}")"
 }
 
 # Build s390x kernels
@@ -473,35 +511,39 @@ function build_s390x_kernels() {
     header "Building s390x kernels"
 
     # Upstream
+    KLOG=s390x-defconfig
     LD=${CROSS_COMPILE}ld \
         OBJCOPY=${CROSS_COMPILE}objcopy \
         OBJDUMP=${CROSS_COMPILE}objdump \
         kmake "${KMAKE_ARGS[@]}" distclean defconfig all
-    log "s390x defconfig exit code: ${?}"
+    log "s390x defconfig $(results "${?}")"
 
     # Debian
+    KLOG=s390x-debian
     setup_config debian/s390x.config
     LD=${CROSS_COMPILE}ld \
         OBJCOPY=${CROSS_COMPILE}objcopy \
         OBJDUMP=${CROSS_COMPILE}objdump \
         kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "s390x debian config exit code: ${?}"
+    log "s390x debian config $(results "${?}")"
 
     # Fedora
+    KLOG=s390x-fedora
     setup_config fedora/s390x.config
     LD=${CROSS_COMPILE}ld \
         OBJCOPY=${CROSS_COMPILE}objcopy \
         OBJDUMP=${CROSS_COMPILE}objdump \
         kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "s390x fedora config exit code: ${?}"
+    log "s390x fedora config $(results "${?}")"
 
     # OpenSUSE
+    KLOG=s390x-opensuse
     setup_config opensuse/s390x.config
     LD=${CROSS_COMPILE}ld \
         OBJCOPY=${CROSS_COMPILE}objcopy \
         OBJDUMP=${CROSS_COMPILE}objdump \
         kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "s390x opensuse config exit code: ${?}"
+    log "s390x opensuse config $(results "${?}")"
 }
 
 # Build x86_64 kernels
@@ -510,11 +552,13 @@ function build_x86_64_kernels() {
     header "Building x86_64 kernels"
 
     # Upstream
+    KLOG=x86_64-defconfig
     kmake distclean defconfig all
-    log "x86_64 defconfig exit code: ${?}"
+    log "x86_64 defconfig $(results "${?}")"
     qemu_boot_kernel x86_64
-    log "x86_64 qemu boot exit code: ${?}"
+    log "x86_64 qemu boot $(QEMU=1 results "${?}")"
 
+    KLOG=x86_64-allmodconfig
     kmake distclean allmodconfig
     # https://github.com/ClangBuiltLinux/linux/issues/515
     if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
@@ -524,11 +568,13 @@ function build_x86_64_kernels() {
         unset LOG_COMMENT
     fi
     kmake olddefconfig all
-    log "x86_64 allmodconfig${LOG_COMMENT} exit code: ${?}"
+    log "x86_64 allmodconfig${LOG_COMMENT} $(results "${?}")"
 
+    KLOG=x86_64-allyesconfig
     kmake distclean allyesconfig all
-    log "x86_64 allyesconfig exit code: ${?}"
+    log "x86_64 allyesconfig $(results "${?}")"
 
+    KLOG=x86_64-allyesconfig-O3
     kmake distclean allyesconfig
     # https://github.com/ClangBuiltLinux/linux/issues/678
     if [[ ${LNX_VER_CODE} -lt 508000 ]]; then
@@ -537,10 +583,11 @@ function build_x86_64_kernels() {
     else
         unset LOG_COMMENT
     fi
-    kmake olddefconfig all KCFLAGS=-O3
-    log "x86_64 allyesconfig at -O3${LOG_COMMENT} exit code: ${?}"
+    kmake olddefconfig all KCFLAGS="${KCFLAGS:+${KCFLAGS} }-O3"
+    log "x86_64 allyesconfig at -O3${LOG_COMMENT} $(results "${?}")"
 
     # Arch Linux
+    KLOG=x86_64-archlinux
     setup_config archlinux/x86_64.config
     # https://github.com/ClangBuiltLinux/linux/issues/515
     if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
@@ -550,20 +597,23 @@ function build_x86_64_kernels() {
         unset LOG_COMMENT
     fi
     kmake olddefconfig all
-    log "x86_64 archlinux config${LOG_COMMENT} exit code: ${?}"
+    log "x86_64 archlinux config${LOG_COMMENT} $(results "${?}")"
 
     # Debian
+    KLOG=x86_64-debian
     setup_config debian/amd64.config
     # https://github.com/ClangBuiltLinux/linux/issues/514
     OBJCOPY=objcopy kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "x86_64 debian config exit code: ${?}"
+    log "x86_64 debian config $(results "${?}")"
 
     # Fedora
+    KLOG=x86_64-fedora
     setup_config fedora/x86_64.config
     kmake olddefconfig all
-    log "x86_64 fedora config exit code: ${?}"
+    log "x86_64 fedora config $(results "${?}")"
 
     # OpenSUSE
+    KLOG=x86_64-opensuse
     setup_config opensuse/x86_64.config
     # https://github.com/ClangBuiltLinux/linux/issues/515
     if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
@@ -574,7 +624,7 @@ function build_x86_64_kernels() {
     fi
     # https://github.com/ClangBuiltLinux/linux/issues/514
     OBJCOPY=objcopy kmake olddefconfig all
-    log "x86_64 opensuse config${LOG_COMMENT} exit code: ${?}"
+    log "x86_64 opensuse config${LOG_COMMENT} $(results "${?}")"
 }
 
 # Build Sami Tolvanen's LTO/CFI tree
@@ -593,6 +643,7 @@ function build_lto_cfi_kernels() {
     rm -rf "${LINUX_SRC}.zip"
 
     # arm64
+    KLOG=arm64-lto-cfi
     kmake "${KMAKE_ARGS[@]}" distclean defconfig
     modify_config \
         -e LTO_CLANG \
@@ -603,11 +654,12 @@ function build_lto_cfi_kernels() {
         -e LOCK_TORTURE_TEST \
         -e RCU_TORTURE_TEST
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "arm64 defconfig (plus CONFIG_{LTO,CFI}_CLANG and CONFIG_DYNAMIC_FTRACE_WITH_REGS) exit code: ${?}"
+    log "arm64 defconfig (plus CONFIG_{LTO,CFI}_CLANG and CONFIG_DYNAMIC_FTRACE_WITH_REGS) $(results "${?}")"
     qemu_boot_kernel arm64
-    log "arm64 defconfig (plus CONFIG_{LTO,CFI}_CLANG and CONFIG_DYNAMIC_FTRACE_WITH_REGS) qemu boot exit code: ${?}"
+    log "arm64 defconfig (plus CONFIG_{LTO,CFI}_CLANG and CONFIG_DYNAMIC_FTRACE_WITH_REGS) qemu boot $(QEMU=1 results "${?}")"
 
     # x86_64
+    KLOG=x86_64-lto-cfi
     kmake distclean defconfig
     modify_config \
         -e LTO_CLANG \
@@ -615,9 +667,9 @@ function build_lto_cfi_kernels() {
         -e LOCK_TORTURE_TEST \
         -e RCU_TORTURE_TEST
     kmake olddefconfig all
-    log "x86_64 defconfig (plus CONFIG_{LTO,CFI}_CLANG) exit code: ${?}"
+    log "x86_64 defconfig (plus CONFIG_{LTO,CFI}_CLANG) $(results "${?}")"
     qemu_boot_kernel x86_64
-    log "x86_64 defconfig (plus CONFIG_{LTO,CFI}_CLANG) qemu boot exit code: ${?}"
+    log "x86_64 defconfig (plus CONFIG_{LTO,CFI}_CLANG) qemu boot $(QEMU=1 results "${?}")"
 }
 
 # Print LLVM/clang version as a 5-6 digit number (e.g. clang 11.0.0 will be 110000)
@@ -661,8 +713,8 @@ function report_results() {
     header "Toolchain and kernel information"
     head -n3 "${BLD_LOG}"
     header "List of successes"
-    grep ": 0" "${BLD_LOG}"
-    FAILS=$(tail -n +4 "${BLD_LOG}" | grep -v ": 0")
+    grep "success" "${BLD_LOG}"
+    FAILS=$(tail -n +4 "${BLD_LOG}" | grep "failed")
     if [[ -n ${FAILS} ]]; then
         header "List of failures"
         echo "${FAILS}"
