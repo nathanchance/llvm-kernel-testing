@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Make sure that we instantly exit on Ctrl-C
+trap 'exit' INT
+
 # Get the absolute location of this repo
 BASE=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 [[ -z ${BASE} ]] && exit 1
