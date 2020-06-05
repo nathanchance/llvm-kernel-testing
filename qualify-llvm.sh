@@ -36,9 +36,11 @@ function log() {
 
 # Parse inputs to the script
 function parse_parameters() {
+    ARCHES=()
     BLD_LLVM_ARGS=()
     while ((${#})); do
         case ${1} in
+            -a | --arches) shift && IFS=, read -r -a ARCHES <<<"${1}" ;;
             -b | --llvm-branch) shift && LLVM_BRANCH=${1} ;;
             -d | --debug) set -x ;;
             -j | --jobs) shift && JOBS=${1} ;;
@@ -55,6 +57,7 @@ function parse_parameters() {
         shift
     done
 
+    [[ -z ${ARCHES[*]} ]] && ARCHES=(arm32 arm64 mips powerpc s390x x86_64)
     [[ -z ${TC_PREFIX} ]] && TC_PREFIX=${BASE}/toolchain
 }
 
@@ -67,15 +70,28 @@ function build_llvm_binutils() {
     [[ -d ${TC_BLD} ]] || git clone git://github.com/ClangBuiltLinux/tc-build "${TC_BLD}"
     git -C "${TC_BLD}" pull --rebase || die "Error updating tc-build" "${?}"
 
-    "${TC_BLD}"/build-llvm.py --assertions \
+    BINUTILS_TARGETS=()
+    for ARCH in "${ARCHES[@]}"; do
+        case ${ARCH} in
+            arm32) BINUTILS_TARGETS=("${BINUTILS_TARGETS[@]}" arm) ;;
+            arm64) BINUTILS_TARGETS=("${BINUTILS_TARGETS[@]}" aarch64) ;;
+            mips) BINUTILS_TARGETS=("${BINUTILS_TARGETS[@]}" mips mipsel) ;;
+            powerpc) BINUTILS_TARGETS=("${BINUTILS_TARGETS[@]}" powerpc powerpc64 powerpc64le) ;;
+            s390x | x86_64) BINUTILS_TARGETS=("${BINUTILS_TARGETS[@]}" "${ARCH}") ;;
+            *) die "Unsupported architecture '${ARCH}'" ;;
+        esac
+    done
+
+    "${TC_BLD}"/build-llvm.py \
+        --assertions \
         --branch "${LLVM_BRANCH:=llvmorg-10.0.1-rc1}" \
         --check-targets clang lld llvm \
         --install-folder "${TC_PREFIX}" \
-        "${BLD_LLVM_ARGS[@]}" ||
-        die "build-llvm.py failed" "${?}"
+        "${BLD_LLVM_ARGS[@]}" || die "build-llvm.py failed" "${?}"
 
-    "${TC_BLD}"/build-binutils.py --install-folder "${TC_PREFIX}" ||
-        die "build-binutils.py failed" "${?}"
+    "${TC_BLD}"/build-binutils.py \
+        --install-folder "${TC_PREFIX}" \
+        --targets "${BINUTILS_TARGETS[@]}" || die "build-binutils.py failed" "${?}"
 }
 
 # Download the kernel source that we are testing if LINUX_SOURCE wasn't specified
@@ -608,12 +624,9 @@ function build_kernels() {
     create_lnx_ver_code
     create_llvm_ver_code
 
-    build_arm32_kernels
-    build_arm64_kernels
-    build_mips_kernels
-    build_powerpc_kernels
-    build_s390x_kernels
-    build_x86_64_kernels
+    for ARCH in "${ARCHES[@]}"; do
+        build_"${ARCH}"_kernels
+    done
     ${TEST_LTO_CFI_KERNEL:=false} && build_lto_cfi_kernels
 }
 
