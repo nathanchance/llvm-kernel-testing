@@ -160,7 +160,7 @@ function kmake() { (
         HOSTLDFLAGS="${HOSTLDFLAGS--fuse-ld=lld}" \
         ${KCFLAGS:+KCFLAGS="${KCFLAGS}"} \
         LD="${LD:-ld.lld}" \
-        O=out \
+        O="${OUT#${LINUX_SRC}/*}" \
         NM="${NM:-llvm-nm}" \
         OBJCOPY="${OBJCOPY:-llvm-objcopy}" \
         OBJDUMP="${OBJDUMP:-llvm-objdump}" \
@@ -620,11 +620,11 @@ function create_lnx_ver_code() {
 function build_kernels() {
     # Use ccache by default
     CCACHE=$(command -v ccache)
-    OUT=${LINUX_SRC}/out
     create_lnx_ver_code
     create_llvm_ver_code
 
     for ARCH in "${ARCHES[@]}"; do
+        OUT=$(cd "${LINUX_SRC}" && readlink -f -m "${O:-out}")/${ARCH}
         build_"${ARCH}"_kernels
     done
     ${TEST_LTO_CFI_KERNEL:=false} && build_lto_cfi_kernels
