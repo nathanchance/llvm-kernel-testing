@@ -35,7 +35,12 @@ function header() {
 
 # Logs message to current log
 function log() {
-    printf "%b\n" "${1}" >>"${BLD_LOG}"
+    printf "%b\n\n" "${1}" >>"${BLD_LOG}"
+}
+
+# Print formatted time with Python 3
+function print_time() {
+    python3 -c "import datetime; print(str(datetime.timedelta(seconds=int(${2} - ${1}))))"
 }
 
 # Parse inputs to the script
@@ -146,6 +151,7 @@ function log_tc_lnx_ver() {
         "${TC_PREFIX}"/bin/clang --version | head -n1
         "${TC_PREFIX}"/bin/as --version | head -n1
         echo "Linux $(make -C "${LINUX_SRC}" -s kernelversion)$(get_config_localversion_auto)"
+        echo
     } >"${BLD_LOG}"
 }
 
@@ -161,33 +167,39 @@ function set_tool_vars() {
 }
 
 # make wrapper for the kernel so we can set all variables that we need
-function kmake() { (
-    set -x
-    time PATH=${TC_PREFIX}/bin:${PATH} \
-        make -C "${LINUX_SRC}" \
-        -skj"${JOBS:=$(nproc)}" \
-        AR="${AR:-llvm-ar}" \
-        CC="${CC:-${CCACHE:+ccache }clang}" \
-        HOSTAR="${HOSTAR:-llvm-ar}" \
-        HOSTCC="${HOSTCC:-${CCACHE:+ccache }clang}" \
-        HOSTCXX="${HOSTCXX:-${CCACHE:+ccache }clang++}" \
-        HOSTLD="${HOSTLD:-ld.lld}" \
-        HOSTLDFLAGS="${HOSTLDFLAGS--fuse-ld=lld}" \
-        ${KCFLAGS:+KCFLAGS="${KCFLAGS}"} \
-        LD="${LD:-ld.lld}" \
-        NM="${NM:-llvm-nm}" \
-        O="${OUT#${LINUX_SRC}/*}" \
-        OBJCOPY="${OBJCOPY:-llvm-objcopy}" \
-        OBJDUMP="${OBJDUMP:-llvm-objdump}" \
-        OBJSIZE="${OBJSIZE:-llvm-size}" \
-        READELF="${READELF:-llvm-readelf}" \
-        STRIP="${LLVM_STRIP:-llvm-strip}" \
-        ${PCOMP:+"${PCOMP[@]}"} \
-        "${@}" |& tee "${BLD_LOG_DIR}/${KLOG}.log"
-    RET=${PIPESTATUS[0]}
-    set +x
-    exit "${RET}"
-); }
+function kmake() {
+    KMAKE_START=$(date +%s)
+    (
+        set -x
+        time PATH=${TC_PREFIX}/bin:${PATH} make \
+            -C "${LINUX_SRC}" \
+            -skj"${JOBS:=$(nproc)}" \
+            AR="${AR:-llvm-ar}" \
+            CC="${CC:-${CCACHE:+ccache }clang}" \
+            HOSTAR="${HOSTAR:-llvm-ar}" \
+            HOSTCC="${HOSTCC:-${CCACHE:+ccache }clang}" \
+            HOSTCXX="${HOSTCXX:-${CCACHE:+ccache }clang++}" \
+            HOSTLD="${HOSTLD:-ld.lld}" \
+            HOSTLDFLAGS="${HOSTLDFLAGS--fuse-ld=lld}" \
+            ${KCFLAGS:+KCFLAGS="${KCFLAGS}"} \
+            LD="${LD:-ld.lld}" \
+            NM="${NM:-llvm-nm}" \
+            O="${OUT#${LINUX_SRC}/*}" \
+            OBJCOPY="${OBJCOPY:-llvm-objcopy}" \
+            OBJDUMP="${OBJDUMP:-llvm-objdump}" \
+            OBJSIZE="${OBJSIZE:-llvm-size}" \
+            READELF="${READELF:-llvm-readelf}" \
+            STRIP="${LLVM_STRIP:-llvm-strip}" \
+            ${PCOMP:+"${PCOMP[@]}"} \
+            "${@}" |& tee "${BLD_LOG_DIR}/${KLOG}.log"
+        INNER_RET=${PIPESTATUS[0]}
+        set +x
+        exit "${INNER_RET}"
+    )
+    OUTER_RET=${?}
+    KMAKE_END=$(date +%s)
+    return "${OUTER_RET}"
+}
 
 # Use config script in kernel source to enable/disable options
 function modify_config() {
@@ -231,12 +243,12 @@ function setup_config() {
 
 function results() {
     if [[ ${1} -eq 0 ]]; then
-        echo "successful"
+        RESULT=successful
     else
-        echo "failed"
-        [[ -z ${QEMU} ]] && grep "error:\|warning:\|undefined" "${BLD_LOG_DIR}/${KLOG}.log"
+        RESULT=failed
     fi
-    echo
+    echo "${RESULT} in $(print_time "${KMAKE_START}" "${KMAKE_END}")"
+    [[ -z ${QEMU} && ${RESULT} = "failed" ]] && grep "error:\|warning:\|undefined" "${BLD_LOG_DIR}/${KLOG}.log"
 }
 
 # Build arm32 kernels
@@ -713,6 +725,8 @@ function qemu_boot_kernel() {
 
 # Show the results from the build log and show total script runtime
 function report_results() {
+    # Remove last blank line and full path from errors/warnings because I am OCD :^)
+    sed -i -e '${/^$/d}' -e "s;${LINUX_SRC}/;;g" "${BLD_LOG}"
     header "Toolchain and kernel information"
     head -n3 "${BLD_LOG}"
     header "List of successes"
@@ -723,7 +737,7 @@ function report_results() {
         echo "${FAILS}"
     fi
     echo
-    echo "Total script runtime: $(python3 -c "import datetime; print(str(datetime.timedelta(seconds=int($(date +%s) - ${START_TIME}))))")"
+    echo "Total script runtime: $(print_time "${START_TIME}" "$(date +%s)")"
 }
 
 parse_parameters "${@}"
