@@ -156,7 +156,7 @@ function set_tool_vars() {
     if grep -q "override GZIP=" "${LINUX_SRC}"/Makefile; then
         command -v pbzip2 &>/dev/null && PCOMP=("${PCOMP[@]}" BZIP2=pbzip2)
         command -v pigz &>/dev/null && PCOMP=("${PCOMP[@]}" GZIP=pigz)
-        command -v pixz &>/dev/null && PCOMP=("${PCOMP[@]}" LZMA=pixz XZ=pixz)
+        # command -v pixz &>/dev/null && PCOMP=("${PCOMP[@]}" LZMA=pixz XZ=pixz)
     fi
 }
 
