@@ -723,7 +723,7 @@ function build_kernels() {
 
     for ARCH in "${ARCHES[@]}"; do
         OUT=$(cd "${LINUX_SRC}" && readlink -f -m "${O:-out}")/${ARCH}
-        build_"${ARCH}"_kernels
+        build_"${ARCH}"_kernels || exit ${?}
     done
     ${TEST_LTO_CFI_KERNEL:=false} && build_lto_cfi_kernels
 }
