@@ -170,6 +170,16 @@ function set_tool_vars() {
 function kmake() {
     KMAKE_START=$(date +%s)
     (
+        MAKE_ARGS=()
+        while ((${#})); do
+            case ${1} in
+                # Consume these to avoid duplicates in the 'set -x' print out
+                LD=* | OBJCOPY=* | OBJDUMP=*) export "${1:?}" ;;
+                *) MAKE_ARGS=("${MAKE_ARGS[@]}" "${1}") ;;
+            esac
+            shift
+        done
+
         set -x
         time PATH=${TC_PREFIX}/bin:${PATH} make \
             -C "${LINUX_SRC}" \
@@ -192,7 +202,7 @@ function kmake() {
             READELF="${READELF:-llvm-readelf}" \
             STRIP="${LLVM_STRIP:-llvm-strip}" \
             ${PCOMP:+"${PCOMP[@]}"} \
-            "${@}" |& tee "${BLD_LOG_DIR}/${KLOG}.log"
+            "${MAKE_ARGS[@]}" |& tee "${BLD_LOG_DIR}/${KLOG}.log"
         INNER_RET=${PIPESTATUS[0]}
         set +x
         exit "${INNER_RET}"
@@ -287,7 +297,7 @@ function build_arm32_kernels() {
 
     # https://github.com/ClangBuiltLinux/linux/issues/732
     KLOG=arm32-aspeed_g5_defconfig
-    LD=${CROSS_COMPILE}ld kmake "${KMAKE_ARGS[@]}" distclean aspeed_g5_defconfig all
+    kmake "${KMAKE_ARGS[@]}" LD=${CROSS_COMPILE}ld distclean aspeed_g5_defconfig all
     log "arm32 aspeed_g5_defconfig $(results "${?}")"
     qemu_boot_kernel arm32_v6
     log "arm32 aspeed_g5_defconfig qemu boot $(QEMU=1 results "${?}")"
@@ -392,21 +402,15 @@ function build_mips_kernels() {
     # https://github.com/ClangBuiltLinux/linux/issues/1025
     KLOG=mips
     [[ -f ${LINUX_SRC}/arch/mips/vdso/Kconfig ]] && MIPS_BE_LD=${CROSS_COMPILE}ld
-    LD=${MIPS_BE_LD:=ld.lld} kmake "${KMAKE_ARGS[@]}" distclean malta_kvm_guest_defconfig
+    kmake "${KMAKE_ARGS[@]}" ${MIPS_BE_LD:+LD=${MIPS_BE_LD}} distclean malta_kvm_guest_defconfig
     scripts_config -d CONFIG_CPU_LITTLE_ENDIAN -e CONFIG_CPU_BIG_ENDIAN
-    LD=${MIPS_BE_LD} kmake "${KMAKE_ARGS[@]}" olddefconfig all
+    kmake "${KMAKE_ARGS[@]}" ${MIPS_BE_LD:+LD=${MIPS_BE_LD}} olddefconfig all
     log "mips malta_kvm_guest_defconfig plus CONFIG_CPU_BIG_ENDIAN=y $(results "${?}")"
     qemu_boot_kernel mips
     log "mips malta_kvm_guest_defconfig plus CONFIG_CPU_BIG_ENDIAN=y qemu boot $(QEMU=1 results "${?}")"
 }
 
 # Build powerpc kernels
-# Non-working LLVM tools outline:
-#   * ld.lld
-#     * pseries_defconfig: https://github.com/ClangBuiltLinux/linux/issues/602
-#     * ppc64le_defconfig / fedora/ppc64le.config: https://github.com/ClangBuiltLinux/linux/issues/811
-#   * llvm-objdump
-#     * https://github.com/ClangBuiltLinux/linux/issues/666
 function build_powerpc_kernels() {
     local CROSS_COMPILE CTOD KMAKE_ARGS LOG_COMMENT
     CROSS_COMPILE=powerpc-linux-gnu-
@@ -426,7 +430,8 @@ function build_powerpc_kernels() {
     log "powerpc allnoconfig $(results "${?}")"
 
     KLOG=powerpc64-pseries_defconfig
-    LD=${CROSS_COMPILE}ld kmake "${KMAKE_ARGS[@]}" distclean pseries_defconfig all
+    # https://github.com/ClangBuiltLinux/linux/issues/602
+    kmake "${KMAKE_ARGS[@]}" LD=${CROSS_COMPILE}ld distclean pseries_defconfig all
     log "powerpc pseries_defconfig $(results "${?}")"
     qemu_boot_kernel ppc64
     log "powerpc pseries_defconfig qemu boot $(QEMU=1 results "${?}")"
@@ -440,9 +445,12 @@ function build_powerpc_kernels() {
     qemu_boot_kernel ppc64le
     log "powerpc powernv_defconfig qemu boot $(QEMU=1 results "${?}")"
 
+    # https://github.com/ClangBuiltLinux/linux/issues/666
+    # https://github.com/ClangBuiltLinux/linux/issues/811
+    PPC64LE_ARGS=("LD=${CROSS_COMPILE}ld" "OBJDUMP=${CROSS_COMPILE}objdump")
+
     KLOG=powerpc64le-defconfig
-    LD=${CROSS_COMPILE}ld OBJDUMP=${CROSS_COMPILE}objdump \
-        kmake "${KMAKE_ARGS[@]}" distclean ppc64le_defconfig all
+    kmake "${KMAKE_ARGS[@]}" "${PPC64LE_ARGS[@]}" distclean ppc64le_defconfig all
     log "powerpc ppc64le_defconfig $(results "${?}")"
 
     # Debian
@@ -456,8 +464,7 @@ function build_powerpc_kernels() {
     else
         unset LOG_COMMENT
     fi
-    LD=${CROSS_COMPILE}ld OBJDUMP=${CROSS_COMPILE}objdump \
-        kmake "${KMAKE_ARGS[@]}" olddefconfig all
+    kmake "${KMAKE_ARGS[@]}" "${PPC64LE_ARGS[@]}" olddefconfig all
     log "ppc64le debian config${LOG_COMMENT} $(results "${?}")"
 
     # Fedora
@@ -465,8 +472,7 @@ function build_powerpc_kernels() {
     setup_config fedora/ppc64le.config
     # https://github.com/ClangBuiltLinux/linux/issues/944
     [[ ${LLVM_VER_CODE} -lt 100001 ]] && scripts_config -d ${CTOD}
-    LD=${CROSS_COMPILE}ld OBJDUMP=${CROSS_COMPILE}objdump \
-        kmake "${KMAKE_ARGS[@]}" olddefconfig all
+    kmake "${KMAKE_ARGS[@]}" "${PPC64LE_ARGS[@]}" olddefconfig all
     log "ppc64le fedora config${LOG_COMMENT} $(results "${?}")"
 
     # OpenSUSE
@@ -474,8 +480,7 @@ function build_powerpc_kernels() {
     setup_config opensuse/ppc64le.config
     # https://github.com/ClangBuiltLinux/linux/issues/944
     [[ ${LLVM_VER_CODE} -lt 100001 ]] && scripts_config -d ${CTOD}
-    LD=${CROSS_COMPILE}ld OBJDUMP=${CROSS_COMPILE}objdump \
-        kmake "${KMAKE_ARGS[@]}" olddefconfig all
+    kmake "${KMAKE_ARGS[@]}" "${PPC64LE_ARGS[@]}" olddefconfig all
     log "ppc64le opensuse config $(results "${?}")"
 }
 
@@ -524,7 +529,14 @@ function build_s390x_kernels() {
     # For some reason, -Waddress-of-packed-member does not get disabled...
     # Disable it so that real issues/errors can be found
     # TODO: Investigate and file a bug or fix
-    KMAKE_ARGS=("ARCH=s390" "CROSS_COMPILE=${CROSS_COMPILE}" "KCFLAGS=-Wno-address-of-packed-member")
+    KMAKE_ARGS=(
+        "ARCH=s390"
+        "CROSS_COMPILE=${CROSS_COMPILE}"
+        "KCFLAGS=-Wno-address-of-packed-member"
+        "LD=${CROSS_COMPILE}ld"
+        "OBJCOPY=${CROSS_COMPILE}objcopy"
+        "OBJDUMP=${CROSS_COMPILE}objdump"
+    )
 
     # s390 did not build properly until Linux 5.6
     if [[ ${LNX_VER_CODE} -lt 506000 ]]; then
@@ -538,37 +550,25 @@ function build_s390x_kernels() {
 
     # Upstream
     KLOG=s390x-defconfig
-    LD=${CROSS_COMPILE}ld \
-        OBJCOPY=${CROSS_COMPILE}objcopy \
-        OBJDUMP=${CROSS_COMPILE}objdump \
-        kmake "${KMAKE_ARGS[@]}" distclean defconfig all
+    kmake "${KMAKE_ARGS[@]}" distclean defconfig all
     log "s390x defconfig $(results "${?}")"
 
     # Debian
     KLOG=s390x-debian
     setup_config debian/s390x.config
-    LD=${CROSS_COMPILE}ld \
-        OBJCOPY=${CROSS_COMPILE}objcopy \
-        OBJDUMP=${CROSS_COMPILE}objdump \
-        kmake "${KMAKE_ARGS[@]}" olddefconfig all
+    kmake "${KMAKE_ARGS[@]}" olddefconfig all
     log "s390x debian config $(results "${?}")"
 
     # Fedora
     KLOG=s390x-fedora
     setup_config fedora/s390x.config
-    LD=${CROSS_COMPILE}ld \
-        OBJCOPY=${CROSS_COMPILE}objcopy \
-        OBJDUMP=${CROSS_COMPILE}objdump \
-        kmake "${KMAKE_ARGS[@]}" olddefconfig all
+    kmake "${KMAKE_ARGS[@]}" olddefconfig all
     log "s390x fedora config $(results "${?}")"
 
     # OpenSUSE
     KLOG=s390x-opensuse
     setup_config opensuse/s390x.config
-    LD=${CROSS_COMPILE}ld \
-        OBJCOPY=${CROSS_COMPILE}objcopy \
-        OBJDUMP=${CROSS_COMPILE}objdump \
-        kmake "${KMAKE_ARGS[@]}" olddefconfig all
+    kmake "${KMAKE_ARGS[@]}" olddefconfig all
     log "s390x opensuse config $(results "${?}")"
 }
 
@@ -629,7 +629,7 @@ function build_x86_64_kernels() {
     KLOG=x86_64-debian
     setup_config debian/amd64.config
     # https://github.com/ClangBuiltLinux/linux/issues/514
-    OBJCOPY=objcopy kmake "${KMAKE_ARGS[@]}" olddefconfig all
+    kmake OBJCOPY=objcopy olddefconfig all
     log "x86_64 debian config $(results "${?}")"
 
     # Fedora
@@ -649,7 +649,7 @@ function build_x86_64_kernels() {
         unset LOG_COMMENT
     fi
     # https://github.com/ClangBuiltLinux/linux/issues/514
-    OBJCOPY=objcopy kmake olddefconfig all
+    kmake OBJCOPY=objcopy olddefconfig all
     log "x86_64 opensuse config${LOG_COMMENT} $(results "${?}")"
 }
 
