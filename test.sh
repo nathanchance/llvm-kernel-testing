@@ -202,7 +202,7 @@ function kmake() {
 }
 
 # Use config script in kernel source to enable/disable options
-function modify_config() {
+function scripts_config() {
     set -x
     "${LINUX_SRC}"/scripts/config --file "${OUT:?}"/.config "${@}"
     set +x
@@ -223,7 +223,7 @@ function setup_config() {
         # We are building upstream kernels, which do not have Debian's
         # signing keys in their source
         # The Android drivers are not modular in upstream
-        debian/*) modify_config -d CONFIG_SYSTEM_TRUSTED_KEYS -e ANDROID_BINDER_IPC -e ASHMEM ;;
+        debian/*) scripts_config -d CONFIG_SYSTEM_TRUSTED_KEYS -e ANDROID_BINDER_IPC -e ASHMEM ;;
 
         # Fedora and OpenSUSE enable BTF, which has to be handled in a special manner:
         #
@@ -236,10 +236,19 @@ function setup_config() {
         # that the build does not error.
         fedora/* | opensuse/*)
             if ! (command -v pahole &>/dev/null && [[ ${LNX_VER_CODE} -ge 507000 ]]); then
-                modify_config -d CONFIG_DEBUG_INFO_BTF
+                scripts_config -d CONFIG_DEBUG_INFO_BTF
             fi
             ;;
     esac
+
+    # CONFIG_INTERCONNECT as a module is invalid after https://git.kernel.org/linus/fcb57bfcb87f3bdb1b29fea1a1cd72940fa559fd
+    # Make sure that it does not get disabled if that patch is present.
+    # This would not be necessary if we had an individual config for each kernel version
+    # that we support but that is a lot more effort.
+    if [[ "$(scripts_config -s INTERCONNECT)" = "m" ]] &&
+        grep -q 'bool "On-Chip Interconnect management support"' "${LINUX_SRC}"/drivers/interconnect/Kconfig; then
+        scripts_config -e INTERCONNECT
+    fi
 }
 
 function results() {
@@ -266,7 +275,7 @@ function build_arm32_kernels() {
     # https://github.com/ClangBuiltLinux/linux/issues/954
     if [[ ${LLVM_VER_CODE} -lt 100001 ]]; then
         LOG_COMMENT=" (minus CONFIG_TRACING, CONFIG_OPROFILE, and CONFIG_RCU_TRACE)"
-        modify_config -d CONFIG_TRACING -d CONFIG_OPROFILE -d CONFIG_RCU_TRACE
+        scripts_config -d CONFIG_TRACING -d CONFIG_OPROFILE -d CONFIG_RCU_TRACE
     else
         unset LOG_COMMENT
     fi
@@ -383,7 +392,7 @@ function build_mips_kernels() {
     KLOG=mips
     [[ -f ${LINUX_SRC}/arch/mips/vdso/Kconfig ]] && MIPS_BE_LD=${CROSS_COMPILE}ld
     LD=${MIPS_BE_LD:=ld.lld} kmake "${KMAKE_ARGS[@]}" distclean malta_kvm_guest_defconfig
-    modify_config -d CONFIG_CPU_LITTLE_ENDIAN -e CONFIG_CPU_BIG_ENDIAN
+    scripts_config -d CONFIG_CPU_LITTLE_ENDIAN -e CONFIG_CPU_BIG_ENDIAN
     LD=${MIPS_BE_LD} kmake "${KMAKE_ARGS[@]}" olddefconfig all
     log "mips malta_kvm_guest_defconfig plus CONFIG_CPU_BIG_ENDIAN=y $(results "${?}")"
     qemu_boot_kernel mips
@@ -442,7 +451,7 @@ function build_powerpc_kernels() {
     if [[ ${LLVM_VER_CODE} -lt 100001 ]]; then
         CTOD=CONFIG_DRM_AMD_DC
         LOG_COMMENT=" (minus ${CTOD})"
-        modify_config -d ${CTOD}
+        scripts_config -d ${CTOD}
     else
         unset LOG_COMMENT
     fi
@@ -454,7 +463,7 @@ function build_powerpc_kernels() {
     KLOG=powerpc64le-fedora
     setup_config fedora/ppc64le.config
     # https://github.com/ClangBuiltLinux/linux/issues/944
-    [[ ${LLVM_VER_CODE} -lt 100001 ]] && modify_config -d ${CTOD}
+    [[ ${LLVM_VER_CODE} -lt 100001 ]] && scripts_config -d ${CTOD}
     LD=${CROSS_COMPILE}ld OBJDUMP=${CROSS_COMPILE}objdump \
         kmake "${KMAKE_ARGS[@]}" olddefconfig all
     log "ppc64le fedora config${LOG_COMMENT} $(results "${?}")"
@@ -463,7 +472,7 @@ function build_powerpc_kernels() {
     KLOG=powerpc64le-opensuse
     setup_config opensuse/ppc64le.config
     # https://github.com/ClangBuiltLinux/linux/issues/944
-    [[ ${LLVM_VER_CODE} -lt 100001 ]] && modify_config -d ${CTOD}
+    [[ ${LLVM_VER_CODE} -lt 100001 ]] && scripts_config -d ${CTOD}
     LD=${CROSS_COMPILE}ld OBJDUMP=${CROSS_COMPILE}objdump \
         kmake "${KMAKE_ARGS[@]}" olddefconfig all
     log "ppc64le opensuse config $(results "${?}")"
@@ -579,7 +588,7 @@ function build_x86_64_kernels() {
     # https://github.com/ClangBuiltLinux/linux/issues/515
     if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
         LOG_COMMENT=" (minus CONFIG_STM and CONFIG_TEST_MEMCAT_P)"
-        modify_config -d CONFIG_STM -d CONFIG_TEST_MEMCAT_P
+        scripts_config -d CONFIG_STM -d CONFIG_TEST_MEMCAT_P
     else
         unset LOG_COMMENT
     fi
@@ -595,7 +604,7 @@ function build_x86_64_kernels() {
     # https://github.com/ClangBuiltLinux/linux/issues/678
     if [[ ${LNX_VER_CODE} -lt 508000 ]]; then
         LOG_COMMENT=" (minus CONFIG_SENSORS_APPLESMC)"
-        modify_config -d CONFIG_SENSORS_APPLESMC
+        scripts_config -d CONFIG_SENSORS_APPLESMC
     else
         unset LOG_COMMENT
     fi
@@ -608,7 +617,7 @@ function build_x86_64_kernels() {
     # https://github.com/ClangBuiltLinux/linux/issues/515
     if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
         LOG_COMMENT=" (minus CONFIG_STM)"
-        modify_config -d CONFIG_STM
+        scripts_config -d CONFIG_STM
     else
         unset LOG_COMMENT
     fi
@@ -634,7 +643,7 @@ function build_x86_64_kernels() {
     # https://github.com/ClangBuiltLinux/linux/issues/515
     if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
         LOG_COMMENT=" (minus CONFIG_STM)"
-        modify_config -d CONFIG_STM
+        scripts_config -d CONFIG_STM
     else
         unset LOG_COMMENT
     fi
@@ -661,7 +670,7 @@ function build_lto_cfi_kernels() {
     # arm64
     KLOG=arm64-lto-cfi
     kmake "${KMAKE_ARGS[@]}" distclean defconfig
-    modify_config \
+    scripts_config \
         -e LTO_CLANG \
         -e CFI_CLANG \
         -e FTRACE \
@@ -677,7 +686,7 @@ function build_lto_cfi_kernels() {
     # x86_64
     KLOG=x86_64-lto-cfi
     kmake distclean defconfig
-    modify_config \
+    scripts_config \
         -e LTO_CLANG \
         -e CFI_CLANG \
         -e LOCK_TORTURE_TEST \
