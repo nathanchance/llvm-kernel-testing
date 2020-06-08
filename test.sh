@@ -158,12 +158,8 @@ function log_tc_lnx_ver() {
 # Set tool variables based on availability
 function set_tool_vars() {
     CCACHE=$(command -v ccache)
-    PCOMP=()
-    if grep -q "override GZIP=" "${LINUX_SRC}"/Makefile; then
-        command -v pbzip2 &>/dev/null && PCOMP=("${PCOMP[@]}" BZIP2=pbzip2)
-        command -v pigz &>/dev/null && PCOMP=("${PCOMP[@]}" GZIP=pigz)
-        # command -v pixz &>/dev/null && PCOMP=("${PCOMP[@]}" LZMA=pixz XZ=pixz)
-    fi
+    KBZIP2=$(command -v pbzip2)
+    KGZIP=$(command -v pigz)
 }
 
 # make wrapper for the kernel so we can set all variables that we need
@@ -191,7 +187,9 @@ function kmake() {
             HOSTCXX="${HOSTCXX:-${CCACHE:+ccache }clang++}" \
             HOSTLD="${HOSTLD:-ld.lld}" \
             HOSTLDFLAGS="${HOSTLDFLAGS--fuse-ld=lld}" \
+            ${KBZIP2:+KBZIP2=pbzip2} \
             ${KCFLAGS:+KCFLAGS="${KCFLAGS}"} \
+            ${KGZIP:+KGZIP=pigz} \
             LD="${LD:-ld.lld}" \
             LOCALVERSION="${LOCALVERSION--cbl}" \
             NM="${NM:-llvm-nm}" \
@@ -201,7 +199,6 @@ function kmake() {
             OBJSIZE="${OBJSIZE:-llvm-size}" \
             READELF="${READELF:-llvm-readelf}" \
             STRIP="${LLVM_STRIP:-llvm-strip}" \
-            ${PCOMP:+"${PCOMP[@]}"} \
             "${MAKE_ARGS[@]}" |& tee "${BLD_LOG_DIR}/${KLOG}.log"
         INNER_RET=${PIPESTATUS[0]}
         set +x
