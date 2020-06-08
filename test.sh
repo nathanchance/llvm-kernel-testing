@@ -12,14 +12,9 @@ SRC=${BASE}/src
 TC_BLD=${SRC}/tc-build
 
 # Logging for the script
-BLD_LOG_DIR=${BASE}/logs/$(date +%Y%m%d-%H%M)
-BLD_LOG=${BLD_LOG_DIR}/results.log
 
 # Start tracking script runtime
 START_TIME=$(date +%s)
-
-# Create necessary folders
-mkdir -p "${BLD_LOG%/*}" "${SRC}"
 
 # Prints an error message in bold red then exits
 function die() {
@@ -55,6 +50,7 @@ function parse_parameters() {
             -j | --jobs) shift && JOBS=${1} ;;
             -j*) JOBS=${1/-j/} ;;
             -l | --linux-src) shift && LINUX_SRC=$(readlink -f "${1}") ;;
+            --log-dir) shift && BLD_LOG_DIR=${1} ;;
             --lto=* | -n | --no-update | --pgo) BLD_LLVM_ARGS=("${BLD_LLVM_ARGS[@]}" "${1}") ;;
             --lto) shift && BLD_LLVM_ARGS=("${BLD_LLVM_ARGS[@]}" --lto "${1}") ;;
             -s | --skip-tc-build) SKIP_TC_BUILD=true ;;
@@ -66,8 +62,12 @@ function parse_parameters() {
         shift
     done
 
+    [[ -z ${BLD_LOG_DIR} ]] && BLD_LOG_DIR=${BASE}/logs/$(date +%Y%m%d-%H%M)
     [[ -z ${ARCHES[*]} ]] && ARCHES=(arm32 arm64 mips powerpc s390x x86_64)
     [[ -z ${TC_PREFIX} ]] && TC_PREFIX=${BASE}/toolchain
+
+    BLD_LOG=${BLD_LOG_DIR}/results.log
+    mkdir -p "${BLD_LOG%/*}" "${SRC}"
 }
 
 # Builds the tools that we are testing
