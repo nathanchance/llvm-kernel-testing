@@ -62,9 +62,14 @@ function parse_parameters() {
         shift
     done
 
-    [[ -z ${BLD_LOG_DIR} ]] && BLD_LOG_DIR=${BASE}/logs/$(date +%Y%m%d-%H%M)
     [[ -z ${ARCHES[*]} ]] && ARCHES=(arm32 arm64 mips powerpc s390x x86_64)
+    [[ -z ${BLD_LOG_DIR} ]] && BLD_LOG_DIR=${BASE}/logs/$(date +%Y%m%d-%H%M)
     [[ -z ${TC_PREFIX} ]] && TC_PREFIX=${BASE}/toolchain
+
+    # We purposefully do not use [[ -z ... ]] here so that a user can
+    # override this with LOCALVERSION=
+    : "${LOCALVERSION=-cbl}"
+    export LOCALVERSION
 
     BLD_LOG=${BLD_LOG_DIR}/results.log
     mkdir -p "${BLD_LOG%/*}" "${SRC}"
@@ -191,7 +196,7 @@ function kmake() {
             ${KCFLAGS:+KCFLAGS="${KCFLAGS}"} \
             ${KGZIP:+KGZIP=pigz} \
             LD="${LD:-ld.lld}" \
-            LOCALVERSION="${LOCALVERSION--cbl}" \
+            ${LOCALVERSION:+LOCALVERSION="${LOCALVERSION}"} \
             NM="${NM:-llvm-nm}" \
             O="${OUT#${LINUX_SRC}/*}" \
             OBJCOPY="${OBJCOPY:-llvm-objcopy}" \
