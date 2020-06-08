@@ -553,6 +553,14 @@ function build_s390x_kernels() {
     kmake "${KMAKE_ARGS[@]}" distclean defconfig all
     log "s390x defconfig $(results "${?}")"
 
+    KLOG=s390x-allmodconfig
+    kmake "${KMAKE_ARGS[@]}" distclean allmodconfig all
+    log "s390x allmodconfig $(results "${?}")"
+
+    KLOG=s390x-allyesconfig
+    kmake "${KMAKE_ARGS[@]}" distclean allyesconfig all
+    log "s390x allyesconfig $(results "${?}")"
+
     # Debian
     KLOG=s390x-debian
     setup_config debian/s390x.config
