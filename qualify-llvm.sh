@@ -222,7 +222,8 @@ function setup_config() {
     case ${1} in
         # We are building upstream kernels, which do not have Debian's
         # signing keys in their source
-        debian/*) modify_config -d CONFIG_SYSTEM_TRUSTED_KEYS ;;
+        # The Android drivers are not modular in upstream
+        debian/*) modify_config -d CONFIG_SYSTEM_TRUSTED_KEYS -e ANDROID_BINDER_IPC -e ASHMEM ;;
 
         # Fedora and OpenSUSE enable BTF, which has to be handled in a special manner:
         #
