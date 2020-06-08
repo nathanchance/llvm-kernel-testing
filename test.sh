@@ -183,6 +183,7 @@ function kmake() {
             HOSTLDFLAGS="${HOSTLDFLAGS--fuse-ld=lld}" \
             ${KCFLAGS:+KCFLAGS="${KCFLAGS}"} \
             LD="${LD:-ld.lld}" \
+            LOCALVERSION="${LOCALVERSION--cbl}" \
             NM="${NM:-llvm-nm}" \
             O="${OUT#${LINUX_SRC}/*}" \
             OBJCOPY="${OBJCOPY:-llvm-objcopy}" \
