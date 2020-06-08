@@ -295,9 +295,10 @@ function build_arm32_kernels() {
     qemu_boot_kernel arm32_v5
     log "arm32 multi_v5_defconfig${LOG_COMMENT} qemu boot $(QEMU=1 results "${?}")"
 
-    # https://github.com/ClangBuiltLinux/linux/issues/732
     KLOG=arm32-aspeed_g5_defconfig
-    kmake "${KMAKE_ARGS[@]}" LD=${CROSS_COMPILE}ld distclean aspeed_g5_defconfig all
+    # https://github.com/ClangBuiltLinux/linux/issues/732
+    [[ ${LLVM_VER_CODE} -lt 110000 ]] && ARM32_V6_LD=${CROSS_COMPILE}ld
+    kmake "${KMAKE_ARGS[@]}" ${ARM32_V6_LD:+LD=${ARM32_V6_LD}} distclean aspeed_g5_defconfig all
     log "arm32 aspeed_g5_defconfig $(results "${?}")"
     qemu_boot_kernel arm32_v6
     log "arm32 aspeed_g5_defconfig qemu boot $(QEMU=1 results "${?}")"
