@@ -62,7 +62,7 @@ function parse_parameters() {
         shift
     done
 
-    [[ -z ${ARCHES[*]} ]] && ARCHES=(arm32 arm64 mips powerpc s390x x86_64)
+    [[ -z ${ARCHES[*]} ]] && ARCHES=(arm32 arm64 mips powerpc riscv s390x x86_64)
     [[ -z ${BLD_LOG_DIR} ]] && BLD_LOG_DIR=${BASE}/logs/$(date +%Y%m%d-%H%M)
     [[ -z ${TC_PREFIX} ]] && TC_PREFIX=${BASE}/toolchain
 
