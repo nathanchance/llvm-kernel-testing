@@ -135,7 +135,8 @@ function dwnld_update_boot_utils() {
 
     BOOT_UTILS=${SRC}/boot-utils
     [[ -d ${BOOT_UTILS} ]] || git -C "${BOOT_UTILS%/*}" clone git://github.com/ClangBuiltLinux/boot-utils
-    git -C "${BOOT_UTILS}" pull
+    git -C "${BOOT_UTILS}" pull --no-edit || die "Error updating boot-utils"
+    git -C "${BOOT_UTILS}" pull --no-edit https://github.com/nathanchance/boot-utils riscv || die "Error pulling RISC-V support"
 }
 
 # Get what CONFIG_LOCALVERSION_AUTO spits out without actually enabling it in every config
@@ -519,9 +520,18 @@ function build_riscv_kernels() {
         return 0
     fi
 
+    header "Building riscv kernels"
+
     KLOG=riscv-defconfig
-    kmake "${KMAKE_ARGS[@]}" LLVM_IAS=1 distclean defconfig all
-    log "riscv64 defconfig exit code: $(results "${?}")"
+    # https://github.com/ClangBuiltLinux/linux/issues/1020
+    kmake "${KMAKE_ARGS[@]}" LD=riscv64-linux-gnu-ld LLVM_IAS=1 distclean defconfig all
+    log "riscv defconfig exit code: $(results "${?}")"
+    # https://github.com/ClangBuiltLinux/linux/issues/867
+    if grep -q "(long)__old" "${LINUX_SRC}"/arch/riscv/include/asm/cmpxchg.h; then
+        qemu_boot_kernel riscv
+        log "riscv defconfig qemu boot $(QEMU=1 results "${?}")"
+    fi
+
 }
 
 # Build s390x kernels
