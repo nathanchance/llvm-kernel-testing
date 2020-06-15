@@ -271,8 +271,15 @@ function results() {
     else
         RESULT=failed
     fi
-    echo "${RESULT} in $(print_time "${KMAKE_START}" "${KMAKE_END}")"
-    [[ -z ${QEMU} && ${RESULT} = "failed" ]] && grep "error:\|warning:\|undefined" "${BLD_LOG_DIR}/${KLOG}.log"
+    printf "%s" "${RESULT}"
+    if [[ -z ${QEMU} ]]; then
+        printf " in %s" "$(print_time "${KMAKE_START}" "${KMAKE_END}")"
+        printf '\n'
+        [[ ${RESULT} = "failed" ]] && grep "error:\|warning:\|undefined" "${BLD_LOG_DIR}/${KLOG}.log"
+    else
+        printf '\n'
+    fi
+    printf '\n'
 }
 
 # Build arm32 kernels
