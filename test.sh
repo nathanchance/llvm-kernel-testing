@@ -435,12 +435,14 @@ function build_powerpc_kernels() {
 
     # Upstream
     # https://llvm.org/pr46186
-    if ! grep -q 'case 4: __put_user_asm_goto(x, ptr, label, "stw"); break;' "${LINUX_SRC}"/arch/powerpc/include/asm/uaccess.h; then
+    if ! grep -q 'case 4: __put_user_asm_goto(x, ptr, label, "stw"); break;' "${LINUX_SRC}"/arch/powerpc/include/asm/uaccess.h || [[ ${LLVM_VER_CODE} -ge 110000 ]]; then
         KLOG=powerpc-ppc44x_defconfig
         kmake "${KMAKE_ARGS[@]}" distclean ppc44x_defconfig all
         log "powerpc ppc44x_defconfig $(results "${?}")"
-        qemu_boot_kernel ppc32
-        log "powerpc ppc44x_defconfig qemu boot $(QEMU=1 results "${?}")"
+        if [[ ${LNX_VER_CODE} -lt 508000 ]]; then
+            qemu_boot_kernel ppc32
+            log "powerpc ppc44x_defconfig qemu boot $(QEMU=1 results "${?}")"
+        fi
 
         KLOG=powerpc-allnoconfig
         kmake "${KMAKE_ARGS[@]}" distclean allnoconfig all
