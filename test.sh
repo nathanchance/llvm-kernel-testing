@@ -46,10 +46,12 @@ function parse_parameters() {
         case ${1} in
             -a | --arches) shift && IFS=, read -r -a ARCHES <<<"${1}" ;;
             -b | --llvm-branch) shift && LLVM_BRANCH=${1} ;;
+            --binutils-prefix) shift && BINUTILS_PREFIX=$(readlink -f "${1}") ;;
             -d | --debug) set -x ;;
             -j | --jobs) shift && JOBS=${1} ;;
             -j*) JOBS=${1/-j/} ;;
             -l | --linux-src) shift && LINUX_SRC=$(readlink -f "${1}") ;;
+            --llvm-prefix) shift && LLVM_PREFIX=$(readlink -f "${1}") ;;
             --log-dir) shift && BLD_LOG_DIR=${1} ;;
             --lto=* | -n | --no-update | --pgo) BLD_LLVM_ARGS=("${BLD_LLVM_ARGS[@]}" "${1}") ;;
             --lto) shift && BLD_LLVM_ARGS=("${BLD_LLVM_ARGS[@]}" --lto "${1}") ;;
@@ -66,6 +68,8 @@ function parse_parameters() {
     [[ -z ${ARCHES[*]} ]] && ARCHES=(arm32 arm64 mips powerpc riscv s390x x86_64)
     [[ -z ${BLD_LOG_DIR} ]] && BLD_LOG_DIR=${BASE}/logs/$(date +%Y%m%d-%H%M)
     [[ -z ${TC_PREFIX} ]] && TC_PREFIX=${BASE}/toolchain
+    [[ -z ${LLVM_PREFIX} ]] && LLVM_PREFIX=${TC_PREFIX}
+    [[ -z ${BINUTILS_PREFIX} ]] && BINUTILS_PREFIX=${TC_PREFIX}
 
     # We purposefully do not use [[ -z ... ]] here so that a user can
     # override this with LOCALVERSION=
@@ -101,11 +105,11 @@ function build_llvm_binutils() {
         --assertions \
         --branch "${LLVM_BRANCH:=llvmorg-10.0.1-rc1}" \
         --check-targets clang lld llvm \
-        --install-folder "${TC_PREFIX}" \
+        --install-folder "${LLVM_PREFIX}" \
         "${BLD_LLVM_ARGS[@]}" || die "build-llvm.py failed" "${?}"
 
     "${TC_BLD}"/build-binutils.py \
-        --install-folder "${TC_PREFIX}" \
+        --install-folder "${BINUTILS_PREFIX}" \
         --targets "${BINUTILS_TARGETS[@]}" || die "build-binutils.py failed" "${?}"
 }
 
@@ -154,8 +158,8 @@ function get_config_localversion_auto() { (
 # Print clang, binutils, and kernel versions being tested into the build log
 function log_tc_lnx_ver() {
     {
-        "${TC_PREFIX}"/bin/clang --version | head -n1
-        "${TC_PREFIX}"/bin/as --version | head -n1
+        clang --version | head -n1
+        as --version | head -n1
         echo "Linux $(make -C "${LINUX_SRC}" -s kernelversion)$(get_config_localversion_auto)"
         echo
     } >"${BLD_LOG}"
@@ -183,7 +187,7 @@ function kmake() {
         done
 
         set -x
-        time PATH=${TC_PREFIX}/bin:${PATH} make \
+        time make \
             -C "${LINUX_SRC}" \
             -skj"${JOBS:=$(nproc)}" \
             AR="${AR:-llvm-ar}" \
@@ -731,11 +735,10 @@ function build_lto_cfi_kernels() {
 
 # Print LLVM/clang version as a 5-6 digit number (e.g. clang 11.0.0 will be 110000)
 function create_llvm_ver_code() {
-    local CLANG MAJOR MINOR PATCHLEVEL
-    CLANG=${TC_PREFIX}/bin/clang
-    MAJOR=$(echo __clang_major__ | "${CLANG}" -E -x c - | tail -n 1)
-    MINOR=$(echo __clang_minor__ | "${CLANG}" -E -x c - | tail -n 1)
-    PATCHLEVEL=$(echo __clang_patchlevel__ | "${CLANG}" -E -x c - | tail -n 1)
+    local MAJOR MINOR PATCHLEVEL
+    MAJOR=$(echo __clang_major__ | clang -E -x c - | tail -n 1)
+    MINOR=$(echo __clang_minor__ | clang -E -x c - | tail -n 1)
+    PATCHLEVEL=$(echo __clang_patchlevel__ | clang -E -x c - | tail -n 1)
     LLVM_VER_CODE=$(printf "%d%02d%02d" "${MAJOR}" "${MINOR}" "${PATCHLEVEL}")
 }
 
@@ -746,8 +749,25 @@ function create_lnx_ver_code() {
     LNX_VER_CODE=$(printf "%d%02d%03d" "${LNX_VER[@]}")
 }
 
+# Check if the clang binary supports the target before attempting to build
+function check_clang_target() {
+    local target
+    case "${1:?}" in
+        arm32) target=arm-linux-gnueabi ;;
+        arm64) target=aarch64-linux-gnu ;;
+        mips) target=mips-linux-gnu ;;
+        powerpc) target=powerpc-linux-gnu ;;
+        riscv) target=riscv64-linux-gnu ;;
+        s390x) target=s390x-linux-gnu ;;
+        x86_64) target=x86_64-linux-gnu ;;
+    esac
+    echo | clang --target=${target} -no-integrated-as -c -x c - -o /dev/null &>/dev/null
+}
+
 # Build kernels with said toolchains
 function build_kernels() {
+    export PATH=${LLVM_PREFIX}/bin:${BINUTILS_PREFIX}/bin:${PATH}
+
     set_tool_vars
     log_tc_lnx_ver
     create_lnx_ver_code
@@ -755,6 +775,11 @@ function build_kernels() {
 
     for ARCH in "${ARCHES[@]}"; do
         OUT=$(cd "${LINUX_SRC}" && readlink -f -m "${O:-out}")/${ARCH}
+        if ! check_clang_target "${ARCH}"; then
+            header "Skipping ${ARCH} kernels"
+            echo "Reason: clang was not configured with this target"
+            continue
+        fi
         build_"${ARCH}"_kernels || exit ${?}
     done
     ${TEST_LTO_CFI_KERNEL:=false} && build_lto_cfi_kernels
