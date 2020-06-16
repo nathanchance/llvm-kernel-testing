@@ -137,7 +137,6 @@ function dwnld_update_boot_utils() {
     BOOT_UTILS=${SRC}/boot-utils
     [[ -d ${BOOT_UTILS} ]] || git -C "${BOOT_UTILS%/*}" clone git://github.com/ClangBuiltLinux/boot-utils
     git -C "${BOOT_UTILS}" pull --no-edit || die "Error updating boot-utils"
-    git -C "${BOOT_UTILS}" pull --no-edit https://github.com/nathanchance/boot-utils riscv || die "Error pulling RISC-V support"
 }
 
 # Get what CONFIG_LOCALVERSION_AUTO spits out without actually enabling it in every config
