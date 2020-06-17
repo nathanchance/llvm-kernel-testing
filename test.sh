@@ -159,6 +159,7 @@ function get_config_localversion_auto() { (
 function log_tc_lnx_ver() {
     {
         clang --version | head -n1
+        clang --version | tail -n1
         as --version | head -n1
         echo "Linux $(make -C "${LINUX_SRC}" -s kernelversion)$(get_config_localversion_auto)"
         echo
@@ -797,10 +798,10 @@ function report_results() {
     # Remove last blank line and full path from errors/warnings because I am OCD :^)
     sed -i -e '${/^$/d}' -e "s;${LINUX_SRC}/;;g" "${BLD_LOG}"
     header "Toolchain and kernel information"
-    head -n3 "${BLD_LOG}"
+    head -n4 "${BLD_LOG}"
     header "List of successes"
     grep "success" "${BLD_LOG}"
-    FAILS=$(tail -n +4 "${BLD_LOG}" | grep "failed")
+    FAILS=$(tail -n +5 "${BLD_LOG}" | grep "failed")
     if [[ -n ${FAILS} ]]; then
         header "List of failures"
         echo "${FAILS}"
