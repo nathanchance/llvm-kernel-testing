@@ -440,10 +440,8 @@ function build_powerpc_kernels() {
         KLOG=powerpc-ppc44x_defconfig
         kmake "${KMAKE_ARGS[@]}" distclean ppc44x_defconfig all
         log "powerpc ppc44x_defconfig $(results "${?}")"
-        if [[ ${LNX_VER_CODE} -lt 508000 ]]; then
-            qemu_boot_kernel ppc32
-            log "powerpc ppc44x_defconfig qemu boot $(QEMU=1 results "${?}")"
-        fi
+        qemu_boot_kernel ppc32
+        log "powerpc ppc44x_defconfig qemu boot $(QEMU=1 results "${?}")"
 
         KLOG=powerpc-allnoconfig
         kmake "${KMAKE_ARGS[@]}" distclean allnoconfig all
