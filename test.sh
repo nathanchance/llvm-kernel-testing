@@ -364,7 +364,7 @@ function build_arm64_kernels() {
     # Upstream
     KLOG=arm64-defconfig
     kmake "${KMAKE_ARGS[@]}" distclean defconfig all
-    log "arm64 defconfig exit code: $(results "${?}")"
+    log "arm64 defconfig $(results "${?}")"
     qemu_boot_kernel arm64
     log "arm64 defconfig qemu boot $(QEMU=1 results "${?}")"
 
@@ -538,7 +538,7 @@ function build_riscv_kernels() {
     KLOG=riscv-defconfig
     # https://github.com/ClangBuiltLinux/linux/issues/1020
     kmake "${KMAKE_ARGS[@]}" LD=riscv64-linux-gnu-ld LLVM_IAS=1 distclean defconfig all
-    log "riscv defconfig exit code: $(results "${?}")"
+    log "riscv defconfig $(results "${?}")"
     # https://github.com/ClangBuiltLinux/linux/issues/867
     if grep -q "(long)__old" "${LINUX_SRC}"/arch/riscv/include/asm/cmpxchg.h; then
         qemu_boot_kernel riscv
