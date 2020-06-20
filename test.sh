@@ -535,8 +535,27 @@ function build_riscv_kernels() {
     header "Building riscv kernels"
 
     KLOG=riscv-defconfig
+    # binutils 2.34 is needed, build it if necessary
+    # https://lore.kernel.org/linux-riscv/20200612084350.GA1108986@ubuntu-n2-xlarge-x86/
+    RISCV_LD=${BASE}/toolchain/bin/riscv64-linux-gnu-ld
+    if [[ ! -x ${RISCV_LD} ]]; then
+        [[ -d ${TC_BLD} ]] || git clone git://github.com/ClangBuiltLinux/tc-build "${TC_BLD}"
+        if ! git -C "${TC_BLD}" pull --rebase; then
+            log "riscv defconfig could not be built due to error updating tc-build"
+            return 0
+        fi
+        set -x
+        if ! "${TC_BLD}"/build-binutils.py \
+            --install-folder "${BASE}"/toolchain \
+            --targets riscv64 &>/dev/null; then
+            set +x
+            log "riscv defconfig could not be built due to error building binutils 2.34"
+            return 0
+        fi
+        set +x
+    fi
     # https://github.com/ClangBuiltLinux/linux/issues/1020
-    kmake "${KMAKE_ARGS[@]}" LD=riscv64-linux-gnu-ld LLVM_IAS=1 distclean defconfig all
+    kmake "${KMAKE_ARGS[@]}" LD="${RISCV_LD}" LLVM_IAS=1 distclean defconfig all
     log "riscv defconfig $(results "${?}")"
     # https://github.com/ClangBuiltLinux/linux/issues/867
     if grep -q "(long)__old" "${LINUX_SRC}"/arch/riscv/include/asm/cmpxchg.h; then
