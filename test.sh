@@ -96,6 +96,7 @@ function build_llvm_binutils() {
             arm64) BINUTILS_TARGETS=("${BINUTILS_TARGETS[@]}" aarch64) ;;
             mips) BINUTILS_TARGETS=("${BINUTILS_TARGETS[@]}" mips mipsel) ;;
             powerpc) BINUTILS_TARGETS=("${BINUTILS_TARGETS[@]}" powerpc powerpc64 powerpc64le) ;;
+            riscv) BINUTILS_TARGETS=("${BINUTILS_TARGETS[@]}" riscv64) ;;
             s390x | x86_64) BINUTILS_TARGETS=("${BINUTILS_TARGETS[@]}" "${ARCH}") ;;
             *) die "Unsupported architecture '${ARCH}'" ;;
         esac
