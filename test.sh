@@ -55,6 +55,7 @@ function parse_parameters() {
             --log-dir) shift && BLD_LOG_DIR=${1} ;;
             --lto=* | -n | --no-update | --pgo) BLD_LLVM_ARGS=("${BLD_LLVM_ARGS[@]}" "${1}") ;;
             --lto) shift && BLD_LLVM_ARGS=("${BLD_LLVM_ARGS[@]}" --lto "${1}") ;;
+            -o | --out-dir) shift && O=${1} ;;
             -s | --skip-tc-build) SKIP_TC_BUILD=true ;;
             -t | --tc-prefix) shift && TC_PREFIX=$(readlink -f "${1}") ;;
             --test-lto-cfi-kernel) TEST_LTO_CFI_KERNEL=true ;;
