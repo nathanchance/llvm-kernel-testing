@@ -328,7 +328,7 @@ function build_arm32_kernels() {
 
     KLOG=arm32-allmodconfig
     kmake "${KMAKE_ARGS[@]}" distclean allmodconfig all
-    log "arm32 allmodconfig $(results "${?}")"
+    log "arm32 allmodconfig (plus CONFIG_CPU_BIG_ENDIAN=n) $(results "${?}")"
 
     KLOG=arm32-allnoconfig
     kmake "${KMAKE_ARGS[@]}" distclean allnoconfig all
@@ -336,7 +336,7 @@ function build_arm32_kernels() {
 
     KLOG=arm32-allyesconfig
     kmake "${KMAKE_ARGS[@]}" distclean allyesconfig all
-    log "arm32 allyesconfig $(results "${?}")"
+    log "arm32 allyesconfig (plus CONFIG_CPU_BIG_ENDIAN=n) $(results "${?}")"
 
     # Debian
     KLOG=arm32-debian
@@ -373,7 +373,7 @@ function build_arm64_kernels() {
 
     KLOG=arm64-allmodconfig
     kmake "${KMAKE_ARGS[@]}" distclean allmodconfig all
-    log "arm64 allmodconfig $(results "${?}")"
+    log "arm64 allmodconfig (plus CONFIG_CPU_BIG_ENDIAN=n) $(results "${?}")"
 
     KLOG=arm64-allnoconfig
     kmake "${KMAKE_ARGS[@]}" distclean allnoconfig all
@@ -381,7 +381,7 @@ function build_arm64_kernels() {
 
     KLOG=arm64-allyesconfig
     kmake "${KMAKE_ARGS[@]}" distclean allyesconfig all
-    log "arm64 allyesconfig $(results "${?}")"
+    log "arm64 allyesconfig (plus CONFIG_CPU_BIG_ENDIAN=n) $(results "${?}")"
 
     # Debian
     KLOG=arm64-debian
