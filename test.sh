@@ -105,7 +105,7 @@ function build_llvm_binutils() {
 
     "${TC_BLD}"/build-llvm.py \
         --assertions \
-        --branch "${LLVM_BRANCH:=llvmorg-10.0.1-rc4}" \
+        --branch "${LLVM_BRANCH:=llvmorg-11.0.0-rc1}" \
         --check-targets clang lld llvm \
         --install-folder "${LLVM_PREFIX}" \
         "${BLD_LLVM_ARGS[@]}" || die "build-llvm.py failed" "${?}"
@@ -119,7 +119,7 @@ function build_llvm_binutils() {
 function dwnld_kernel_src() {
     [[ -n ${LINUX_SRC} ]] && return 0
 
-    LINUX=linux-5.7.8
+    LINUX=linux-5.7.10
     LINUX_SRC=${SRC}/${LINUX}
     LINUX_TARBALL=${LINUX_SRC}.tar.xz
 
