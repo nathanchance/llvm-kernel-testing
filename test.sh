@@ -246,7 +246,7 @@ function setup_config() {
         # The Android drivers are not modular in upstream
         debian/*) scripts_config -d CONFIG_SYSTEM_TRUSTED_KEYS -e ANDROID_BINDER_IPC -e ASHMEM ;;
 
-        # Fedora and OpenSUSE enable BTF, which has to be handled in a special manner:
+        # Arch Linux, Fedora, and OpenSUSE enable BTF, which has to be handled in a special manner:
         #
         #   * pahole needs to be available
         #
@@ -255,7 +255,7 @@ function setup_config() {
         #
         # If either of those conditions are false, we need to disable this config so
         # that the build does not error.
-        fedora/* | opensuse/*)
+        archlinux/* | fedora/* | opensuse/*)
             if ! (command -v pahole &>/dev/null && [[ ${LNX_VER_CODE} -ge 507000 ]]); then
                 scripts_config -d CONFIG_DEBUG_INFO_BTF
             fi
