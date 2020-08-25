@@ -763,6 +763,7 @@ function build_lto_cfi_kernels() {
     KLOG=arm64-lto-cfi
     kmake "${KMAKE_ARGS[@]}" distclean defconfig
     scripts_config \
+        -d LTO_NONE \
         -e LTO_CLANG \
         -e CFI_CLANG \
         -e FTRACE \
@@ -779,6 +780,7 @@ function build_lto_cfi_kernels() {
     KLOG=x86_64-lto-cfi
     kmake distclean defconfig
     scripts_config \
+        -d LTO_NONE \
         -e LTO_CLANG \
         -e CFI_CLANG \
         -e LOCK_TORTURE_TEST \
