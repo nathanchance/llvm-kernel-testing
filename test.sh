@@ -726,8 +726,15 @@ function build_x86_64_kernels() {
     # Fedora
     KLOG=x86_64-fedora
     setup_config fedora/x86_64.config
+    # https://github.com/ClangBuiltLinux/linux/issues/515
+    if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
+        LOG_COMMENT=" (minus CONFIG_TEST_MEMCAT_P)"
+        scripts_config -d CONFIG_TEST_MEMCAT_P
+    else
+        unset LOG_COMMENT
+    fi
     kmake olddefconfig all
-    log "x86_64 fedora config $(results "${?}")"
+    log "x86_64 fedora config${LOG_COMMENT} $(results "${?}")"
 
     # OpenSUSE
     KLOG=x86_64-opensuse
