@@ -737,8 +737,8 @@ function build_x86_64_kernels() {
     setup_config fedora/x86_64.config
     # https://github.com/ClangBuiltLinux/linux/issues/515
     if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
-        LOG_COMMENT=" (minus CONFIG_TEST_MEMCAT_P)"
-        scripts_config -d CONFIG_TEST_MEMCAT_P
+        LOG_COMMENT=" (minus CONFIG_STM and CONFIG_TEST_MEMCAT_P)"
+        scripts_config -d CONFIG_STM -d CONFIG_TEST_MEMCAT_P
     else
         unset LOG_COMMENT
     fi
