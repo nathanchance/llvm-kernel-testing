@@ -224,7 +224,10 @@ function kmake() {
 
 # Use config script in kernel source to enable/disable options
 function scripts_config() {
-    set -x
+    case "${*}" in
+        *"-s "*) ;;
+        *) set -x ;;
+    esac
     "${LINUX_SRC}"/scripts/config --file "${OUT:?}"/.config "${@}"
     set +x
 }
@@ -244,7 +247,11 @@ function setup_config() {
         # We are building upstream kernels, which do not have Debian's
         # signing keys in their source
         # The Android drivers are not modular in upstream
-        debian/*) scripts_config -d CONFIG_SYSTEM_TRUSTED_KEYS -e ANDROID_BINDER_IPC -e ASHMEM ;;
+        debian/*)
+            scripts_config -d CONFIG_SYSTEM_TRUSTED_KEYS
+            [[ "$(scripts_config -s ANDROID_BINDER_IPC)" = "m" ]] && scripts_config -e ANDROID_BINDER_IPC
+            [[ "$(scripts_config -s ASHMEM)" = "m" ]] && scripts_config -e ASHMEM
+            ;;
 
         # Arch Linux, Fedora, and OpenSUSE enable BTF, which has to be handled in a special manner:
         #
@@ -265,60 +272,62 @@ function setup_config() {
     # Make sure that certain configuration options do not get disabled across kernel versions
     # This would not be necessary if we had an individual config for each kernel version
     # that we support but that is a lot more effort.
+    SCRIPTS_CONFIG_ARGS=()
 
     # CONFIG_IMX_DSP as a module is invalid before https://git.kernel.org/linus/f52cdcce9197fef9d4a68792dd3b840ad2b77117
     if [[ "$(scripts_config -s IMX_DSP)" = "m" ]] &&
         grep -q 'bool "IMX DSP Protocol driver"' "${LINUX_SRC}"/drivers/firmware/imx/Kconfig; then
-        scripts_config -e IMX_DSP
+        SCRIPTS_CONFIG_ARGS+=(-e IMX_DSP)
     fi
 
     # CONFIG_INTERCONNECT as a module is invalid after https://git.kernel.org/linus/fcb57bfcb87f3bdb1b29fea1a1cd72940fa559fd
     if [[ "$(scripts_config -s INTERCONNECT)" = "m" ]] &&
         grep -q 'bool "On-Chip Interconnect management support"' "${LINUX_SRC}"/drivers/interconnect/Kconfig; then
-        scripts_config -e INTERCONNECT
+        SCRIPTS_CONFIG_ARGS+=(-e INTERCONNECT)
     fi
 
     # CONFIG_POWER_RESET_SC27XX as a module is invalid before https://git.kernel.org/linus/f78c55e3b4806974f7d590b2aab8683232b7bd25
     if [[ "$(scripts_config -s POWER_RESET_SC27XX)" = "m" ]] &&
         grep -q 'bool "Spreadtrum SC27xx PMIC power-off driver"' "${LINUX_SRC}"/drivers/power/reset/Kconfig; then
-        scripts_config -e POWER_RESET_SC27XX
+        SCRIPTS_CONFIG_ARGS+=(-e POWER_RESET_SC27XX)
     fi
 
     # CONFIG_QCOM_RPMPD as a module is invalid before https://git.kernel.org/linus/f29808b2fb85a7ff2d4830aa1cb736c8c9b986f4
     if [[ "$(scripts_config -s QCOM_RPMPD)" = "m" ]] &&
         grep -q 'bool "Qualcomm RPM Power domain driver"' "${LINUX_SRC}"/drivers/soc/qcom/Kconfig; then
-        scripts_config -e QCOM_RPMPD
+        SCRIPTS_CONFIG_ARGS+=(-e QCOM_RPMPD)
     fi
 
     # CONFIG_RTW88_8822BE as a module is invalid before https://git.kernel.org/linus/416e87fcc780cae8d72cb9370fa0f46007faa69a
     if [[ "$(scripts_config -s RTW88_8822BE)" = "m" ]] &&
         grep -q 'bool "Realtek 8822BE PCI wireless network adapter"' "${LINUX_SRC}"/drivers/net/wireless/realtek/rtw88/Kconfig; then
-        scripts_config -e RTW88_8822BE
+        SCRIPTS_CONFIG_ARGS+=(-e RTW88_8822BE)
     fi
 
     # CONFIG_RTW88_8822CE as a module is invalid before https://git.kernel.org/linus/ba0fbe236fb8a7b992e82d6eafb03a600f5eba43
     if [[ "$(scripts_config -s RTW88_8822CE)" = "m" ]] &&
         grep -q 'bool "Realtek 8822CE PCI wireless network adapter"' "${LINUX_SRC}"/drivers/net/wireless/realtek/rtw88/Kconfig; then
-        scripts_config -e RTW88_8822CE
+        SCRIPTS_CONFIG_ARGS+=(-e RTW88_8822CE)
     fi
 
     # CONFIG_SERIAL_LANTIQ as a module is invalid before https://git.kernel.org/linus/ad406341bdd7d22ba9497931c2df5dde6bb9440e
     if [[ "$(scripts_config -s SERIAL_LANTIQ)" = "m" ]] &&
         grep -q 'bool "Lantiq serial driver"' "${LINUX_SRC}"/drivers/tty/serial/Kconfig; then
-        scripts_config -e SERIAL_LANTIQ
+        SCRIPTS_CONFIG_ARGS+=(-e SERIAL_LANTIQ)
     fi
 
     # CONFIG_SND_SOC_SPRD_MCDT as a module is invalid before https://git.kernel.org/linus/fd357ec595d36676c239d8d16706a270a961ac32
     if [[ "$(scripts_config -s SND_SOC_SPRD_MCDT)" = "m" ]] &&
         grep -q 'bool "Spreadtrum multi-channel data transfer support"' "${LINUX_SRC}"/sound/soc/sprd/Kconfig; then
-        scripts_config -e SND_SOC_SPRD_MCDT
+        SCRIPTS_CONFIG_ARGS+=(-e SND_SOC_SPRD_MCDT)
     fi
 
     # CONFIG_TI_CPTS as a module is invalid before https://git.kernel.org/linus/92db978f0d686468e527d49268e7c7e8d97d334b
     if [[ "$(scripts_config -s TI_CPTS)" = "m" ]] &&
         grep -q 'bool "TI Common Platform Time Sync' "${LINUX_SRC}"/drivers/net/ethernet/ti/Kconfig; then
-        scripts_config -e TI_CPTS
+        SCRIPTS_CONFIG_ARGS+=(-e TI_CPTS)
     fi
+    [[ -n "${SCRIPTS_CONFIG_ARGS[*]}" ]] && scripts_config "${SCRIPTS_CONFIG_ARGS[@]}"
 }
 
 function results() {
