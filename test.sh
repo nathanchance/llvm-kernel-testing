@@ -48,6 +48,7 @@ function parse_parameters() {
             -b | --llvm-branch) shift && LLVM_BRANCH=${1} ;;
             --binutils-prefix) shift && BINUTILS_PREFIX=$(readlink -f "${1}") ;;
             -d | --debug) set -x ;;
+            --defconfigs) DEFCONFIGS_ONLY=true ;;
             -j | --jobs) shift && JOBS=${1} ;;
             -j*) JOBS=${1/-j/} ;;
             -l | --linux-src) shift && LINUX_SRC=$(readlink -f "${1}") ;;
@@ -67,6 +68,7 @@ function parse_parameters() {
     done
 
     [[ -z ${ARCHES[*]} ]] && ARCHES=(arm32 arm64 mips powerpc riscv s390x x86_64)
+    [[ -z ${DEFCONFIGS_ONLY} ]] && DEFCONFIGS_ONLY=false
     [[ -z ${BLD_LOG_DIR} ]] && BLD_LOG_DIR=${BASE}/logs/$(date +%Y%m%d-%H%M)
     [[ -z ${TC_PREFIX} ]] && TC_PREFIX=${BASE}/toolchain
     [[ -z ${LLVM_PREFIX} ]] && LLVM_PREFIX=${TC_PREFIX}
@@ -384,6 +386,8 @@ function build_arm32_kernels() {
     qemu_boot_kernel arm32_v7
     log "arm32 multi_v7_defconfig qemu boot $(QEMU=1 results "${?}")"
 
+    ${DEFCONFIGS_ONLY} && return 0
+
     KLOG=arm32-allmodconfig
     kmake "${KMAKE_ARGS[@]}" distclean allmodconfig all
     log "arm32 allmodconfig (plus CONFIG_CPU_BIG_ENDIAN=n) $(results "${?}")"
@@ -428,6 +432,8 @@ function build_arm64_kernels() {
     log "arm64 defconfig $(results "${?}")"
     qemu_boot_kernel arm64
     log "arm64 defconfig qemu boot $(QEMU=1 results "${?}")"
+
+    ${DEFCONFIGS_ONLY} && return 0
 
     KLOG=arm64-allmodconfig
     kmake "${KMAKE_ARGS[@]}" distclean allmodconfig all
@@ -531,6 +537,8 @@ function build_powerpc_kernels() {
     KLOG=powerpc64le-defconfig
     kmake "${KMAKE_ARGS[@]}" "${PPC64LE_ARGS[@]}" distclean ppc64le_defconfig all
     log "powerpc ppc64le_defconfig $(results "${?}")"
+
+    ${DEFCONFIGS_ONLY} && return 0
 
     # Debian
     KLOG=powerpc64le-debian
@@ -641,6 +649,8 @@ function build_s390x_kernels() {
     kmake "${KMAKE_ARGS[@]}" distclean defconfig all
     log "s390x defconfig $(results "${?}")"
 
+    ${DEFCONFIGS_ONLY} && return 0
+
     KLOG=s390x-allmodconfig
     kmake "${KMAKE_ARGS[@]}" distclean allmodconfig all
     log "s390x allmodconfig $(results "${?}")"
@@ -679,6 +689,8 @@ function build_x86_64_kernels() {
     log "x86_64 defconfig $(results "${?}")"
     qemu_boot_kernel x86_64
     log "x86_64 qemu boot $(QEMU=1 results "${?}")"
+
+    ${DEFCONFIGS_ONLY} && return 0
 
     KLOG=x86_64-allmodconfig
     kmake distclean allmodconfig
