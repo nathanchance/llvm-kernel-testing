@@ -604,8 +604,14 @@ function build_riscv_kernels() {
 
     KLOG=riscv-defconfig
     # https://github.com/ClangBuiltLinux/linux/issues/1020
-    kmake "${KMAKE_ARGS[@]}" LD=riscv64-linux-gnu-ld LLVM_IAS=1 distclean defconfig all
-    log "riscv defconfig $(results "${?}")"
+    kmake "${KMAKE_ARGS[@]}" LD=riscv64-linux-gnu-ld LLVM_IAS=1 distclean defconfig
+    # https://github.com/ClangBuiltLinux/linux/issues/1143
+    if grep -q "config EFI" "${LINUX_SRC}"/arch/riscv/Kconfig; then
+        LOG_COMMENT=" (minus CONFIG_EFI)"
+        scripts_config -d CONFIG_EFI
+    fi
+    kmake "${KMAKE_ARGS[@]}" LD=riscv64-linux-gnu-ld LLVM_IAS=1 olddefconfig all
+    log "riscv defconfig${LOG_COMMENT} $(results "${?}")"
     # https://github.com/ClangBuiltLinux/linux/issues/867
     if grep -q "(long)__old" "${LINUX_SRC}"/arch/riscv/include/asm/cmpxchg.h; then
         qemu_boot_kernel riscv
