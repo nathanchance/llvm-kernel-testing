@@ -353,7 +353,7 @@ function results() {
 function build_arm32_kernels() {
     local CROSS_COMPILE KMAKE_ARGS LOG_COMMENT
     CROSS_COMPILE=arm-linux-gnueabi-
-    KMAKE_ARGS=("ARCH=arm" "CROSS_COMPILE=${CROSS_COMPILE}" "KCONFIG_ALLCONFIG=${BASE}/configs/le.config")
+    KMAKE_ARGS=("ARCH=arm" "CROSS_COMPILE=${CROSS_COMPILE}")
 
     header "Building arm32 kernels"
 
@@ -389,7 +389,7 @@ function build_arm32_kernels() {
     ${DEFCONFIGS_ONLY} && return 0
 
     KLOG=arm32-allmodconfig
-    kmake "${KMAKE_ARGS[@]}" distclean allmodconfig all
+    kmake "${KMAKE_ARGS[@]}" KCONFIG_ALLCONFIG=<(echo CONFIG_CPU_BIG_ENDIAN=n) distclean allmodconfig all
     log "arm32 allmodconfig (plus CONFIG_CPU_BIG_ENDIAN=n) $(results "${?}")"
 
     KLOG=arm32-allnoconfig
@@ -397,7 +397,7 @@ function build_arm32_kernels() {
     log "arm32 allnoconfig $(results "${?}")"
 
     KLOG=arm32-allyesconfig
-    kmake "${KMAKE_ARGS[@]}" distclean allyesconfig all
+    kmake "${KMAKE_ARGS[@]}" KCONFIG_ALLCONFIG=<(echo CONFIG_CPU_BIG_ENDIAN=n) distclean allyesconfig all
     log "arm32 allyesconfig (plus CONFIG_CPU_BIG_ENDIAN=n) $(results "${?}")"
 
     # Debian
@@ -422,7 +422,7 @@ function build_arm32_kernels() {
 # Build arm64 kernels
 function build_arm64_kernels() {
     local KMAKE_ARGS
-    KMAKE_ARGS=("ARCH=arm64" "CROSS_COMPILE=aarch64-linux-gnu-" "KCONFIG_ALLCONFIG=${BASE}/configs/le.config")
+    KMAKE_ARGS=("ARCH=arm64" "CROSS_COMPILE=aarch64-linux-gnu-")
 
     header "Building arm64 kernels"
 
@@ -436,7 +436,7 @@ function build_arm64_kernels() {
     ${DEFCONFIGS_ONLY} && return 0
 
     KLOG=arm64-allmodconfig
-    kmake "${KMAKE_ARGS[@]}" distclean allmodconfig all
+    kmake "${KMAKE_ARGS[@]}" KCONFIG_ALLCONFIG=<(echo CONFIG_CPU_BIG_ENDIAN=n) distclean allmodconfig all
     log "arm64 allmodconfig (plus CONFIG_CPU_BIG_ENDIAN=n) $(results "${?}")"
 
     KLOG=arm64-allnoconfig
@@ -444,7 +444,7 @@ function build_arm64_kernels() {
     log "arm64 allnoconfig $(results "${?}")"
 
     KLOG=arm64-allyesconfig
-    kmake "${KMAKE_ARGS[@]}" distclean allyesconfig all
+    kmake "${KMAKE_ARGS[@]}" KCONFIG_ALLCONFIG=<(echo CONFIG_CPU_BIG_ENDIAN=n) distclean allyesconfig all
     log "arm64 allyesconfig (plus CONFIG_CPU_BIG_ENDIAN=n) $(results "${?}")"
 
     # Debian
