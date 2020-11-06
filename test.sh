@@ -329,6 +329,13 @@ function setup_config() {
         grep -q 'bool "TI Common Platform Time Sync' "${LINUX_SRC}"/drivers/net/ethernet/ti/Kconfig; then
         SCRIPTS_CONFIG_ARGS+=(-e TI_CPTS)
     fi
+
+    # CONFIG_MTD_NAND_ECC_SW_HAMMING as a module is invalid after https://git.kernel.org/next/linux-next/c/5c859c18150b57d47dc684cab6e12b99f5d14ad3
+    if [[ "$(scripts_config -s MTD_NAND_ECC_SW_HAMMING)" = "m" ]] &&
+        grep -q 'bool "Software Hamming ECC engine"' "${LINUX_SRC}"/drivers/mtd/nand/Kconfig; then
+        SCRIPTS_CONFIG_ARGS+=(-e MTD_NAND_ECC_SW_HAMMING)
+    fi
+
     [[ -n "${SCRIPTS_CONFIG_ARGS[*]}" ]] && scripts_config "${SCRIPTS_CONFIG_ARGS[@]}"
 }
 
