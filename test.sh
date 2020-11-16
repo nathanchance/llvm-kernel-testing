@@ -574,8 +574,17 @@ function build_powerpc_kernels() {
     setup_config opensuse/ppc64le.config
     # https://github.com/ClangBuiltLinux/linux/issues/944
     [[ ${LLVM_VER_CODE} -lt 100001 ]] && scripts_config -d ${CTOD}
+    # https://github.com/ClangBuiltLinux/linux/issues/1160
+    if grep -q "depends on PPC32 || COMPAT" "${LINUX_SRC}"/arch/powerpc/platforms/Kconfig.cputype; then
+        OTHER_COTD=${COTD}
+        COTD=CONFIG_COMPAT
+        LOG_COMMENT=" (minus ${OTHER_COTD:+${OTHER_COTD} and }${COTD}"
+        scripts_config -d ${COTD}
+    else
+        unset LOG_COMMENT
+    fi
     kmake "${KMAKE_ARGS[@]}" "${PPC64LE_ARGS[@]}" olddefconfig all
-    log "ppc64le opensuse config $(results "${?}")"
+    log "ppc64le opensuse config${LOG_COMMENT} $(results "${?}")"
 }
 
 # Build riscv kernels
