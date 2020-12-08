@@ -814,7 +814,7 @@ function build_lto_cfi_kernels() {
     kmake "${KMAKE_ARGS[@]}" distclean defconfig
     scripts_config \
         -d LTO_NONE \
-        -e LTO_CLANG \
+        -e LTO_CLANG_THIN \
         -e CFI_CLANG \
         -e FTRACE \
         -e FUNCTION_TRACER \
@@ -822,23 +822,23 @@ function build_lto_cfi_kernels() {
         -e LOCK_TORTURE_TEST \
         -e RCU_TORTURE_TEST
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "arm64 defconfig (plus CONFIG_{LTO,CFI}_CLANG and CONFIG_DYNAMIC_FTRACE_WITH_REGS) $(results "${?}")"
+    log "arm64 defconfig (plus CONFIG_LTO_CLANG_THIN, CONFIG_CFI_CLANG, and CONFIG_DYNAMIC_FTRACE_WITH_REGS) $(results "${?}")"
     qemu_boot_kernel arm64
-    log "arm64 defconfig (plus CONFIG_{LTO,CFI}_CLANG and CONFIG_DYNAMIC_FTRACE_WITH_REGS) qemu boot $(QEMU=1 results "${?}")"
+    log "arm64 defconfig (plus CONFIG_LTO_CLANG_THIN, CONFIG_CFI_CLANG, and CONFIG_DYNAMIC_FTRACE_WITH_REGS) qemu boot $(QEMU=1 results "${?}")"
 
     # x86_64
     KLOG=x86_64-lto-cfi
     kmake distclean defconfig
     scripts_config \
         -d LTO_NONE \
-        -e LTO_CLANG \
+        -e LTO_CLANG_THIN \
         -e CFI_CLANG \
         -e LOCK_TORTURE_TEST \
         -e RCU_TORTURE_TEST
     kmake olddefconfig all
-    log "x86_64 defconfig (plus CONFIG_{LTO,CFI}_CLANG) $(results "${?}")"
+    log "x86_64 defconfig (plus CONFIG_LTO_CLANG_THIN and CONFIG_CFI_CLANG) $(results "${?}")"
     qemu_boot_kernel x86_64
-    log "x86_64 defconfig (plus CONFIG_{LTO,CFI}_CLANG) qemu boot $(QEMU=1 results "${?}")"
+    log "x86_64 defconfig (plus CONFIG_LTO_CLANG_THIN and CONFIG_CFI_CLANG) qemu boot $(QEMU=1 results "${?}")"
 }
 
 # Print LLVM/clang version as a 5-6 digit number (e.g. clang 11.0.0 will be 110000)
