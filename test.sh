@@ -124,7 +124,7 @@ function build_llvm_binutils() {
 function dwnld_kernel_src() {
     [[ -n ${LINUX_SRC} ]] && return 0
 
-    LINUX=linux-5.10.8
+    LINUX=linux-5.10.9
     LINUX_SRC=${SRC}/${LINUX}
     LINUX_TARBALL=${LINUX_SRC}.tar.xz
 
