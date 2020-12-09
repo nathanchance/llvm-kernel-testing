@@ -636,7 +636,7 @@ function build_riscv_kernels() {
 #   * llvm-objcopy
 #   * llvm-objdump
 function build_s390x_kernels() {
-    local CROSS_COMPILE KMAKE_ARGS
+    local CROSS_COMPILE CTOD KMAKE_ARGS LOG_COMMENT
     CROSS_COMPILE=s390x-linux-gnu-
     # For some reason, -Waddress-of-packed-member does not get disabled...
     # Disable it so that real issues/errors can be found
@@ -668,12 +668,30 @@ function build_s390x_kernels() {
     ${DEFCONFIGS_ONLY} && return 0
 
     KLOG=s390x-allmodconfig
-    kmake "${KMAKE_ARGS[@]}" distclean allmodconfig all
-    log "s390x allmodconfig $(results "${?}")"
+    kmake "${KMAKE_ARGS[@]}" distclean allmodconfig
+    # https://github.com/ClangBuiltLinux/linux/issues/1213
+    if ! grep -q "config UBSAN_MISC" "${LINUX_SRC}"/lib/Kconfig.ubsan; then
+        CTOD=CONFIG_UBSAN
+        LOG_COMMENT=" (minus ${CTOD})"
+        scripts_config -d ${CTOD}
+    else
+        unset LOG_COMMENT
+    fi
+    kmake "${KMAKE_ARGS[@]}" olddefconfig all
+    log "s390x allmodconfig${LOG_COMMENT} $(results "${?}")"
 
     KLOG=s390x-allyesconfig
-    kmake "${KMAKE_ARGS[@]}" distclean allyesconfig all
-    log "s390x allyesconfig $(results "${?}")"
+    kmake "${KMAKE_ARGS[@]}" distclean allyesconfig
+    # https://github.com/ClangBuiltLinux/linux/issues/1213
+    if ! grep -q "config UBSAN_MISC" "${LINUX_SRC}"/lib/Kconfig.ubsan; then
+        CTOD=CONFIG_UBSAN
+        LOG_COMMENT=" (minus ${CTOD})"
+        scripts_config -d ${CTOD}
+    else
+        unset LOG_COMMENT
+    fi
+    kmake "${KMAKE_ARGS[@]}" olddefconfig all
+    log "s390x allyesconfig${LOG_COMMENT} $(results "${?}")"
 
     # Debian
     KLOG=s390x-debian
