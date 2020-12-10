@@ -809,7 +809,7 @@ function build_x86_64_kernels() {
 # Build Sami Tolvanen's LTO/CFI tree
 function build_lto_cfi_kernels() {
     local KMAKE_ARGS
-    KMAKE_ARGS=("ARCH=arm64" "CROSS_COMPILE=aarch64-linux-gnu-")
+    KMAKE_ARGS=("ARCH=arm64" "CROSS_COMPILE=aarch64-linux-gnu-" "LLVM=1" "LLVM_IAS=1")
 
     header "Building LTO/CFI kernels"
 
@@ -840,14 +840,14 @@ function build_lto_cfi_kernels() {
 
     # x86_64
     KLOG=x86_64-lto-cfi
-    kmake distclean defconfig
+    kmake LLVM=1 LLVM_IAS=1 distclean defconfig
     scripts_config \
         -d LTO_NONE \
         -e LTO_CLANG_THIN \
         -e CFI_CLANG \
         -e LOCK_TORTURE_TEST \
         -e RCU_TORTURE_TEST
-    kmake olddefconfig all
+    kmake LLVM=1 LLVM_IAS=1 olddefconfig all
     log "x86_64 defconfig (plus CONFIG_LTO_CLANG_THIN and CONFIG_CFI_CLANG) $(results "${?}")"
     qemu_boot_kernel x86_64
     log "x86_64 defconfig (plus CONFIG_LTO_CLANG_THIN and CONFIG_CFI_CLANG) qemu boot $(QEMU=1 results "${?}")"
