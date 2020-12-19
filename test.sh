@@ -828,29 +828,36 @@ function build_lto_cfi_kernels() {
         -d LTO_NONE \
         -e LTO_CLANG_THIN \
         -e CFI_CLANG \
+        -e SHADOW_CALL_STACK \
         -e FTRACE \
         -e FUNCTION_TRACER \
         -e DYNAMIC_FTRACE \
         -e LOCK_TORTURE_TEST \
         -e RCU_TORTURE_TEST
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "arm64 defconfig (plus CONFIG_LTO_CLANG_THIN, CONFIG_CFI_CLANG, and CONFIG_DYNAMIC_FTRACE_WITH_REGS) $(results "${?}")"
+    log "arm64 LTO+CFI+SCS config $(results "${?}")"
     qemu_boot_kernel arm64
-    log "arm64 defconfig (plus CONFIG_LTO_CLANG_THIN, CONFIG_CFI_CLANG, and CONFIG_DYNAMIC_FTRACE_WITH_REGS) qemu boot $(QEMU=1 results "${?}")"
+    log "arm64 LTO+CFI+SCS config qemu boot $(QEMU=1 results "${?}")"
 
     # x86_64
+    # Patch https://github.com/ClangBuiltLinux/linux/issues/1216 for now
+    grep -q "vmsave" "${LINUX_SRC}"/arch/x86/kvm/svm/sev.c &&
+        b4 am -o - -l 20201219063711.3526947-1-natechancellor@gmail.com | patch -d "${LINUX_SRC}" -p1
     KLOG=x86_64-lto-cfi
     kmake LLVM=1 LLVM_IAS=1 distclean defconfig
     scripts_config \
         -d LTO_NONE \
         -e LTO_CLANG_THIN \
         -e CFI_CLANG \
+        -e KVM \
+        -e KVM_AMD \
+        -e KVM_INTEL \
         -e LOCK_TORTURE_TEST \
         -e RCU_TORTURE_TEST
     kmake LLVM=1 LLVM_IAS=1 olddefconfig all
-    log "x86_64 defconfig (plus CONFIG_LTO_CLANG_THIN and CONFIG_CFI_CLANG) $(results "${?}")"
+    log "x86_64 LTO+CFI config $(results "${?}")"
     qemu_boot_kernel x86_64
-    log "x86_64 defconfig (plus CONFIG_LTO_CLANG_THIN and CONFIG_CFI_CLANG) qemu boot $(QEMU=1 results "${?}")"
+    log "x86_64 LTO+CFI config qemu boot $(QEMU=1 results "${?}")"
 }
 
 # Print LLVM/clang version as a 5-6 digit number (e.g. clang 11.0.0 will be 110000)
