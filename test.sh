@@ -369,7 +369,7 @@ function build_arm32_kernels() {
     kmake "${KMAKE_ARGS[@]}" distclean multi_v5_defconfig
     # https://github.com/ClangBuiltLinux/linux/issues/954
     if [[ ${LLVM_VER_CODE} -lt 100001 ]]; then
-        LOG_COMMENT=" (minus CONFIG_TRACING, CONFIG_OPROFILE, and CONFIG_RCU_TRACE)"
+        LOG_COMMENT=" (minus CONFIG_TRACING, CONFIG_OPROFILE, and CONFIG_RCU_TRACE due to https://github.com/ClangBuiltLinux/linux/issues/954)"
         scripts_config -d CONFIG_TRACING -d CONFIG_OPROFILE -d CONFIG_RCU_TRACE
     else
         unset LOG_COMMENT
@@ -519,6 +519,8 @@ function build_powerpc_kernels() {
         KLOG=powerpc-allnoconfig
         kmake "${KMAKE_ARGS[@]}" distclean allnoconfig all
         log "powerpc allnoconfig $(results "${?}")"
+    else
+        log "powerpc 32-bit configs skipped due to https://llvm.org/pr46186"
     fi
 
     KLOG=powerpc64-pseries_defconfig
@@ -553,7 +555,7 @@ function build_powerpc_kernels() {
     # https://github.com/ClangBuiltLinux/linux/issues/944
     if [[ ${LLVM_VER_CODE} -lt 100001 ]]; then
         CTOD=CONFIG_DRM_AMD_DC
-        LOG_COMMENT=" (minus ${CTOD})"
+        LOG_COMMENT=" (minus ${CTOD} due to https://github.com/ClangBuiltLinux/linux/issues/944)"
         scripts_config -d ${CTOD}
     else
         unset LOG_COMMENT
@@ -571,13 +573,15 @@ function build_powerpc_kernels() {
 
     # OpenSUSE
     # https://github.com/ClangBuiltLinux/linux/issues/1160
-    if ! grep -q "depends on PPC32 || COMPAT" "${LINUX_SRC}"/arch/powerpc/platforms/Kconfig.cputype; then
+    if ! grep -q "depends on PPC32 || COMPAT" "${LINUX_SRC}"/arch/powerpc/platforms/Kconfig.cputype || [[ ${LLVM_VER_CODE} -ge 120000 ]]; then
         KLOG=powerpc64le-opensuse
         setup_config opensuse/ppc64le.config
         # https://github.com/ClangBuiltLinux/linux/issues/944
         [[ ${LLVM_VER_CODE} -lt 100001 ]] && scripts_config -d ${CTOD}
         kmake "${KMAKE_ARGS[@]}" "${PPC64LE_ARGS[@]}" olddefconfig all
         log "ppc64le opensuse config $(results "${?}")"
+    else
+        log "ppc64le opensuse config skipped due to https://github.com/ClangBuiltLinux/linux/issues/1160"
     fi
 }
 
@@ -617,7 +621,7 @@ function build_riscv_kernels() {
     kmake "${KMAKE_ARGS[@]}" LD=riscv64-linux-gnu-ld LLVM_IAS=1 distclean defconfig
     # https://github.com/ClangBuiltLinux/linux/issues/1143
     if grep -q "config EFI" "${LINUX_SRC}"/arch/riscv/Kconfig; then
-        LOG_COMMENT=" (minus CONFIG_EFI)"
+        LOG_COMMENT=" (minus CONFIG_EFI due to https://github.com/ClangBuiltLinux/linux/issues/1143)"
         scripts_config -d CONFIG_EFI
     fi
     kmake "${KMAKE_ARGS[@]}" LD=riscv64-linux-gnu-ld LLVM_IAS=1 olddefconfig all
@@ -672,7 +676,7 @@ function build_s390x_kernels() {
     # https://github.com/ClangBuiltLinux/linux/issues/1213
     if ! grep -q "config UBSAN_MISC" "${LINUX_SRC}"/lib/Kconfig.ubsan; then
         CTOD=CONFIG_UBSAN
-        LOG_COMMENT=" (minus ${CTOD})"
+        LOG_COMMENT=" (minus ${CTOD} due to https://github.com/ClangBuiltLinux/linux/issues/1213)"
         scripts_config -d ${CTOD}
     else
         unset LOG_COMMENT
@@ -685,7 +689,7 @@ function build_s390x_kernels() {
     # https://github.com/ClangBuiltLinux/linux/issues/1213
     if ! grep -q "config UBSAN_MISC" "${LINUX_SRC}"/lib/Kconfig.ubsan; then
         CTOD=CONFIG_UBSAN
-        LOG_COMMENT=" (minus ${CTOD})"
+        LOG_COMMENT=" (minus ${CTOD} due to https://github.com/ClangBuiltLinux/linux/issues/1213)"
         scripts_config -d ${CTOD}
     else
         unset LOG_COMMENT
@@ -730,7 +734,7 @@ function build_x86_64_kernels() {
     kmake distclean allmodconfig
     # https://github.com/ClangBuiltLinux/linux/issues/515
     if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
-        LOG_COMMENT=" (minus CONFIG_STM and CONFIG_TEST_MEMCAT_P)"
+        LOG_COMMENT=" (minus CONFIG_STM and CONFIG_TEST_MEMCAT_P due to https://github.com/ClangBuiltLinux/linux/issues/515)"
         scripts_config -d CONFIG_STM -d CONFIG_TEST_MEMCAT_P
     else
         unset LOG_COMMENT
@@ -750,7 +754,7 @@ function build_x86_64_kernels() {
         scripts_config -d CONFIG_SENSORS_APPLESMC
     # https://github.com/ClangBuiltLinux/linux/issues/1116
     elif [[ -f ${LINUX_SRC}/drivers/media/platform/ti-vpe/cal-camerarx.c ]]; then
-        LOG_COMMENT=" (minus CONFIG_VIDEO_TI_CAL)"
+        LOG_COMMENT=" (minus CONFIG_VIDEO_TI_CAL due to https://github.com/ClangBuiltLinux/linux/issues/1116)"
         scripts_config -d CONFIG_VIDEO_TI_CAL
     else
         unset LOG_COMMENT
@@ -763,7 +767,7 @@ function build_x86_64_kernels() {
     setup_config archlinux/x86_64.config
     # https://github.com/ClangBuiltLinux/linux/issues/515
     if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
-        LOG_COMMENT=" (minus CONFIG_STM)"
+        LOG_COMMENT=" (minus CONFIG_STM due to https://github.com/ClangBuiltLinux/linux/issues/515)"
         scripts_config -d CONFIG_STM
     else
         unset LOG_COMMENT
@@ -783,7 +787,7 @@ function build_x86_64_kernels() {
     setup_config fedora/x86_64.config
     # https://github.com/ClangBuiltLinux/linux/issues/515
     if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
-        LOG_COMMENT=" (minus CONFIG_STM and CONFIG_TEST_MEMCAT_P)"
+        LOG_COMMENT=" (minus CONFIG_STM and CONFIG_TEST_MEMCAT_P due to https://github.com/ClangBuiltLinux/linux/issues/515)"
         scripts_config -d CONFIG_STM -d CONFIG_TEST_MEMCAT_P
     else
         unset LOG_COMMENT
@@ -796,7 +800,7 @@ function build_x86_64_kernels() {
     setup_config opensuse/x86_64.config
     # https://github.com/ClangBuiltLinux/linux/issues/515
     if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
-        LOG_COMMENT=" (minus CONFIG_STM)"
+        LOG_COMMENT=" (minus CONFIG_STM due to https://github.com/ClangBuiltLinux/linux/issues/515)"
         scripts_config -d CONFIG_STM
     else
         unset LOG_COMMENT
