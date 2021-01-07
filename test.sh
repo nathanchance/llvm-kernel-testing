@@ -67,7 +67,7 @@ function parse_parameters() {
         shift
     done
 
-    [[ -z ${ARCHES[*]} ]] && ARCHES=(arm32 arm64 mips powerpc riscv s390x x86_64)
+    [[ -z ${ARCHES[*]} ]] && ARCHES=(arm32 arm64 mips powerpc riscv s390x x86 x86_64)
     [[ -z ${DEFCONFIGS_ONLY} ]] && DEFCONFIGS_ONLY=false
     [[ -z ${BLD_LOG_DIR} ]] && BLD_LOG_DIR=${BASE}/logs/$(date +%Y%m%d-%H%M)
     [[ -z ${TC_PREFIX} ]] && TC_PREFIX=${BASE}/toolchain
@@ -100,6 +100,8 @@ function build_llvm_binutils() {
             mips) BINUTILS_TARGETS=("${BINUTILS_TARGETS[@]}" mips mipsel) ;;
             powerpc) BINUTILS_TARGETS=("${BINUTILS_TARGETS[@]}" powerpc powerpc64 powerpc64le) ;;
             riscv) BINUTILS_TARGETS=("${BINUTILS_TARGETS[@]}" riscv64) ;;
+            # We only support x86_64 in build-binutils.py but it works for 32-bit x86 as well
+            x86) BINUTILS_TARGETS=("${BINUTILS_TARGETS[@]}" x86_64) ;;
             s390x | x86_64) BINUTILS_TARGETS=("${BINUTILS_TARGETS[@]}" "${ARCH}") ;;
             *) die "Unsupported architecture '${ARCH}'" ;;
         esac
@@ -716,6 +718,29 @@ function build_s390x_kernels() {
     log "s390x opensuse config $(results "${?}")"
 }
 
+# Build x86 kernels
+function build_x86_kernels() {
+    # s390 did not build properly until Linux 5.9
+    if [[ ${LNX_VER_CODE} -lt 509000 ]]; then
+        header "Skipping x86 kernels"
+        echo "Reason: x86 kernels did not build properly until Linux 5.9"
+        echo "        https://github.com/ClangBuiltLinux/linux/issues/194"
+        return 0
+    fi
+
+    header "Building x86 kernels"
+
+    KLOG=i386-defconfig
+    kmake distclean i386_defconfig all
+    log "i386 defconfig $(results "${?}")"
+    qemu_boot_kernel x86
+    log "i386 defconfig qemu boot $(QEMU=1 results "${?}")"
+
+    KLOG=x86-allnoconfig
+    kmake distclean allnoconfig all
+    log "x86 allnoconfig $(results "${?}")"
+}
+
 # Build x86_64 kernels
 function build_x86_64_kernels() {
     local LOG_COMMENT
@@ -890,6 +915,7 @@ function check_clang_target() {
         powerpc) target=powerpc-linux-gnu ;;
         riscv) target=riscv64-linux-gnu ;;
         s390x) target=s390x-linux-gnu ;;
+        x86) target=i386-linux-gnu ;;
         x86_64) target=x86_64-linux-gnu ;;
     esac
     echo | clang --target=${target} -no-integrated-as -c -x c - -o /dev/null &>/dev/null
