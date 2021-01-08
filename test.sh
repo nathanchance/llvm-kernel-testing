@@ -670,6 +670,8 @@ function build_s390x_kernels() {
     KLOG=s390x-defconfig
     kmake "${KMAKE_ARGS[@]}" distclean defconfig all
     log "s390x defconfig $(results "${?}")"
+    qemu_boot_kernel s390
+    log "s390x defconfig qemu boot $(QEMU=1 results "${?}")"
 
     ${DEFCONFIGS_ONLY} && return 0
 
