@@ -484,14 +484,14 @@ function build_mips_kernels() {
     header "Building mips kernels"
 
     # Upstream
-    KLOG=mipsel
+    KLOG=mipsel-malta
     kmake "${KMAKE_ARGS[@]}" distclean malta_kvm_guest_defconfig all
     log "mips malta_kvm_guest_defconfig $(results "${?}")"
     qemu_boot_kernel mipsel
     log "mips malta_kvm_guest_defconfig qemu boot $(QEMU=1 results "${?}")"
 
     # https://github.com/ClangBuiltLinux/linux/issues/1025
-    KLOG=mips
+    KLOG=mips-malta
     [[ -f ${LINUX_SRC}/arch/mips/vdso/Kconfig ]] && MIPS_BE_LD=${CROSS_COMPILE}ld
     kmake "${KMAKE_ARGS[@]}" ${MIPS_BE_LD:+LD=${MIPS_BE_LD}} distclean malta_kvm_guest_defconfig
     scripts_config -d CONFIG_CPU_LITTLE_ENDIAN -e CONFIG_CPU_BIG_ENDIAN
@@ -499,6 +499,22 @@ function build_mips_kernels() {
     log "mips malta_kvm_guest_defconfig plus CONFIG_CPU_BIG_ENDIAN=y $(results "${?}")"
     qemu_boot_kernel mips
     log "mips malta_kvm_guest_defconfig plus CONFIG_CPU_BIG_ENDIAN=y qemu boot $(QEMU=1 results "${?}")"
+
+    KLOG=mips-32r1
+    kmake "${KMAKE_ARGS[@]}" ${MIPS_BE_LD:+LD=${MIPS_BE_LD}} distclean 32r1_defconfig all
+    log "mips 32r1_defconfig $(results "${?}")"
+
+    KLOG=mips-32r1el
+    kmake "${KMAKE_ARGS[@]}" distclean 32r1el_defconfig all
+    log "mips 32r1el_defconfig $(results "${?}")"
+
+    KLOG=mips-32r2
+    kmake "${KMAKE_ARGS[@]}" ${MIPS_BE_LD:+LD=${MIPS_BE_LD}} distclean 32r2_defconfig all
+    log "mips 32r2_defconfig $(results "${?}")"
+
+    KLOG=mips-32r2el
+    kmake "${KMAKE_ARGS[@]}" distclean 32r2el_defconfig all
+    log "mips 32r2el_defconfig $(results "${?}")"
 }
 
 # Build powerpc kernels
