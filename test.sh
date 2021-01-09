@@ -197,25 +197,26 @@ function kmake() {
         time make \
             -C "${LINUX_SRC}" \
             -skj"${JOBS:=$(nproc)}" \
-            AR="${AR:-llvm-ar}" \
-            CC="${CC:-${CCACHE:+ccache }clang}" \
-            HOSTAR="${HOSTAR:-llvm-ar}" \
-            HOSTCC="${HOSTCC:-${CCACHE:+ccache }clang}" \
-            HOSTCXX="${HOSTCXX:-${CCACHE:+ccache }clang++}" \
-            HOSTLD="${HOSTLD:-ld.lld}" \
+            ${AR:+AR="${AR}"} \
+            ${CCACHE:+CC="ccache clang"} \
+            ${HOSTAR:+HOSTAR="${HOSTAR}"} \
+            ${CCACHE:+HOSTCC="ccache clang"} \
+            ${HOSTLD:+HOSTLD="${HOSTLD}"} \
             HOSTLDFLAGS="${HOSTLDFLAGS--fuse-ld=lld}" \
             ${KBZIP2:+KBZIP2=pbzip2} \
             ${KCFLAGS:+KCFLAGS="${KCFLAGS}"} \
             ${KGZIP:+KGZIP=pigz} \
-            LD="${LD:-ld.lld}" \
+            ${LD:+LD="${LD}"} \
+            LLVM=1 \
+            ${LLVM_IAS:+LLVM_IAS="${LLVM_IAS}"} \
             ${LOCALVERSION:+LOCALVERSION="${LOCALVERSION}"} \
-            NM="${NM:-llvm-nm}" \
+            ${NM:+NM="${NM}"} \
             O="${OUT#${LINUX_SRC}/*}" \
-            OBJCOPY="${OBJCOPY:-llvm-objcopy}" \
-            OBJDUMP="${OBJDUMP:-llvm-objdump}" \
-            OBJSIZE="${OBJSIZE:-llvm-size}" \
-            READELF="${READELF:-llvm-readelf}" \
-            STRIP="${LLVM_STRIP:-llvm-strip}" \
+            ${OBJCOPY:+OBJCOPY="${OBJCOPY}"} \
+            ${OBJDUMP:+OBJDUMP="${OBJDUMP}"} \
+            ${OBJSIZE:+OBJSIZE="${OBJSIZE}"} \
+            ${READELF:+READELF="${READELF}"} \
+            ${STRIP:+STRIP="${STRIP}"} \
             "${MAKE_ARGS[@]}" |& tee "${BLD_LOG_DIR}/${KLOG}.log"
         INNER_RET=${PIPESTATUS[0]}
         set +x
