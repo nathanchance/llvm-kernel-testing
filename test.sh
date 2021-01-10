@@ -47,6 +47,7 @@ function parse_parameters() {
             -a | --arches) shift && IFS=, read -r -a ARCHES <<<"${1}" ;;
             -b | --llvm-branch) shift && LLVM_BRANCH=${1} ;;
             --binutils-prefix) shift && BINUTILS_PREFIX=$(readlink -f "${1}") ;;
+            --boot-utils) shift && BOOT_UTILS=$(readlink -f "${1}") ;;
             -d | --debug) set -x ;;
             --defconfigs) DEFCONFIGS_ONLY=true ;;
             -j | --jobs) shift && JOBS=${1} ;;
@@ -142,11 +143,13 @@ function dwnld_kernel_src() {
 
 # Download/update boot-utils repo
 function dwnld_update_boot_utils() {
-    header "Updating boot-utils"
+    if [[ -z ${BOOT_UTILS} ]]; then
+        header "Updating boot-utils"
 
-    BOOT_UTILS=${SRC}/boot-utils
-    [[ -d ${BOOT_UTILS} ]] || git -C "${BOOT_UTILS%/*}" clone git://github.com/ClangBuiltLinux/boot-utils
-    git -C "${BOOT_UTILS}" pull --no-edit || die "Error updating boot-utils"
+        BOOT_UTILS=${SRC}/boot-utils
+        [[ -d ${BOOT_UTILS} ]] || git -C "${BOOT_UTILS%/*}" clone git://github.com/ClangBuiltLinux/boot-utils
+        git -C "${BOOT_UTILS}" pull --no-edit || die "Error updating boot-utils"
+    fi
 }
 
 # Get what CONFIG_LOCALVERSION_AUTO spits out without actually enabling it in every config
