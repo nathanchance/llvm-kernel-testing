@@ -940,7 +940,7 @@ function check_clang_target() {
         x86) target=i386-linux-gnu ;;
         x86_64) target=x86_64-linux-gnu ;;
     esac
-    echo | clang --target=${target} -no-integrated-as -c -x c - -o /dev/null &>/dev/null
+    echo | clang --target=${target} -c -x c - -o /dev/null &>/dev/null
 }
 
 # Build kernels with said toolchains
