@@ -494,11 +494,24 @@ function build_mips_kernels() {
     qemu_boot_kernel mipsel
     log "mips malta_kvm_guest_defconfig qemu boot $(QEMU=1 results "${?}")"
 
+    KLOG=mipsel-malta-kaslr
+    kmake "${KMAKE_ARGS[@]}" distclean malta_kvm_guest_defconfig
+    scripts_config \
+        -e RELOCATABLE \
+        --set-val RELOCATION_TABLE_SIZE 0x00200000 \
+        -e RANDOMIZE_BASE
+    kmake "${KMAKE_ARGS[@]}" olddefconfig all
+    log "mips malta_kvm_guest_defconfig (plus CONFIG_RANDOMIZE_BASE=y) $(results "${?}")"
+    qemu_boot_kernel mipsel
+    log "mips malta_kvm_guest_defconfig (plus CONFIG_RANDOMIZE_BASE=y) qemu boot $(QEMU=1 results "${?}")"
+
     # https://github.com/ClangBuiltLinux/linux/issues/1025
     KLOG=mips-malta
     [[ -f ${LINUX_SRC}/arch/mips/vdso/Kconfig ]] && MIPS_BE_LD=${CROSS_COMPILE}ld
     kmake "${KMAKE_ARGS[@]}" ${MIPS_BE_LD:+LD=${MIPS_BE_LD}} distclean malta_kvm_guest_defconfig
-    scripts_config -d CONFIG_CPU_LITTLE_ENDIAN -e CONFIG_CPU_BIG_ENDIAN
+    scripts_config \
+        -d CONFIG_CPU_LITTLE_ENDIAN \
+        -e CONFIG_CPU_BIG_ENDIAN
     kmake "${KMAKE_ARGS[@]}" ${MIPS_BE_LD:+LD=${MIPS_BE_LD}} olddefconfig all
     log "mips malta_kvm_guest_defconfig plus CONFIG_CPU_BIG_ENDIAN=y $(results "${?}")"
     qemu_boot_kernel mips
