@@ -346,18 +346,20 @@ function setup_config() {
 }
 
 function results() {
-    if [[ ${1} -eq 0 ]]; then
+    if [[ -n ${QEMU} && ${KRNL_RC} -ne 0 ]]; then
+        RESULT=skipped
+    elif [[ ${1} -eq 0 ]]; then
         RESULT=successful
     else
         RESULT=failed
     fi
     printf "%s" "${RESULT}"
-    if [[ -z ${QEMU} ]]; then
+    if [[ -n ${QEMU} ]]; then
+        printf '\n'
+    else
         printf " in %s" "$(print_time "${KMAKE_START}" "${KMAKE_END}")"
         printf '\n'
         [[ ${RESULT} = "failed" ]] && grep "error:\|warning:\|undefined" "${BLD_LOG_DIR}/${KLOG}.log"
-    else
-        printf '\n'
     fi
     printf '\n'
 }
@@ -381,7 +383,8 @@ function build_arm32_kernels() {
         unset LOG_COMMENT
     fi
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "arm32 multi_v5_defconfig${LOG_COMMENT} $(results "${?}")"
+    KRNL_RC=${?}
+    log "arm32 multi_v5_defconfig${LOG_COMMENT} $(results "${KRNL_RC}")"
     qemu_boot_kernel arm32_v5
     log "arm32 multi_v5_defconfig${LOG_COMMENT} qemu boot $(QEMU=1 results "${?}")"
 
@@ -389,13 +392,15 @@ function build_arm32_kernels() {
     # https://github.com/ClangBuiltLinux/linux/issues/732
     [[ ${LLVM_VER_CODE} -lt 110000 ]] && ARM32_V6_LD=${CROSS_COMPILE}ld
     kmake "${KMAKE_ARGS[@]}" ${ARM32_V6_LD:+LD=${ARM32_V6_LD}} distclean aspeed_g5_defconfig all
-    log "arm32 aspeed_g5_defconfig $(results "${?}")"
+    KRNL_RC=${?}
+    log "arm32 aspeed_g5_defconfig $(results "${KRNL_RC}")"
     qemu_boot_kernel arm32_v6
     log "arm32 aspeed_g5_defconfig qemu boot $(QEMU=1 results "${?}")"
 
     KLOG=arm32-multi_v7_defconfig
     kmake "${KMAKE_ARGS[@]}" distclean multi_v7_defconfig all
-    log "arm32 multi_v7_defconfig $(results "${?}")"
+    KRNL_RC=${?}
+    log "arm32 multi_v7_defconfig $(results "${KRNL_RC}")"
     qemu_boot_kernel arm32_v7
     log "arm32 multi_v7_defconfig qemu boot $(QEMU=1 results "${?}")"
 
@@ -442,7 +447,8 @@ function build_arm64_kernels() {
     # Upstream
     KLOG=arm64-defconfig
     kmake "${KMAKE_ARGS[@]}" distclean defconfig all
-    log "arm64 defconfig $(results "${?}")"
+    KRNL_RC=${?}
+    log "arm64 defconfig $(results "${KRNL_RC}")"
     qemu_boot_kernel arm64
     log "arm64 defconfig qemu boot $(QEMU=1 results "${?}")"
 
@@ -490,7 +496,8 @@ function build_mips_kernels() {
     # Upstream
     KLOG=mipsel-malta
     kmake "${KMAKE_ARGS[@]}" distclean malta_kvm_guest_defconfig all
-    log "mips malta_kvm_guest_defconfig $(results "${?}")"
+    KRNL_RC=${?}
+    log "mips malta_kvm_guest_defconfig $(results "${KRNL_RC}")"
     qemu_boot_kernel mipsel
     log "mips malta_kvm_guest_defconfig qemu boot $(QEMU=1 results "${?}")"
 
@@ -501,7 +508,8 @@ function build_mips_kernels() {
         --set-val RELOCATION_TABLE_SIZE 0x00200000 \
         -e RANDOMIZE_BASE
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "mips malta_kvm_guest_defconfig (plus CONFIG_RANDOMIZE_BASE=y) $(results "${?}")"
+    KRNL_RC=${?}
+    log "mips malta_kvm_guest_defconfig (plus CONFIG_RANDOMIZE_BASE=y) $(results "${KRNL_RC}")"
     qemu_boot_kernel mipsel
     log "mips malta_kvm_guest_defconfig (plus CONFIG_RANDOMIZE_BASE=y) qemu boot $(QEMU=1 results "${?}")"
 
@@ -513,7 +521,8 @@ function build_mips_kernels() {
         -d CONFIG_CPU_LITTLE_ENDIAN \
         -e CONFIG_CPU_BIG_ENDIAN
     kmake "${KMAKE_ARGS[@]}" ${MIPS_BE_LD:+LD=${MIPS_BE_LD}} olddefconfig all
-    log "mips malta_kvm_guest_defconfig (plus CONFIG_CPU_BIG_ENDIAN=y) $(results "${?}")"
+    KRNL_RC=${?}
+    log "mips malta_kvm_guest_defconfig (plus CONFIG_CPU_BIG_ENDIAN=y) $(results "${KRNL_RC}")"
     qemu_boot_kernel mips
     log "mips malta_kvm_guest_defconfig (plus CONFIG_CPU_BIG_ENDIAN=y) qemu boot $(QEMU=1 results "${?}")"
 
@@ -547,7 +556,8 @@ function build_powerpc_kernels() {
     if ! grep -q 'case 4: __put_user_asm_goto(x, ptr, label, "stw"); break;' "${LINUX_SRC}"/arch/powerpc/include/asm/uaccess.h || [[ ${LLVM_VER_CODE} -ge 110000 ]]; then
         KLOG=powerpc-ppc44x_defconfig
         kmake "${KMAKE_ARGS[@]}" distclean ppc44x_defconfig all uImage
-        log "powerpc ppc44x_defconfig $(results "${?}")"
+        KRNL_RC=${?}
+        log "powerpc ppc44x_defconfig $(results "${KRNL_RC}")"
         qemu_boot_kernel ppc32
         log "powerpc ppc44x_defconfig qemu boot $(QEMU=1 results "${?}")"
 
@@ -561,7 +571,8 @@ function build_powerpc_kernels() {
     KLOG=powerpc64-pseries_defconfig
     # https://github.com/ClangBuiltLinux/linux/issues/602
     kmake "${KMAKE_ARGS[@]}" LD=${CROSS_COMPILE}ld distclean pseries_defconfig all
-    log "powerpc pseries_defconfig $(results "${?}")"
+    KRNL_RC=${?}
+    log "powerpc pseries_defconfig $(results "${KRNL_RC}")"
     qemu_boot_kernel ppc64
     log "powerpc pseries_defconfig qemu boot $(QEMU=1 results "${?}")"
 
@@ -570,7 +581,8 @@ function build_powerpc_kernels() {
 
     KLOG=powerpc64le-powernv_defconfig
     kmake "${KMAKE_ARGS[@]}" distclean powernv_defconfig all
-    log "powerpc powernv_defconfig $(results "${?}")"
+    KRNL_RC=${?}
+    log "powerpc powernv_defconfig $(results "${KRNL_RC}")"
     qemu_boot_kernel ppc64le
     log "powerpc powernv_defconfig qemu boot $(QEMU=1 results "${?}")"
 
@@ -660,13 +672,13 @@ function build_riscv_kernels() {
         scripts_config -d CONFIG_EFI
     fi
     kmake "${KMAKE_ARGS[@]}" LD=riscv64-linux-gnu-ld LLVM_IAS=1 olddefconfig all
-    log "riscv defconfig${LOG_COMMENT} $(results "${?}")"
+    KRNL_RC=${?}
+    log "riscv defconfig${LOG_COMMENT} $(results "${KRNL_RC}")"
     # https://github.com/ClangBuiltLinux/linux/issues/867
     if grep -q "(long)__old" "${LINUX_SRC}"/arch/riscv/include/asm/cmpxchg.h; then
         qemu_boot_kernel riscv
         log "riscv defconfig qemu boot $(QEMU=1 results "${?}")"
     fi
-
 }
 
 # Build s390x kernels
@@ -702,7 +714,8 @@ function build_s390x_kernels() {
     # Upstream
     KLOG=s390x-defconfig
     kmake "${KMAKE_ARGS[@]}" distclean defconfig all
-    log "s390x defconfig $(results "${?}")"
+    KRNL_RC=${?}
+    log "s390x defconfig $(results "${KRNL_RC}")"
     qemu_boot_kernel s390
     log "s390x defconfig qemu boot $(QEMU=1 results "${?}")"
 
@@ -761,7 +774,8 @@ function build_x86_kernels() {
 
     KLOG=i386-defconfig
     kmake distclean i386_defconfig all
-    log "i386 defconfig $(results "${?}")"
+    KRNL_RC=${?}
+    log "i386 defconfig $(results "${KRNL_RC}")"
     qemu_boot_kernel x86
     log "i386 defconfig qemu boot $(QEMU=1 results "${?}")"
 
@@ -778,7 +792,8 @@ function build_x86_64_kernels() {
     # Upstream
     KLOG=x86_64-defconfig
     kmake distclean defconfig all
-    log "x86_64 defconfig $(results "${?}")"
+    KRNL_RC=${?}
+    log "x86_64 defconfig $(results "${KRNL_RC}")"
     qemu_boot_kernel x86_64
     log "x86_64 qemu boot $(QEMU=1 results "${?}")"
 
@@ -893,7 +908,8 @@ function build_lto_cfi_kernels() {
         -e LOCK_TORTURE_TEST \
         -e RCU_TORTURE_TEST
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "arm64 LTO+CFI+SCS config $(results "${?}")"
+    KRNL_RC=${?}
+    log "arm64 LTO+CFI+SCS config $(results "${KRNL_RC}")"
     qemu_boot_kernel arm64
     log "arm64 LTO+CFI+SCS config qemu boot $(QEMU=1 results "${?}")"
 
@@ -913,7 +929,8 @@ function build_lto_cfi_kernels() {
         -e LOCK_TORTURE_TEST \
         -e RCU_TORTURE_TEST
     kmake LLVM=1 LLVM_IAS=1 olddefconfig all
-    log "x86_64 LTO+CFI config $(results "${?}")"
+    KRNL_RC=${?}
+    log "x86_64 LTO+CFI config $(results "${KRNL_RC}")"
     qemu_boot_kernel x86_64
     log "x86_64 LTO+CFI config qemu boot $(QEMU=1 results "${?}")"
 }
@@ -973,7 +990,7 @@ function build_kernels() {
 
 # Boot the kernel in QEMU
 function qemu_boot_kernel() {
-    "${SRC}"/boot-utils/boot-qemu.sh -a "${1:?}" -k "${OUT}"
+    [[ ${KRNL_RC} -eq 0 ]] && "${SRC}"/boot-utils/boot-qemu.sh -a "${1:?}" -k "${OUT}"
 }
 
 # Show the results from the build log and show total script runtime
