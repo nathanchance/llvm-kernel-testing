@@ -513,9 +513,9 @@ function build_mips_kernels() {
         -d CONFIG_CPU_LITTLE_ENDIAN \
         -e CONFIG_CPU_BIG_ENDIAN
     kmake "${KMAKE_ARGS[@]}" ${MIPS_BE_LD:+LD=${MIPS_BE_LD}} olddefconfig all
-    log "mips malta_kvm_guest_defconfig plus CONFIG_CPU_BIG_ENDIAN=y $(results "${?}")"
+    log "mips malta_kvm_guest_defconfig (plus CONFIG_CPU_BIG_ENDIAN=y) $(results "${?}")"
     qemu_boot_kernel mips
-    log "mips malta_kvm_guest_defconfig plus CONFIG_CPU_BIG_ENDIAN=y qemu boot $(QEMU=1 results "${?}")"
+    log "mips malta_kvm_guest_defconfig (plus CONFIG_CPU_BIG_ENDIAN=y) qemu boot $(QEMU=1 results "${?}")"
 
     KLOG=mips-32r1
     kmake "${KMAKE_ARGS[@]}" ${MIPS_BE_LD:+LD=${MIPS_BE_LD}} distclean 32r1_defconfig all
