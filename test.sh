@@ -712,7 +712,7 @@ function build_s390x_kernels() {
     kmake "${KMAKE_ARGS[@]}" distclean allmodconfig
     # https://github.com/ClangBuiltLinux/linux/issues/1213
     if ! grep -q "config UBSAN_MISC" "${LINUX_SRC}"/lib/Kconfig.ubsan; then
-        CTOD=CONFIG_UBSAN
+        CTOD=CONFIG_UBSAN_TRAP
         LOG_COMMENT=" (minus ${CTOD} due to https://github.com/ClangBuiltLinux/linux/issues/1213)"
         scripts_config -d ${CTOD}
     else
@@ -724,13 +724,7 @@ function build_s390x_kernels() {
     KLOG=s390x-allyesconfig
     kmake "${KMAKE_ARGS[@]}" distclean allyesconfig
     # https://github.com/ClangBuiltLinux/linux/issues/1213
-    if ! grep -q "config UBSAN_MISC" "${LINUX_SRC}"/lib/Kconfig.ubsan; then
-        CTOD=CONFIG_UBSAN
-        LOG_COMMENT=" (minus ${CTOD} due to https://github.com/ClangBuiltLinux/linux/issues/1213)"
-        scripts_config -d ${CTOD}
-    else
-        unset LOG_COMMENT
-    fi
+    grep -q "config UBSAN_MISC" "${LINUX_SRC}"/lib/Kconfig.ubsan || scripts_config -d ${CTOD}
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
     log "s390x allyesconfig${LOG_COMMENT} $(results "${?}")"
 
