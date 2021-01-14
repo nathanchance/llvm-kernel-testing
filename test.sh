@@ -164,15 +164,21 @@ function get_config_localversion_auto() { (
     rm -rf include/config
 ); }
 
+# Print binutils version for specific architectures
+function print_binutils_info() {
+    AS=${CROSS_COMPILE}as
+    echo "binutils version: $("${AS}" --version | head -n1)"
+    echo "binutils location $(dirname "$(command -v "${AS}")")"
+}
+
 # Print clang, binutils, and kernel versions being tested into the build log
-function log_tc_lnx_ver() {
-    {
-        clang --version | head -n1
-        clang --version | tail -n1
-        as --version | head -n1
-        echo "Linux $(make -C "${LINUX_SRC}" -s kernelversion)$(get_config_localversion_auto)"
-        echo
-    } >"${BLD_LOG}"
+function print_tc_lnx_info() {
+    clang --version | head -n1
+    clang --version | tail -n1
+
+    print_binutils_info
+
+    echo "Linux $(make -C "${LINUX_SRC}" -s kernelversion)$(get_config_localversion_auto)"
 }
 
 # Set tool variables based on availability
@@ -372,6 +378,9 @@ function build_arm32_kernels() {
 
     header "Building arm32 kernels"
 
+    print_binutils_info
+    echo
+
     # Upstream
     KLOG=arm32-multi_v5_defconfig
     kmake "${KMAKE_ARGS[@]}" distclean multi_v5_defconfig
@@ -440,9 +449,13 @@ function build_arm32_kernels() {
 # Build arm64 kernels
 function build_arm64_kernels() {
     local KMAKE_ARGS
-    KMAKE_ARGS=("ARCH=arm64" "CROSS_COMPILE=aarch64-linux-gnu-")
+    CROSS_COMPILE=aarch64-linux-gnu-
+    KMAKE_ARGS=("ARCH=arm64" "CROSS_COMPILE=${CROSS_COMPILE}")
 
     header "Building arm64 kernels"
+
+    print_binutils_info
+    echo
 
     # Upstream
     KLOG=arm64-defconfig
@@ -492,6 +505,9 @@ function build_mips_kernels() {
     KMAKE_ARGS=("ARCH=mips" "CROSS_COMPILE=${CROSS_COMPILE}")
 
     header "Building mips kernels"
+
+    print_binutils_info
+    echo
 
     # Upstream
     KLOG=mipsel-malta
@@ -550,6 +566,9 @@ function build_powerpc_kernels() {
     KMAKE_ARGS=("ARCH=powerpc" "CROSS_COMPILE=${CROSS_COMPILE}")
 
     header "Building powerpc kernels"
+
+    print_binutils_info
+    echo
 
     # Upstream
     # https://llvm.org/pr46186
@@ -635,7 +654,8 @@ function build_powerpc_kernels() {
 # Build riscv kernels
 function build_riscv_kernels() {
     local KMAKE_ARGS
-    KMAKE_ARGS=("ARCH=riscv" "CROSS_COMPILE=riscv64-linux-gnu-")
+    CROSS_COMPILE=riscv64-linux-gnu-
+    KMAKE_ARGS=("ARCH=riscv" "CROSS_COMPILE=${CROSS_COMPILE}")
 
     # riscv did not build properly for Linux prior to 5.7 and there is an
     # inordinate amount of spam about '-save-restore' before LLVM 11: https://llvm.org/pr44853
@@ -662,6 +682,9 @@ function build_riscv_kernels() {
     fi
 
     header "Building riscv kernels"
+
+    print_binutils_info
+    echo
 
     KLOG=riscv-defconfig
     # https://github.com/ClangBuiltLinux/linux/issues/1020
@@ -710,6 +733,9 @@ function build_s390x_kernels() {
     fi
 
     header "Building s390x kernels"
+
+    print_binutils_info
+    echo
 
     # Upstream
     KLOG=s390x-defconfig
@@ -772,6 +798,10 @@ function build_x86_kernels() {
 
     header "Building x86 kernels"
 
+    unset CROSS_COMPILE
+    print_binutils_info
+    echo
+
     KLOG=i386-defconfig
     kmake distclean i386_defconfig all
     KRNL_RC=${?}
@@ -788,6 +818,10 @@ function build_x86_kernels() {
 function build_x86_64_kernels() {
     local LOG_COMMENT
     header "Building x86_64 kernels"
+
+    unset CROSS_COMPILE
+    print_binutils_info
+    echo
 
     # Upstream
     KLOG=x86_64-defconfig
@@ -972,7 +1006,12 @@ function build_kernels() {
     export PATH=${LLVM_PREFIX}/bin:${BINUTILS_PREFIX}/bin:${PATH}
 
     set_tool_vars
-    log_tc_lnx_ver
+    header "Build information"
+    print_tc_lnx_info
+    {
+        print_tc_lnx_info
+        echo
+    } >"${BLD_LOG}"
     create_lnx_ver_code
     create_llvm_ver_code
 
