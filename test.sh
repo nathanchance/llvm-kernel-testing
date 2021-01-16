@@ -432,6 +432,10 @@ function build_arm32_kernels() {
     kmake "${KMAKE_ARGS[@]}" distclean allnoconfig all
     log "arm32 allnoconfig $(results "${?}")"
 
+    KLOG=arm32-tinyconfig
+    kmake "${KMAKE_ARGS[@]}" distclean tinyconfig all
+    log "arm32 tinyconfig $(results "${?}")"
+
     KLOG=arm32-allyesconfig
     kmake "${KMAKE_ARGS[@]}" KCONFIG_ALLCONFIG=<(echo CONFIG_CPU_BIG_ENDIAN=n) distclean allyesconfig all
     log "arm32 allyesconfig (plus CONFIG_CPU_BIG_ENDIAN=n) $(results "${?}")"
@@ -497,6 +501,10 @@ function build_arm64_kernels() {
     KLOG=arm64-allnoconfig
     kmake "${KMAKE_ARGS[@]}" distclean allnoconfig all
     log "arm64 allnoconfig $(results "${?}")"
+
+    KLOG=arm64-tinyconfig
+    kmake "${KMAKE_ARGS[@]}" distclean tinyconfig all
+    log "arm64 tinyconfig $(results "${?}")"
 
     KLOG=arm64-allyesconfig
     kmake "${KMAKE_ARGS[@]}" KCONFIG_ALLCONFIG=<(echo CONFIG_CPU_BIG_ENDIAN=n) distclean allyesconfig all
@@ -589,6 +597,14 @@ function build_mips_kernels() {
     KLOG=mips-32r2el
     kmake "${KMAKE_ARGS[@]}" distclean 32r2el_defconfig all
     log "mips 32r2el_defconfig $(results "${?}")"
+
+    KLOG=mips-allnoconfig
+    kmake "${KMAKE_ARGS[@]}" distclean allnoconfig all
+    log "mips allnoconfig $(results "${?}")"
+
+    KLOG=mips-tinyconfig
+    kmake "${KMAKE_ARGS[@]}" distclean tinyconfig all
+    log "mips tinyconfig $(results "${?}")"
 }
 
 # Build powerpc kernels
@@ -615,6 +631,10 @@ function build_powerpc_kernels() {
         KLOG=powerpc-allnoconfig
         kmake "${KMAKE_ARGS[@]}" distclean allnoconfig all
         log "powerpc allnoconfig $(results "${?}")"
+
+        KLOG=powerpc-tinyconfig
+        kmake "${KMAKE_ARGS[@]}" distclean tinyconfig all
+        log "powerpc tinyconfig $(results "${?}")"
     else
         log "powerpc 32-bit configs skipped due to https://llvm.org/pr46186"
     fi
@@ -779,6 +799,14 @@ function build_s390x_kernels() {
 
     ${DEFCONFIGS_ONLY} && return 0
 
+    KLOG=s390x-allnoconfig
+    kmake "${KMAKE_ARGS[@]}" distclean allnoconfig all
+    log "s390x allnoconfig $(results "${?}")"
+
+    KLOG=s390x-tinyconfig
+    kmake "${KMAKE_ARGS[@]}" distclean tinyconfig all
+    log "s390x tinyconfig $(results "${?}")"
+
     KLOG=s390x-allmodconfig
     kmake "${KMAKE_ARGS[@]}" distclean allmodconfig
     # https://github.com/ClangBuiltLinux/linux/issues/1213
@@ -845,6 +873,10 @@ function build_x86_kernels() {
     KLOG=x86-allnoconfig
     kmake distclean allnoconfig all
     log "x86 allnoconfig $(results "${?}")"
+
+    KLOG=x86-tinyconfig
+    kmake distclean tinyconfig all
+    log "x86 tinyconfig $(results "${?}")"
 
     # Debian
     KLOG=i386-debian
