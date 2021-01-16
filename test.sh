@@ -280,6 +280,9 @@ function setup_config() {
             if ! (command -v pahole &>/dev/null && [[ ${LNX_VER_CODE} -ge 507000 ]]); then
                 scripts_config -d CONFIG_DEBUG_INFO_BTF
             fi
+            if [[ ${1%/*} = "archlinux" ]]; then
+                [[ -z "$(scripts_config -s CONFIG_EXTRA_FIRMWARE)" ]] || scripts_config -u CONFIG_EXTRA_FIRMWARE
+            fi
             ;;
     esac
 
@@ -433,6 +436,20 @@ function build_arm32_kernels() {
     kmake "${KMAKE_ARGS[@]}" KCONFIG_ALLCONFIG=<(echo CONFIG_CPU_BIG_ENDIAN=n) distclean allyesconfig all
     log "arm32 allyesconfig (plus CONFIG_CPU_BIG_ENDIAN=n) $(results "${?}")"
 
+    # Arch Linux ARM
+    KLOG=arm32-v5-archlinux
+    setup_config archlinux/armv5.config
+    kmake "${KMAKE_ARGS[@]}" olddefconfig all
+    log "armv5 archlinux config $(results "${?}")"
+
+    KLOG=arm32-v7-archlinux
+    setup_config archlinux/armv7.config
+    kmake "${KMAKE_ARGS[@]}" olddefconfig all
+    KRNL_RC=${?}
+    log "armv7 archlinux config $(results "${KRNL_RC}")"
+    qemu_boot_kernel arm32_v7
+    log "armv7 archlinux config qemu boot $(QEMU=1 results "${?}")"
+
     # Debian
     KLOG=arm32-debian
     setup_config debian/armmp.config
@@ -484,6 +501,15 @@ function build_arm64_kernels() {
     KLOG=arm64-allyesconfig
     kmake "${KMAKE_ARGS[@]}" KCONFIG_ALLCONFIG=<(echo CONFIG_CPU_BIG_ENDIAN=n) distclean allyesconfig all
     log "arm64 allyesconfig (plus CONFIG_CPU_BIG_ENDIAN=n) $(results "${?}")"
+
+    # Arch Linux ARM
+    KLOG=arm64-archlinux
+    setup_config archlinux/aarch64.config
+    kmake "${KMAKE_ARGS[@]}" olddefconfig all
+    KRNL_RC=${?}
+    log "arm64 archlinux config $(results "${KRNL_RC}")"
+    qemu_boot_kernel arm64
+    log "arm64 archlinux config qemu boot $(QEMU=1 results "${?}")"
 
     # Debian
     KLOG=arm64-debian
