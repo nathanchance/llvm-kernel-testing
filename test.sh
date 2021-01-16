@@ -312,6 +312,12 @@ function setup_config() {
         SCRIPTS_CONFIG_ARGS+=(-e QCOM_RPMPD)
     fi
 
+    # CONFIG_QCOM_RPMHPD as a module is invalid before https://git.kernel.org/linus/d4889ec1fc6ac6321cc1e8b35bb656f970926a09
+    if [[ "$(scripts_config -s QCOM_RPMHPD)" = "m" ]] &&
+        grep -q 'bool "Qualcomm RPMh Power domain driver"' "${LINUX_SRC}"/drivers/soc/qcom/Kconfig; then
+        SCRIPTS_CONFIG_ARGS+=(-e QCOM_RPMHPD)
+    fi
+
     # CONFIG_RTW88_8822BE as a module is invalid before https://git.kernel.org/linus/416e87fcc780cae8d72cb9370fa0f46007faa69a
     if [[ "$(scripts_config -s RTW88_8822BE)" = "m" ]] &&
         grep -q 'bool "Realtek 8822BE PCI wireless network adapter"' "${LINUX_SRC}"/drivers/net/wireless/realtek/rtw88/Kconfig; then
