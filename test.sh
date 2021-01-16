@@ -834,6 +834,7 @@ function build_x86_kernels() {
     print_binutils_info
     echo
 
+    # Upstream
     KLOG=i386-defconfig
     kmake distclean i386_defconfig all
     KRNL_RC=${?}
@@ -844,6 +845,24 @@ function build_x86_kernels() {
     KLOG=x86-allnoconfig
     kmake distclean allnoconfig all
     log "x86 allnoconfig $(results "${?}")"
+
+    # Debian
+    KLOG=i386-debian
+    setup_config debian/i386.config
+    kmake olddefconfig all
+    log "i386 debian config $(results "${?}")"
+
+    # Fedora
+    KLOG=i686-fedora
+    setup_config fedora/i686.config
+    kmake olddefconfig all
+    log "i686 fedora config $(results "${?}")"
+
+    # OpenSUSE
+    KLOG=i386-opensuse
+    setup_config opensuse/i386.config
+    kmake olddefconfig all
+    log "i386 opensuse config $(results "${?}")"
 }
 
 # Build x86_64 kernels
