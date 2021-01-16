@@ -17,7 +17,12 @@ function parse_parameters() {
 
 # Arch Linux
 function fetch_archlinux_config() {
-    curl -LSso archlinux/x86_64.config 'https://git.archlinux.org/svntogit/packages.git/plain/trunk/config?h=packages/linux'
+    case ${1} in
+        armv5 | armv7 | aarch64) URL=https://github.com/archlinuxarm/PKGBUILDs/raw/master/core/linux-${1}/config ;;
+        x86_64) URL="https://git.archlinux.org/svntogit/packages.git/plain/trunk/config?h=packages/linux" ;;
+        *) return ;;
+    esac
+    curl -LSso archlinux/"${1}".config "${URL}"
 }
 
 # Debian
@@ -58,7 +63,7 @@ function fetch_configs() {
     set -x
     for DISTRO in "${DISTROS[@]}"; do
         case ${DISTRO} in
-            archlinux) fetch_archlinux_config ;;
+            archlinux) for CONFIG in armv5 armv7 aarch64 x86_64; do fetch_archlinux_config "${CONFIG}"; done ;;
             debian) for CONFIG in amd64 arm64 armmp i386 powerpc64le s390x; do fetch_debian_config "${CONFIG}"; done ;;
             fedora) for CONFIG in aarch64 armv7hl i686 ppc64le s390x x86_64; do fetch_fedora_config "${CONFIG}"; done ;;
             opensuse) for CONFIG in arm64 armv7hl i386 ppc64le s390x x86_64; do fetch_opensuse_config "${CONFIG}"; done ;;
