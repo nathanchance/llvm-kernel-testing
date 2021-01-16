@@ -25,11 +25,12 @@ function fetch_debian_config() { (
     TMP_DIR=$(mktemp -d -p "${PWD}")
     cd "${TMP_DIR}" || exit ${?}
 
-    PACK_VER=5.9.0-1
-    KER_VER=5.9.1-1
+    PACK_VER=5.10.0-1
+    KER_VER=5.10.4-1
     case ${1} in
         amd64 | arm64) URL=linux-signed-${1}/linux-image-${PACK_VER}-${1}_${KER_VER}_${1}.deb ;;
         armmp) URL=linux/linux-image-${PACK_VER}-${1}_${KER_VER}_armhf.deb ;;
+        i386) DEB_CONFIG=686 && URL=linux-signed-${1}/linux-image-${PACK_VER}-${DEB_CONFIG}_${KER_VER}_${1}.deb ;;
         powerpc64le) URL=linux/linux-image-${PACK_VER}-${1}_${KER_VER}_ppc64el.deb ;;
         s390x) URL=linux/linux-image-${PACK_VER}-${1}_${KER_VER}_${1}.deb ;;
         *) return ;;
@@ -38,13 +39,13 @@ function fetch_debian_config() { (
     curl -LSsO http://ftp.us.debian.org/debian/pool/main/l/"${URL}"
     ar x "${URL##*/}"
     tar xJf data.tar.xz
-    cp -v boot/config-${PACK_VER}-"${1}" ../debian/"${1}".config
+    cp -v boot/config-${PACK_VER}-"${DEB_CONFIG:-${1}}" ../debian/"${1}".config
     rm -rf "${TMP_DIR}"
 ); }
 
 # Fedora
 function fetch_fedora_config() {
-    curl -LSso fedora/"${1:?}".config 'https://git.kernel.org/pub/scm/linux/kernel/git/jwboyer/fedora.git/plain/fedora/configs/kernel-5.9.1-'"${1}"'.config?h=kernel-5.9.1-300.fc33'
+    curl -LSso fedora/"${1:?}".config 'https://git.kernel.org/pub/scm/linux/kernel/git/jwboyer/fedora.git/plain/fedora/configs/kernel-5.10.7-'"${1}"'.config?h=kernel-5.10.7-200.fc33'
 }
 
 # OpenSUSE
@@ -54,10 +55,11 @@ function fetch_opensuse_config() {
 
 # Fetch configs for requested distros
 function fetch_configs() {
+    set -x
     for DISTRO in "${DISTROS[@]}"; do
         case ${DISTRO} in
             archlinux) fetch_archlinux_config ;;
-            debian) for CONFIG in amd64 arm64 armmp powerpc64le s390x; do fetch_debian_config "${CONFIG}"; done ;;
+            debian) for CONFIG in amd64 arm64 armmp i386 powerpc64le s390x; do fetch_debian_config "${CONFIG}"; done ;;
             fedora) for CONFIG in aarch64 armv7hl ppc64le s390x x86_64; do fetch_fedora_config "${CONFIG}"; done ;;
             opensuse) for CONFIG in arm64 armv7hl ppc64le s390x x86_64; do fetch_opensuse_config "${CONFIG}"; done ;;
         esac
