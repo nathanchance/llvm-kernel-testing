@@ -283,6 +283,8 @@ function setup_config() {
             if [[ ${1%/*} = "archlinux" ]]; then
                 [[ -z "$(scripts_config -s CONFIG_EXTRA_FIRMWARE)" ]] || scripts_config -u CONFIG_EXTRA_FIRMWARE
             fi
+            # https://lore.kernel.org/bpf/20201119085022.3606135-1-davidgow@google.com/
+            [[ "$(scripts_config -s BPF_PRELOAD)" = "y" ]] && scripts_config -d BPF_PRELOAD
             ;;
     esac
 
