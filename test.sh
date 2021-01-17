@@ -458,7 +458,10 @@ function build_arm32_kernels() {
     KLOG=arm32-debian
     setup_config debian/armmp.config
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "arm32 debian config $(results "${?}")"
+    KRNL_RC=${?}
+    log "arm32 debian config $(results "${KRNL_RC}")"
+    qemu_boot_kernel arm32_v7
+    log "arm32 debian config qemu boot $(QEMU=1 results "${?}")"
 
     # Fedora
     KLOG=arm32-fedora
@@ -470,7 +473,10 @@ function build_arm32_kernels() {
     KLOG=arm32-opensuse
     setup_config opensuse/armv7hl.config
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "armv7hl opensuse config $(results "${?}")"
+    KRNL_RC=${?}
+    log "armv7hl opensuse config $(results "${KRNL_RC}")"
+    qemu_boot_kernel arm32_v7
+    log "armv7hl opensuse config qemu boot $(QEMU=1 results "${?}")"
 }
 
 # Build arm64 kernels
@@ -523,19 +529,28 @@ function build_arm64_kernels() {
     KLOG=arm64-debian
     setup_config debian/arm64.config
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "arm64 debian config $(results "${?}")"
+    KRNL_RC=${?}
+    log "arm64 debian config $(results "${KRNL_RC}")"
+    qemu_boot_kernel arm64
+    log "arm64 debian config qemu boot $(QEMU=1 results "${?}")"
 
     # Fedora
     KLOG=arm64-fedora
     setup_config fedora/aarch64.config
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "arm64 fedora config $(results "${?}")"
+    KRNL_RC=${?}
+    log "arm64 fedora config $(results "${KRNL_RC}")"
+    qemu_boot_kernel arm64
+    log "arm64 fedora config qemu boot $(QEMU=1 results "${?}")"
 
     # OpenSUSE
     KLOG=arm64-opensuse
     setup_config opensuse/arm64.config
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "arm64 opensuse config $(results "${?}")"
+    KRNL_RC=${?}
+    log "arm64 opensuse config $(results "${KRNL_RC}")"
+    qemu_boot_kernel arm64
+    log "arm64 opensuse config qemu boot $(QEMU=1 results "${?}")"
 }
 
 # Build mips kernels
@@ -679,7 +694,10 @@ function build_powerpc_kernels() {
         unset LOG_COMMENT
     fi
     kmake "${KMAKE_ARGS[@]}" "${PPC64LE_ARGS[@]}" olddefconfig all
-    log "ppc64le debian config${LOG_COMMENT} $(results "${?}")"
+    KRNL_RC=${?}
+    log "ppc64le debian config${LOG_COMMENT} $(results "${KRNL_RC}")"
+    qemu_boot_kernel ppc64le
+    log "ppc64le debian config${LOG_COMMENT} qemu boot $(QEMU=1 results "${?}")"
 
     # Fedora
     KLOG=powerpc64le-fedora
@@ -687,7 +705,10 @@ function build_powerpc_kernels() {
     # https://github.com/ClangBuiltLinux/linux/issues/944
     [[ ${LLVM_VER_CODE} -lt 100001 ]] && scripts_config -d ${CTOD}
     kmake "${KMAKE_ARGS[@]}" "${PPC64LE_ARGS[@]}" olddefconfig all
-    log "ppc64le fedora config${LOG_COMMENT} $(results "${?}")"
+    KRNL_RC=${?}
+    log "ppc64le fedora config${LOG_COMMENT} $(results "${KRNL_RC}")"
+    qemu_boot_kernel ppc64le
+    log "ppc64le fedora config${LOG_COMMENT} qemu boot $(QEMU=1 results "${?}")"
 
     # OpenSUSE
     # https://github.com/ClangBuiltLinux/linux/issues/1160
@@ -697,7 +718,10 @@ function build_powerpc_kernels() {
         # https://github.com/ClangBuiltLinux/linux/issues/944
         [[ ${LLVM_VER_CODE} -lt 100001 ]] && scripts_config -d ${CTOD}
         kmake "${KMAKE_ARGS[@]}" "${PPC64LE_ARGS[@]}" olddefconfig all
-        log "ppc64le opensuse config $(results "${?}")"
+        KRNL_RC=${?}
+        log "ppc64le opensuse config $(results "${KRNL_RC}")"
+        qemu_boot_kernel ppc64le
+        log "ppc64le opensuse config qemu boot $(QEMU=1 results "${?}")"
     else
         log "ppc64le opensuse config skipped due to https://github.com/ClangBuiltLinux/linux/issues/1160"
     fi
@@ -831,19 +855,28 @@ function build_s390x_kernels() {
     KLOG=s390x-debian
     setup_config debian/s390x.config
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "s390x debian config $(results "${?}")"
+    KRNL_RC=${?}
+    log "s390x debian config $(results "${KRNL_RC}")"
+    qemu_boot_kernel s390
+    log "s390x debian config qemu boot $(QEMU=1 results "${?}")"
 
     # Fedora
     KLOG=s390x-fedora
     setup_config fedora/s390x.config
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "s390x fedora config $(results "${?}")"
+    KRNL_RC=${?}
+    log "s390x fedora config $(results "${KRNL_RC}")"
+    qemu_boot_kernel s390
+    log "s390x fedora config qemu boot $(QEMU=1 results "${?}")"
 
     # OpenSUSE
     KLOG=s390x-opensuse
     setup_config opensuse/s390x.config
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "s390x opensuse config $(results "${?}")"
+    KRNL_RC=${?}
+    log "s390x opensuse config $(results "${KRNL_RC}")"
+    qemu_boot_kernel s390
+    log "s390x opensuse config qemu boot $(QEMU=1 results "${?}")"
 }
 
 # Build x86 kernels
@@ -959,14 +992,20 @@ function build_x86_64_kernels() {
         unset LOG_COMMENT
     fi
     kmake olddefconfig all
-    log "x86_64 archlinux config${LOG_COMMENT} $(results "${?}")"
+    KRNL_RC=${?}
+    log "x86_64 archlinux config${LOG_COMMENT} $(results "${KRNL_RC}")"
+    qemu_boot_kernel x86_64
+    log "x86_64 archlinux config${LOG_COMMENT} qemu boot $(QEMU=1 results "${?}")"
 
     # Debian
     KLOG=x86_64-debian
     setup_config debian/amd64.config
     # https://github.com/ClangBuiltLinux/linux/issues/514
     kmake OBJCOPY=objcopy olddefconfig all
-    log "x86_64 debian config $(results "${?}")"
+    KRNL_RC=${?}
+    log "x86_64 debian config $(results "${KRNL_RC}")"
+    qemu_boot_kernel x86_64
+    log "x86_64 debian config qemu boot $(QEMU=1 results "${?}")"
 
     # Fedora
     KLOG=x86_64-fedora
@@ -979,7 +1018,10 @@ function build_x86_64_kernels() {
         unset LOG_COMMENT
     fi
     kmake olddefconfig all
-    log "x86_64 fedora config${LOG_COMMENT} $(results "${?}")"
+    KRNL_RC=${?}
+    log "x86_64 fedora config${LOG_COMMENT} $(results "${KRNL_RC}")"
+    qemu_boot_kernel x86_64
+    log "x86_64 fedora config${LOG_COMMENT} qemu boot $(QEMU=1 results "${?}")"
 
     # OpenSUSE
     KLOG=x86_64-opensuse
@@ -993,7 +1035,10 @@ function build_x86_64_kernels() {
     fi
     # https://github.com/ClangBuiltLinux/linux/issues/514
     kmake OBJCOPY=objcopy olddefconfig all
-    log "x86_64 opensuse config${LOG_COMMENT} $(results "${?}")"
+    KRNL_RC=${?}
+    log "x86_64 opensuse config${LOG_COMMENT} $(results "${KRNL_RC}")"
+    qemu_boot_kernel x86_64
+    log "x86_64 opensuse config${LOG_COMMENT} qemu boot $(QEMU=1 results "${?}")"
 }
 
 # Build Sami Tolvanen's LTO/CFI tree
