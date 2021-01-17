@@ -616,11 +616,11 @@ function build_mips_kernels() {
     log "mips 32r2el_defconfig $(results "${?}")"
 
     KLOG=mips-allnoconfig
-    kmake "${KMAKE_ARGS[@]}" distclean allnoconfig all
+    kmake "${KMAKE_ARGS[@]}" ${MIPS_BE_LD:+LD=${MIPS_BE_LD}} distclean allnoconfig all
     log "mips allnoconfig $(results "${?}")"
 
     KLOG=mips-tinyconfig
-    kmake "${KMAKE_ARGS[@]}" distclean tinyconfig all
+    kmake "${KMAKE_ARGS[@]}" ${MIPS_BE_LD:+LD=${MIPS_BE_LD}} distclean tinyconfig all
     log "mips tinyconfig $(results "${?}")"
 }
 
