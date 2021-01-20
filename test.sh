@@ -293,6 +293,27 @@ function setup_config() {
     # that we support but that is a lot more effort.
     SCRIPTS_CONFIG_ARGS=()
 
+    # CONFIG_CHELSIO_IPSEC_INLINE as a module is invalid before https://git.kernel.org/linus/1b77be463929e6d3cefbc929f710305714a89723
+    if [[ "$(scripts_config -s CHELSIO_IPSEC_INLINE)" = "m" ]] &&
+        grep -q 'bool "Chelsio IPSec XFRM Tx crypto offload"' "${LINUX_SRC}"/drivers/crypto/chelsio/Kconfig; then
+        SCRIPTS_CONFIG_ARGS+=(-e CHELSIO_IPSEC_INLINE)
+    fi
+
+    # CONFIG_CORESIGHT (and all of its drivers) as a module is invalid before https://git.kernel.org/linus/8e264c52e1dab8a7c1e036222ef376c8920c3423
+    if [[ "$(scripts_config -s CORESIGHT)" = "m" ]] &&
+        grep -q 'bool "CoreSight Tracing Support"' "${LINUX_SRC}"/drivers/hwtracing/coresight/Kconfig; then
+        SCRIPTS_CONFIG_ARGS+=(-e CORESIGHT)
+        for CORESIGHT_CONFIG in LINKS_AND_SINKS LINK_AND_SINK_TMC CATU SINK_TPIU SINK_ETBV10 SOURCE_ETM4X STM; do
+            [[ "$(scripts_config -s CORESIGHT_${CORESIGHT_CONFIG})" = "m" ]] && SCRIPTS_CONFIG_ARGS+=(-e CORESIGHT_"${CORESIGHT_CONFIG}")
+        done
+    fi
+
+    # CONFIG_GPIO_MXC as a module is invalid before https://git.kernel.org/linus/12d16b397ce0a999d13762c4c0cae2fb82eb60ee
+    if [[ "$(scripts_config -s GPIO_MXC)" = "m" ]] &&
+        ! grep -q 'tristate "i.MX GPIO support"' "${LINUX_SRC}"/drivers/gpio/Kconfig; then
+        SCRIPTS_CONFIG_ARGS+=(-e GPIO_MXC)
+    fi
+
     # CONFIG_IMX_DSP as a module is invalid before https://git.kernel.org/linus/f52cdcce9197fef9d4a68792dd3b840ad2b77117
     if [[ "$(scripts_config -s IMX_DSP)" = "m" ]] &&
         grep -q 'bool "IMX DSP Protocol driver"' "${LINUX_SRC}"/drivers/firmware/imx/Kconfig; then
@@ -315,6 +336,12 @@ function setup_config() {
     if [[ "$(scripts_config -s MTD_NAND_ECC_SW_HAMMING)" = "m" ]] &&
         grep -q 'bool "Software Hamming ECC engine"' "${LINUX_SRC}"/drivers/mtd/nand/Kconfig; then
         SCRIPTS_CONFIG_ARGS+=(-e MTD_NAND_ECC_SW_HAMMING)
+    fi
+
+    # CONFIG_PCI_MESON as a module is invalid before https://git.kernel.org/linus/a98d2187efd9e6d554efb50e3ed3a2983d340fe5
+    if [[ "$(scripts_configs -s PCI_MESON)" = "m" ]] &&
+        grep -q 'bool "MESON PCIe controller"' "${LINUX_SRC}"/drivers/pci/controller/dwc/Kconfig; then
+        SCRIPTS_CONFIG_ARGS+=(-e PCI_MESON)
     fi
 
     # CONFIG_POWER_RESET_SC27XX as a module is invalid before https://git.kernel.org/linus/f78c55e3b4806974f7d590b2aab8683232b7bd25
