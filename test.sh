@@ -1218,7 +1218,7 @@ function build_kernels() {
 
 # Boot the kernel in QEMU
 function qemu_boot_kernel() {
-    [[ ${KRNL_RC} -eq 0 ]] && "${SRC}"/boot-utils/boot-qemu.sh -a "${1:?}" -k "${OUT}"
+    [[ ${KRNL_RC} -eq 0 ]] && "${BOOT_UTILS}"/boot-qemu.sh -a "${1:?}" -k "${OUT}"
 }
 
 # Show the results from the build log and show total script runtime
