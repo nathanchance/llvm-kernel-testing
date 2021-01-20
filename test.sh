@@ -655,6 +655,25 @@ function build_mips_kernels() {
     kmake "${KMAKE_ARGS[@]}" distclean 32r2el_defconfig all
     log "mips 32r2el_defconfig $(results "${?}")"
 
+    # https://github.com/ClangBuiltLinux/linux/issues/1241
+    KLOG=mips-32r2
+    kmake "${KMAKE_ARGS[@]}" ${MIPS_BE_LD:+LD=${MIPS_BE_LD}} distclean 32r2_defconfig all
+    log "mips 32r2_defconfig $(results "${?}")"
+
+    KLOG=mips-32r2el
+    kmake "${KMAKE_ARGS[@]}" distclean 32r2el_defconfig all
+    log "mips 32r2el_defconfig $(results "${?}")"
+
+    if [[ ${LLVM_VER_CODE} -ge 120000 ]]; then
+        KLOG=mips-32r6
+        kmake "${KMAKE_ARGS[@]}" ${MIPS_BE_LD:+LD=${MIPS_BE_LD}} distclean 32r6_defconfig all
+        log "mips 32r6_defconfig $(results "${?}")"
+
+        KLOG=mips-32r6el
+        kmake "${KMAKE_ARGS[@]}" distclean 32r6el_defconfig all
+        log "mips 32r6el_defconfig $(results "${?}")"
+    fi
+
     KLOG=mips-allnoconfig
     kmake "${KMAKE_ARGS[@]}" ${MIPS_BE_LD:+LD=${MIPS_BE_LD}} distclean allnoconfig all
     log "mips allnoconfig $(results "${?}")"
