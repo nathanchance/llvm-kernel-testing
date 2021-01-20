@@ -305,6 +305,18 @@ function setup_config() {
         SCRIPTS_CONFIG_ARGS+=(-e INTERCONNECT)
     fi
 
+    # CONFIG_KASAN_STACK=1 is invalid after https://git.kernel.org/next/linux-next/c/031734e881750d622a4bbc0011b45361c779dd8c
+    if [[ "$(scripts_config -s KASAN_STACK)" = "1" ]] &&
+        ! grep -q "config KASAN_STACK_ENABLE" "${LINUX_SRC}"/lib/Kconfig.kasan; then
+        SCRIPTS_CONFIG_ARGS+=(--set-val KASAN_STACK y)
+    fi
+
+    # CONFIG_MTD_NAND_ECC_SW_HAMMING as a module is invalid after https://git.kernel.org/next/linux-next/c/5c859c18150b57d47dc684cab6e12b99f5d14ad3
+    if [[ "$(scripts_config -s MTD_NAND_ECC_SW_HAMMING)" = "m" ]] &&
+        grep -q 'bool "Software Hamming ECC engine"' "${LINUX_SRC}"/drivers/mtd/nand/Kconfig; then
+        SCRIPTS_CONFIG_ARGS+=(-e MTD_NAND_ECC_SW_HAMMING)
+    fi
+
     # CONFIG_POWER_RESET_SC27XX as a module is invalid before https://git.kernel.org/linus/f78c55e3b4806974f7d590b2aab8683232b7bd25
     if [[ "$(scripts_config -s POWER_RESET_SC27XX)" = "m" ]] &&
         grep -q 'bool "Spreadtrum SC27xx PMIC power-off driver"' "${LINUX_SRC}"/drivers/power/reset/Kconfig; then
@@ -351,12 +363,6 @@ function setup_config() {
     if [[ "$(scripts_config -s TI_CPTS)" = "m" ]] &&
         grep -q 'bool "TI Common Platform Time Sync' "${LINUX_SRC}"/drivers/net/ethernet/ti/Kconfig; then
         SCRIPTS_CONFIG_ARGS+=(-e TI_CPTS)
-    fi
-
-    # CONFIG_MTD_NAND_ECC_SW_HAMMING as a module is invalid after https://git.kernel.org/next/linux-next/c/5c859c18150b57d47dc684cab6e12b99f5d14ad3
-    if [[ "$(scripts_config -s MTD_NAND_ECC_SW_HAMMING)" = "m" ]] &&
-        grep -q 'bool "Software Hamming ECC engine"' "${LINUX_SRC}"/drivers/mtd/nand/Kconfig; then
-        SCRIPTS_CONFIG_ARGS+=(-e MTD_NAND_ECC_SW_HAMMING)
     fi
 
     [[ -n "${SCRIPTS_CONFIG_ARGS[*]}" ]] && scripts_config "${SCRIPTS_CONFIG_ARGS[@]}"
