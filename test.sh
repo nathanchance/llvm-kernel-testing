@@ -339,7 +339,7 @@ function setup_config() {
     fi
 
     # CONFIG_PCI_MESON as a module is invalid before https://git.kernel.org/linus/a98d2187efd9e6d554efb50e3ed3a2983d340fe5
-    if [[ "$(scripts_configs -s PCI_MESON)" = "m" ]] &&
+    if [[ "$(scripts_config -s PCI_MESON)" = "m" ]] &&
         grep -q 'bool "MESON PCIe controller"' "${LINUX_SRC}"/drivers/pci/controller/dwc/Kconfig; then
         SCRIPTS_CONFIG_ARGS+=(-e PCI_MESON)
     fi
