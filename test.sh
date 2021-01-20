@@ -572,11 +572,18 @@ function build_arm64_kernels() {
     # Fedora
     KLOG=arm64-fedora
     setup_config fedora/aarch64.config
+    # https://github.com/ClangBuiltLinux/linux/issues/515
+    if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
+        LOG_COMMENT=" (minus CONFIG_STM due to https://github.com/ClangBuiltLinux/linux/issues/515)"
+        scripts_config -d CONFIG_STM
+    else
+        unset LOG_COMMENT
+    fi
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
     KRNL_RC=${?}
-    log "arm64 fedora config $(results "${KRNL_RC}")"
+    log "arm64 fedora config${LOG_COMMENT} $(results "${KRNL_RC}")"
     qemu_boot_kernel arm64
-    log "arm64 fedora config qemu boot $(QEMU=1 results "${?}")"
+    log "arm64 fedora config${LOG_COMMENT} qemu boot $(QEMU=1 results "${?}")"
 
     # OpenSUSE
     KLOG=arm64-opensuse
