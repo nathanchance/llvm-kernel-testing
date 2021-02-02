@@ -964,6 +964,8 @@ function build_x86_kernels() {
     qemu_boot_kernel x86
     log "i386 defconfig qemu boot $(QEMU=1 results "${?}")"
 
+    ${DEFCONFIGS_ONLY} && return 0
+
     KLOG=x86-allnoconfig
     kmake distclean allnoconfig all
     log "x86 allnoconfig $(results "${?}")"
