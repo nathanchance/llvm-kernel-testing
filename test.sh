@@ -1207,7 +1207,7 @@ function build_kernels() {
     create_llvm_ver_code
 
     for ARCH in "${ARCHES[@]}"; do
-        OUT=$(cd "${LINUX_SRC}" && readlink -f -m "${O:-out}")/${ARCH}
+        OUT=$(cd "${LINUX_SRC}" && readlink -f -m "${O:-build}")/${ARCH}
         if ! check_clang_target "${ARCH}"; then
             header "Skipping ${ARCH} kernels"
             echo "Reason: clang was not configured with this target"
