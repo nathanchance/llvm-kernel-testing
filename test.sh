@@ -651,7 +651,7 @@ function build_mips_kernels() {
 
     # https://github.com/ClangBuiltLinux/linux/issues/1025
     KLOG=mips-malta
-    [[ -f ${LINUX_SRC}/arch/mips/vdso/Kconfig ]] && MIPS_BE_LD=${CROSS_COMPILE}ld
+    [[ -f ${LINUX_SRC}/arch/mips/vdso/Kconfig && ${LLVM_VER_CODE} -lt 130000 ]] && MIPS_BE_LD=${CROSS_COMPILE}ld
     kmake "${KMAKE_ARGS[@]}" ${MIPS_BE_LD:+LD=${MIPS_BE_LD}} distclean malta_kvm_guest_defconfig
     swap_endianness l2b
     kmake "${KMAKE_ARGS[@]}" ${MIPS_BE_LD:+LD=${MIPS_BE_LD}} olddefconfig all
