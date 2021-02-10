@@ -395,6 +395,18 @@ function setup_config() {
     [[ -n "${SCRIPTS_CONFIG_ARGS[*]}" ]] && scripts_config "${SCRIPTS_CONFIG_ARGS[@]}"
 }
 
+function swap_endianness() {
+    case "${1:?}" in
+        b2l) B_OPT=-d && L_OPT=-e ;;
+        l2b) B_OPT=-e && L_OPT=-d ;;
+        *) return 1 ;;
+    esac
+
+    scripts_config \
+        "${B_OPT}" CPU_BIG_ENDIAN \
+        "${L_OPT}" CPU_LITTLE_ENDIAN
+}
+
 function results() {
     if [[ -n ${QEMU} && ${KRNL_RC} -ne 0 ]]; then
         RESULT=skipped
@@ -533,6 +545,17 @@ function build_arm64_kernels() {
     qemu_boot_kernel arm64
     log "arm64 defconfig qemu boot $(QEMU=1 results "${?}")"
 
+    if [[ ${LLVM_VER_CODE} -ge 130000 ]]; then
+        KLOG=arm64be-defconfig
+        kmake "${KMAKE_ARGS[@]}" distclean defconfig
+        swap_endianness l2b
+        kmake "${KMAKE_ARGS[@]}" olddefconfig all
+        KRNL_RC=${?}
+        log "arm64 defconfig (plus CONFIG_CPU_BIG_ENDIAN=y) $(results "${KRNL_RC}")"
+        qemu_boot_kernel arm64be
+        log "arm64 defconfig (plus CONFIG_CPU_BIG_ENDIAN=y) qemu boot $(QEMU=1 results "${?}")"
+    fi
+
     ${DEFCONFIGS_ONLY} && return 0
 
     KLOG=arm64-allmodconfig
@@ -630,9 +653,7 @@ function build_mips_kernels() {
     KLOG=mips-malta
     [[ -f ${LINUX_SRC}/arch/mips/vdso/Kconfig ]] && MIPS_BE_LD=${CROSS_COMPILE}ld
     kmake "${KMAKE_ARGS[@]}" ${MIPS_BE_LD:+LD=${MIPS_BE_LD}} distclean malta_kvm_guest_defconfig
-    scripts_config \
-        -d CONFIG_CPU_LITTLE_ENDIAN \
-        -e CONFIG_CPU_BIG_ENDIAN
+    swap_endianness l2b
     kmake "${KMAKE_ARGS[@]}" ${MIPS_BE_LD:+LD=${MIPS_BE_LD}} olddefconfig all
     KRNL_RC=${?}
     log "mips malta_kvm_guest_defconfig (plus CONFIG_CPU_BIG_ENDIAN=y) $(results "${KRNL_RC}")"
