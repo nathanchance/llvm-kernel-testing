@@ -963,11 +963,17 @@ function build_s390x_kernels() {
 
 # Build x86 kernels
 function build_x86_kernels() {
-    # s390 did not build properly until Linux 5.9
+    # x86 did not build properly until Linux 5.9
     if [[ ${LNX_VER_CODE} -lt 509000 ]]; then
         header "Skipping x86 kernels"
         echo "Reason: x86 kernels did not build properly until Linux 5.9"
         echo "        https://github.com/ClangBuiltLinux/linux/issues/194"
+        return 0
+    elif [[ ${LLVM_VER_CODE} -gt 120000 ]] &&
+        ! grep -q "R_386_PLT32:" "${LINUX_SRC}"/arch/x86/tools/relocs.c; then
+        header "Skipping x86 kernels"
+        echo "Reason: x86 kernels do not build properly with LLVM 12.0.0+ without R_386_PLT32 handling"
+        echo "        https://github.com/ClangBuiltLinux/linux/issues/1210"
         return 0
     fi
 
