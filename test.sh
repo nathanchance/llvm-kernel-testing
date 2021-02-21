@@ -1181,9 +1181,6 @@ function build_lto_cfi_kernels() {
     log "arm64 LTO+CFI+SCS config qemu boot $(QEMU=1 results "${?}")"
 
     # x86_64
-    # Patch https://github.com/ClangBuiltLinux/linux/issues/1216 for now
-    grep -q "vmsave" "${LINUX_SRC}"/arch/x86/kvm/svm/sev.c &&
-        b4 am -o - -l 20201219063711.3526947-1-natechancellor@gmail.com | patch -d "${LINUX_SRC}" -p1
     KLOG=x86_64-lto-cfi
     kmake LLVM=1 LLVM_IAS=1 distclean defconfig
     scripts_config \
