@@ -471,9 +471,19 @@ function build_arm32_kernels() {
 
     ${DEFCONFIGS_ONLY} && return 0
 
-    LOG_COMMENT=" + CONFIG_CPU_BIG_ENDIAN=n"
+    CONFIGS_TO_DISABLE=()
+    grep -oPqz '(?s)depends on ARCH_SUPPORTS_BIG_ENDIAN.*?depends on \!LD_IS_LLD' "${LINUX_SRC}"/arch/arm/mm/Kconfig || CONFIGS_TO_DISABLE+=(CONFIG_CPU_BIG_ENDIAN)
+    if [[ -n ${CONFIGS_TO_DISABLE[*]} ]]; then
+        CONFIG_FILE=$(mktemp --suffix=.config)
+        LOG_COMMENT=""
+        for CONFIG_TO_DISABLE in "${CONFIGS_TO_DISABLE[@]}"; do
+            CONFIG_VALUE=${CONFIG_TO_DISABLE}=n
+            echo "${CONFIG_VALUE}" >> "${CONFIG_FILE}"
+            LOG_COMMENT+=" + ${CONFIG_VALUE}"
+        done
+    fi
     KLOG=arm32-allmodconfig
-    kmake "${KMAKE_ARGS[@]}" KCONFIG_ALLCONFIG=<(echo CONFIG_CPU_BIG_ENDIAN=n) distclean allmodconfig all
+    kmake "${KMAKE_ARGS[@]}" ${CONFIG_FILE:+KCONFIG_ALLCONFIG=${CONFIG_FILE}} distclean allmodconfig all
     log "arm32 allmodconfig${LOG_COMMENT} $(results "${?}")"
 
     KLOG=arm32-allnoconfig
@@ -485,7 +495,7 @@ function build_arm32_kernels() {
     log "arm32 tinyconfig $(results "${?}")"
 
     KLOG=arm32-allyesconfig
-    kmake "${KMAKE_ARGS[@]}" KCONFIG_ALLCONFIG=<(echo CONFIG_CPU_BIG_ENDIAN=n) distclean allyesconfig all
+    kmake "${KMAKE_ARGS[@]}" ${CONFIG_FILE:+KCONFIG_ALLCONFIG=${CONFIG_FILE}} distclean allyesconfig all
     log "arm32 allyesconfig${LOG_COMMENT} $(results "${?}")"
 
     # Arch Linux ARM
