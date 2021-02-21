@@ -913,25 +913,29 @@ function build_s390x_kernels() {
     kmake "${KMAKE_ARGS[@]}" distclean tinyconfig all
     log "s390x tinyconfig $(results "${?}")"
 
-    KLOG=s390x-allmodconfig
-    kmake "${KMAKE_ARGS[@]}" distclean allmodconfig
-    # https://github.com/ClangBuiltLinux/linux/issues/1213
-    if ! grep -q "config UBSAN_MISC" "${LINUX_SRC}"/lib/Kconfig.ubsan; then
-        CTOD=CONFIG_UBSAN_TRAP
-        LOG_COMMENT=" (minus ${CTOD} due to https://github.com/ClangBuiltLinux/linux/issues/1213)"
-        scripts_config -d ${CTOD}
-    else
-        unset LOG_COMMENT
-    fi
-    kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "s390x allmodconfig${LOG_COMMENT} $(results "${?}")"
+    if [[ ${LLVM_VER_CODE} -ge 120000 ]]; then
+        KLOG=s390x-allmodconfig
+        kmake "${KMAKE_ARGS[@]}" distclean allmodconfig
+        # https://github.com/ClangBuiltLinux/linux/issues/1213
+        if ! grep -q "config UBSAN_MISC" "${LINUX_SRC}"/lib/Kconfig.ubsan; then
+            CTOD=CONFIG_UBSAN_TRAP
+            LOG_COMMENT=" (minus ${CTOD} due to https://github.com/ClangBuiltLinux/linux/issues/1213)"
+            scripts_config -d ${CTOD}
+        else
+            unset LOG_COMMENT
+        fi
+        kmake "${KMAKE_ARGS[@]}" olddefconfig all
+        log "s390x allmodconfig${LOG_COMMENT} $(results "${?}")"
 
-    KLOG=s390x-allyesconfig
-    kmake "${KMAKE_ARGS[@]}" distclean allyesconfig
-    # https://github.com/ClangBuiltLinux/linux/issues/1213
-    grep -q "config UBSAN_MISC" "${LINUX_SRC}"/lib/Kconfig.ubsan || scripts_config -d ${CTOD}
-    kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "s390x allyesconfig${LOG_COMMENT} $(results "${?}")"
+        KLOG=s390x-allyesconfig
+        kmake "${KMAKE_ARGS[@]}" distclean allyesconfig
+        # https://github.com/ClangBuiltLinux/linux/issues/1213
+        grep -q "config UBSAN_MISC" "${LINUX_SRC}"/lib/Kconfig.ubsan || scripts_config -d ${CTOD}
+        kmake "${KMAKE_ARGS[@]}" olddefconfig all
+        log "s390x allyesconfig${LOG_COMMENT} $(results "${?}")"
+    else
+        log "Skipping s390x all{mod,yes}config"
+    fi
 
     # Debian
     KLOG=s390x-debian
