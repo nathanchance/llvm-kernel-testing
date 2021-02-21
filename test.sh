@@ -558,9 +558,21 @@ function build_arm64_kernels() {
 
     ${DEFCONFIGS_ONLY} && return 0
 
+    CONFIGS_TO_DISABLE=()
+    grep -oPqz  '(?s)static __always_inline void.*?gpi_update_reg' "${LINUX_SRC}"/drivers/dma/qcom/gpi.c || CONFIGS_TO_DISABLE+=(CONFIG_QCOM_GPI_DMA)
+    grep -q 'prompt "Endianness"' "${LINUX_SRC}"/arch/arm64/Kconfig || CONFIGS_TO_DISABLE+=(CONFIG_CPU_BIG_ENDIAN)
+    if [[ -n ${CONFIGS_TO_DISABLE[*]} ]]; then
+        CONFIG_FILE=$(mktemp --suffix=.config)
+        LOG_COMMENT=""
+        for CONFIG_TO_DISABLE in "${CONFIGS_TO_DISABLE[@]}"; do
+            CONFIG_VALUE=${CONFIG_TO_DISABLE}=n
+            echo "${CONFIG_VALUE}" >> "${CONFIG_FILE}"
+            LOG_COMMENT+="+${CONFIG_VALUE}"
+        done
+    fi
     KLOG=arm64-allmodconfig
-    kmake "${KMAKE_ARGS[@]}" KCONFIG_ALLCONFIG=<(echo CONFIG_CPU_BIG_ENDIAN=n) distclean allmodconfig all
-    log "arm64 allmodconfig (plus CONFIG_CPU_BIG_ENDIAN=n) $(results "${?}")"
+    kmake "${KMAKE_ARGS[@]}" ${CONFIG_FILE:+KCONFIG_ALLCONFIG=${CONFIG_FILE}} distclean allmodconfig all
+    log "arm64 allmodconfig${LOG_COMMENT} $(results "${?}")"
 
     KLOG=arm64-allnoconfig
     kmake "${KMAKE_ARGS[@]}" distclean allnoconfig all
@@ -571,8 +583,8 @@ function build_arm64_kernels() {
     log "arm64 tinyconfig $(results "${?}")"
 
     KLOG=arm64-allyesconfig
-    kmake "${KMAKE_ARGS[@]}" KCONFIG_ALLCONFIG=<(echo CONFIG_CPU_BIG_ENDIAN=n) distclean allyesconfig all
-    log "arm64 allyesconfig (plus CONFIG_CPU_BIG_ENDIAN=n) $(results "${?}")"
+    kmake "${KMAKE_ARGS[@]}" ${CONFIG_FILE:+KCONFIG_ALLCONFIG=${CONFIG_FILE}} distclean allyesconfig all
+    log "arm64 allyesconfig${LOG_COMMENT} $(results "${?}")"
 
     # Arch Linux ARM
     KLOG=arm64-archlinux
