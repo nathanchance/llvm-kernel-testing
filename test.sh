@@ -442,7 +442,7 @@ function build_arm32_kernels() {
     kmake "${KMAKE_ARGS[@]}" distclean multi_v5_defconfig
     # https://github.com/ClangBuiltLinux/linux/issues/954
     if [[ ${LLVM_VER_CODE} -lt 100001 ]]; then
-        LOG_COMMENT=" (minus CONFIG_TRACING, CONFIG_OPROFILE, and CONFIG_RCU_TRACE due to https://github.com/ClangBuiltLinux/linux/issues/954)"
+        LOG_COMMENT=" + CONFIG_TRACING=n + CONFIG_OPROFILE=n + CONFIG_RCU_TRACE=n (https://github.com/ClangBuiltLinux/linux/issues/954)"
         scripts_config -d CONFIG_TRACING -d CONFIG_OPROFILE -d CONFIG_RCU_TRACE
     else
         unset LOG_COMMENT
@@ -471,9 +471,10 @@ function build_arm32_kernels() {
 
     ${DEFCONFIGS_ONLY} && return 0
 
+    LOG_COMMENT=" + CONFIG_CPU_BIG_ENDIAN=n"
     KLOG=arm32-allmodconfig
     kmake "${KMAKE_ARGS[@]}" KCONFIG_ALLCONFIG=<(echo CONFIG_CPU_BIG_ENDIAN=n) distclean allmodconfig all
-    log "arm32 allmodconfig (plus CONFIG_CPU_BIG_ENDIAN=n) $(results "${?}")"
+    log "arm32 allmodconfig${LOG_COMMENT} $(results "${?}")"
 
     KLOG=arm32-allnoconfig
     kmake "${KMAKE_ARGS[@]}" distclean allnoconfig all
@@ -485,7 +486,7 @@ function build_arm32_kernels() {
 
     KLOG=arm32-allyesconfig
     kmake "${KMAKE_ARGS[@]}" KCONFIG_ALLCONFIG=<(echo CONFIG_CPU_BIG_ENDIAN=n) distclean allyesconfig all
-    log "arm32 allyesconfig (plus CONFIG_CPU_BIG_ENDIAN=n) $(results "${?}")"
+    log "arm32 allyesconfig${LOG_COMMENT} $(results "${?}")"
 
     # Arch Linux ARM
     KLOG=arm32-v5-archlinux
@@ -567,7 +568,7 @@ function build_arm64_kernels() {
         for CONFIG_TO_DISABLE in "${CONFIGS_TO_DISABLE[@]}"; do
             CONFIG_VALUE=${CONFIG_TO_DISABLE}=n
             echo "${CONFIG_VALUE}" >> "${CONFIG_FILE}"
-            LOG_COMMENT+="+${CONFIG_VALUE}"
+            LOG_COMMENT+=" + ${CONFIG_VALUE}"
         done
     fi
     KLOG=arm64-allmodconfig
@@ -609,7 +610,7 @@ function build_arm64_kernels() {
     setup_config fedora/aarch64.config
     # https://github.com/ClangBuiltLinux/linux/issues/515
     if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
-        LOG_COMMENT=" (minus CONFIG_STM due to https://github.com/ClangBuiltLinux/linux/issues/515)"
+        LOG_COMMENT=" + CONFIG_STM=n (https://github.com/ClangBuiltLinux/linux/issues/515)"
         scripts_config -d CONFIG_STM
     else
         unset LOG_COMMENT
@@ -745,7 +746,7 @@ function build_powerpc_kernels() {
         kmake "${KMAKE_ARGS[@]}" distclean tinyconfig all
         log "powerpc tinyconfig $(results "${?}")"
     else
-        log "powerpc 32-bit configs skipped due to https://llvm.org/pr46186"
+        log "powerpc 32-bit configs skipped (https://llvm.org/pr46186)"
     fi
 
     KLOG=powerpc64-pseries_defconfig
@@ -782,7 +783,7 @@ function build_powerpc_kernels() {
     # https://github.com/ClangBuiltLinux/linux/issues/944
     if [[ ${LLVM_VER_CODE} -lt 100001 ]]; then
         CTOD=CONFIG_DRM_AMD_DC
-        LOG_COMMENT=" (minus ${CTOD} due to https://github.com/ClangBuiltLinux/linux/issues/944)"
+        LOG_COMMENT=" + ${CTOD}=n (https://github.com/ClangBuiltLinux/linux/issues/944)"
         scripts_config -d ${CTOD}
     else
         unset LOG_COMMENT
@@ -861,7 +862,7 @@ function build_riscv_kernels() {
     kmake "${KMAKE_ARGS[@]}" LD=riscv64-linux-gnu-ld LLVM_IAS=1 distclean defconfig
     # https://github.com/ClangBuiltLinux/linux/issues/1143
     if grep -q "config EFI" "${LINUX_SRC}"/arch/riscv/Kconfig; then
-        LOG_COMMENT=" (minus CONFIG_EFI due to https://github.com/ClangBuiltLinux/linux/issues/1143)"
+        LOG_COMMENT=" + CONFIG_EFI=n (https://github.com/ClangBuiltLinux/linux/issues/1143)"
         scripts_config -d CONFIG_EFI
     fi
     kmake "${KMAKE_ARGS[@]}" LD=riscv64-linux-gnu-ld LLVM_IAS=1 olddefconfig all
@@ -931,7 +932,7 @@ function build_s390x_kernels() {
         # https://github.com/ClangBuiltLinux/linux/issues/1213
         if ! grep -q "config UBSAN_MISC" "${LINUX_SRC}"/lib/Kconfig.ubsan; then
             CTOD=CONFIG_UBSAN_TRAP
-            LOG_COMMENT=" (minus ${CTOD} due to https://github.com/ClangBuiltLinux/linux/issues/1213)"
+            LOG_COMMENT=" + ${CTOD}=n (https://github.com/ClangBuiltLinux/linux/issues/1213)"
             scripts_config -d ${CTOD}
         else
             unset LOG_COMMENT
@@ -1059,7 +1060,7 @@ function build_x86_64_kernels() {
     kmake distclean allmodconfig
     # https://github.com/ClangBuiltLinux/linux/issues/515
     if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
-        LOG_COMMENT=" (minus CONFIG_STM and CONFIG_TEST_MEMCAT_P due to https://github.com/ClangBuiltLinux/linux/issues/515)"
+        LOG_COMMENT=" + CONFIG_STM=n + CONFIG_TEST_MEMCAT_P=n (https://github.com/ClangBuiltLinux/linux/issues/515)"
         scripts_config -d CONFIG_STM -d CONFIG_TEST_MEMCAT_P
     else
         unset LOG_COMMENT
@@ -1075,7 +1076,7 @@ function build_x86_64_kernels() {
     kmake distclean allyesconfig
     # https://github.com/ClangBuiltLinux/linux/issues/678
     if [[ ${LNX_VER_CODE} -lt 508000 ]]; then
-        LOG_COMMENT=" (minus CONFIG_SENSORS_APPLESMC)"
+        LOG_COMMENT=" + CONFIG_SENSORS_APPLESMC=n (https://github.com/ClangBuiltLinux/linux/issues/678)"
         scripts_config -d CONFIG_SENSORS_APPLESMC
     else
         unset LOG_COMMENT
@@ -1088,7 +1089,7 @@ function build_x86_64_kernels() {
     setup_config archlinux/x86_64.config
     # https://github.com/ClangBuiltLinux/linux/issues/515
     if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
-        LOG_COMMENT=" (minus CONFIG_STM due to https://github.com/ClangBuiltLinux/linux/issues/515)"
+        LOG_COMMENT=" + CONFIG_STM=n (https://github.com/ClangBuiltLinux/linux/issues/515)"
         scripts_config -d CONFIG_STM
     else
         unset LOG_COMMENT
@@ -1114,7 +1115,7 @@ function build_x86_64_kernels() {
     setup_config fedora/x86_64.config
     # https://github.com/ClangBuiltLinux/linux/issues/515
     if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
-        LOG_COMMENT=" (minus CONFIG_STM and CONFIG_TEST_MEMCAT_P due to https://github.com/ClangBuiltLinux/linux/issues/515)"
+        LOG_COMMENT=" + CONFIG_STM=n + CONFIG_TEST_MEMCAT_P=n (https://github.com/ClangBuiltLinux/linux/issues/515)"
         scripts_config -d CONFIG_STM -d CONFIG_TEST_MEMCAT_P
     else
         unset LOG_COMMENT
@@ -1130,7 +1131,7 @@ function build_x86_64_kernels() {
     setup_config opensuse/x86_64.config
     # https://github.com/ClangBuiltLinux/linux/issues/515
     if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
-        LOG_COMMENT=" (minus CONFIG_STM due to https://github.com/ClangBuiltLinux/linux/issues/515)"
+        LOG_COMMENT=" + CONFIG_STM=n (https://github.com/ClangBuiltLinux/linux/issues/515)"
         scripts_config -d CONFIG_STM
     else
         unset LOG_COMMENT
