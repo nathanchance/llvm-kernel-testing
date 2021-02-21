@@ -1136,6 +1136,8 @@ function build_lto_cfi_kernels() {
     local KMAKE_ARGS
     KMAKE_ARGS=("ARCH=arm64" "CROSS_COMPILE=aarch64-linux-gnu-" "LLVM=1" "LLVM_IAS=1")
 
+    [[ ${LLVM_VER_CODE} -ge 110000 ]] || return 0
+
     header "Building LTO/CFI kernels"
 
     # Grab the latest kernel source
