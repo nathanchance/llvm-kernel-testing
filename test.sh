@@ -829,7 +829,7 @@ function build_powerpc_kernels() {
         qemu_boot_kernel ppc64le
         log "ppc64le opensuse config qemu boot $(QEMU=1 results "${?}")"
     else
-        log "ppc64le opensuse config skipped due to https://github.com/ClangBuiltLinux/linux/issues/1160"
+        log "ppc64le opensuse config skipped (https://github.com/ClangBuiltLinux/linux/issues/1160)"
     fi
 }
 
