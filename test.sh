@@ -958,7 +958,7 @@ function build_s390x_kernels() {
         kmake "${KMAKE_ARGS[@]}" olddefconfig all
         log "s390x allyesconfig${LOG_COMMENT} $(results "${?}")"
     else
-        log "Skipping s390x all{mod,yes}config"
+        log "s390x all{mod,yes}config skipped (https://reviews.llvm.org/D90065)"
     fi
 
     # Debian
