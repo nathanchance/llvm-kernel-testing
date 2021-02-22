@@ -1089,6 +1089,10 @@ function build_x86_64_kernels() {
     if [[ ${LNX_VER_CODE} -lt 508000 ]]; then
         LOG_COMMENT=" + CONFIG_SENSORS_APPLESMC=n (https://github.com/ClangBuiltLinux/linux/issues/678)"
         scripts_config -d CONFIG_SENSORS_APPLESMC
+    # https://github.com/ClangBuiltLinux/linux/issues/1116
+    elif [[ -f ${LINUX_SRC}/drivers/media/platform/ti-vpe/cal-camerarx.c ]]; then
+        LOG_COMMENT=" (minus CONFIG_VIDEO_TI_CAL due to https://github.com/ClangBuiltLinux/linux/issues/1116)"
+        scripts_config -d CONFIG_VIDEO_TI_CAL
     else
         unset LOG_COMMENT
     fi
