@@ -570,7 +570,8 @@ function build_arm64_kernels() {
     ${DEFCONFIGS_ONLY} && return 0
 
     CONFIGS_TO_DISABLE=()
-    grep -oPqz '(?s)static __always_inline void.*?gpi_update_reg' "${LINUX_SRC}"/drivers/dma/qcom/gpi.c || CONFIGS_TO_DISABLE+=(CONFIG_QCOM_GPI_DMA)
+    GPI_C=${LINUX_SRC}/drivers/dma/qcom/gpi.c
+    { [[ -f ${GPI_C} ]] && grep -oPqz '(?s)static __always_inline void.*?gpi_update_reg' "${GPI_C}"; } || CONFIGS_TO_DISABLE+=(CONFIG_QCOM_GPI_DMA)
     grep -q 'prompt "Endianness"' "${LINUX_SRC}"/arch/arm64/Kconfig || CONFIGS_TO_DISABLE+=(CONFIG_CPU_BIG_ENDIAN)
     if [[ -n ${CONFIGS_TO_DISABLE[*]} ]]; then
         CONFIG_FILE=$(mktemp --suffix=.config)
