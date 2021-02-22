@@ -575,7 +575,7 @@ function build_arm64_kernels() {
     [[ -f ${LINUX_SRC}/drivers/media/platform/ti-vpe/cal-camerarx.c && ${LLVM_VER_CODE} -lt 110000 ]] && CONFIGS_TO_DISABLE+=(CONFIG_VIDEO_TI_CAL)
     # https://github.com/ClangBuiltLinux/linux/issues/1243
     GPI_C=${LINUX_SRC}/drivers/dma/qcom/gpi.c
-    { [[ -f ${GPI_C} ]] && grep -oPqz '(?s)static __always_inline void.*?gpi_update_reg' "${GPI_C}"; } || CONFIGS_TO_DISABLE+=(CONFIG_QCOM_GPI_DMA)
+    { [[ -f ${GPI_C} ]] && ! grep -oPqz '(?s)static __always_inline void.*?gpi_update_reg' "${GPI_C}"; } && CONFIGS_TO_DISABLE+=(CONFIG_QCOM_GPI_DMA)
     if [[ -n ${CONFIGS_TO_DISABLE[*]} ]]; then
         CONFIG_FILE=$(mktemp --suffix=.config)
         LOG_COMMENT=""
