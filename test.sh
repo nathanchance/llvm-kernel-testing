@@ -764,12 +764,30 @@ function build_powerpc_kernels() {
     fi
 
     KLOG=powerpc64-pseries_defconfig
+    PSERIES_TARGETS=(pseries_defconfig)
+    # https://github.com/ClangBuiltLinux/linux/issues/1292
+    if [[ ${LLVM_VER_CODE} -gt 130000 ]]; then
+        CTOE=CONFIG_PPC_DISABLE_WERROR
+        if [[ -f ${LINUX_SRC}/arch/powerpc/configs/disable-werror.config ]]; then
+            PSERIES_TARGETS+=(disable-werror.config all)
+        else
+            SC_DWERROR=true
+        fi
+        LOG_COMMENT=" + ${CTOE}=y"
+    else
+        PSERIES_TARGETS+=(all)
+    fi
     # https://github.com/ClangBuiltLinux/linux/issues/602
-    kmake "${KMAKE_ARGS[@]}" LD=${CROSS_COMPILE}ld distclean pseries_defconfig all
+    kmake "${KMAKE_ARGS[@]}" LD=${CROSS_COMPILE}ld distclean "${PSERIES_CONFIGS[@]}"
     KRNL_RC=${?}
-    log "powerpc pseries_defconfig $(results "${KRNL_RC}")"
+    if ${SC_DWERROR:=false}; then
+        scripts_config -e ${CTOE}
+        kmake "${KMAKE_ARGS[@]}" LD=${CROSS_COMPILE}ld olddefconfig all
+        KRNL_RC=${?}
+    fi
+    log "powerpc pseries_defconfig${LOG_COMMENT} $(results "${KRNL_RC}")"
     qemu_boot_kernel ppc64
-    log "powerpc pseries_defconfig qemu boot $(QEMU=1 results "${?}")"
+    log "powerpc pseries_defconfig qemu boot${LOG_COMMENT} $(QEMU=1 results "${?}")"
 
     CROSS_COMPILE=powerpc64-linux-gnu-
     KMAKE_ARGS=("ARCH=powerpc" "CROSS_COMPILE=${CROSS_COMPILE}")
