@@ -570,9 +570,12 @@ function build_arm64_kernels() {
     ${DEFCONFIGS_ONLY} && return 0
 
     CONFIGS_TO_DISABLE=()
+    grep -q 'prompt "Endianness"' "${LINUX_SRC}"/arch/arm64/Kconfig || CONFIGS_TO_DISABLE+=(CONFIG_CPU_BIG_ENDIAN)
+    # https://github.com/ClangBuiltLinux/linux/issues/1116
+    [[ -f ${LINUX_SRC}/drivers/media/platform/ti-vpe/cal-camerarx.c && ${LLVM_VER_CODE} -lt 110000 ]] && CONFIGS_TO_DISABLE+=(CONFIG_VIDEO_TI_CAL)
+    # https://github.com/ClangBuiltLinux/linux/issues/1243
     GPI_C=${LINUX_SRC}/drivers/dma/qcom/gpi.c
     { [[ -f ${GPI_C} ]] && grep -oPqz '(?s)static __always_inline void.*?gpi_update_reg' "${GPI_C}"; } || CONFIGS_TO_DISABLE+=(CONFIG_QCOM_GPI_DMA)
-    grep -q 'prompt "Endianness"' "${LINUX_SRC}"/arch/arm64/Kconfig || CONFIGS_TO_DISABLE+=(CONFIG_CPU_BIG_ENDIAN)
     if [[ -n ${CONFIGS_TO_DISABLE[*]} ]]; then
         CONFIG_FILE=$(mktemp --suffix=.config)
         LOG_COMMENT=""
@@ -1090,9 +1093,10 @@ function build_x86_64_kernels() {
         LOG_COMMENT=" + CONFIG_SENSORS_APPLESMC=n (https://github.com/ClangBuiltLinux/linux/issues/678)"
         scripts_config -d CONFIG_SENSORS_APPLESMC
     # https://github.com/ClangBuiltLinux/linux/issues/1116
-    elif [[ -f ${LINUX_SRC}/drivers/media/platform/ti-vpe/cal-camerarx.c ]]; then
-        LOG_COMMENT=" (minus CONFIG_VIDEO_TI_CAL due to https://github.com/ClangBuiltLinux/linux/issues/1116)"
-        scripts_config -d CONFIG_VIDEO_TI_CAL
+    elif [[ -f ${LINUX_SRC}/drivers/media/platform/ti-vpe/cal-camerarx.c && ${LLVM_VER_CODE} -lt 110000 ]]; then
+        CTOD=CONFIG_VIDEO_TI_CAL
+        LOG_COMMENT=" + ${CTOD}=n (https://github.com/ClangBuiltLinux/linux/issues/1116)"
+        scripts_config -d ${CTOD}
     else
         unset LOG_COMMENT
     fi
