@@ -778,7 +778,7 @@ function build_powerpc_kernels() {
         PSERIES_TARGETS+=(all)
     fi
     # https://github.com/ClangBuiltLinux/linux/issues/602
-    kmake "${KMAKE_ARGS[@]}" LD=${CROSS_COMPILE}ld distclean "${PSERIES_CONFIGS[@]}"
+    kmake "${KMAKE_ARGS[@]}" LD=${CROSS_COMPILE}ld distclean "${PSERIES_TARGETS[@]}"
     KRNL_RC=${?}
     if ${SC_DWERROR:=false}; then
         scripts_config -e ${CTOE}
