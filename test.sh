@@ -562,9 +562,9 @@ function build_arm64_kernels() {
         swap_endianness l2b
         kmake "${KMAKE_ARGS[@]}" olddefconfig all
         KRNL_RC=${?}
-        log "arm64 defconfig (plus CONFIG_CPU_BIG_ENDIAN=y) $(results "${KRNL_RC}")"
+        log "arm64 defconfig + CONFIG_CPU_BIG_ENDIAN=y $(results "${KRNL_RC}")"
         qemu_boot_kernel arm64be
-        log "arm64 defconfig (plus CONFIG_CPU_BIG_ENDIAN=y) qemu boot $(QEMU=1 results "${?}")"
+        log "arm64 defconfig + CONFIG_CPU_BIG_ENDIAN=y qemu boot $(QEMU=1 results "${?}")"
     fi
 
     ${DEFCONFIGS_ONLY} && return 0
@@ -672,9 +672,9 @@ function build_mips_kernels() {
         -e RANDOMIZE_BASE
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
     KRNL_RC=${?}
-    log "mips malta_kvm_guest_defconfig (plus CONFIG_RANDOMIZE_BASE=y) $(results "${KRNL_RC}")"
+    log "mips malta_kvm_guest_defconfig + CONFIG_RANDOMIZE_BASE=y $(results "${KRNL_RC}")"
     qemu_boot_kernel mipsel
-    log "mips malta_kvm_guest_defconfig (plus CONFIG_RANDOMIZE_BASE=y) qemu boot $(QEMU=1 results "${?}")"
+    log "mips malta_kvm_guest_defconfig + CONFIG_RANDOMIZE_BASE=y qemu boot $(QEMU=1 results "${?}")"
 
     # https://github.com/ClangBuiltLinux/linux/issues/1025
     KLOG=mips-malta
@@ -683,9 +683,9 @@ function build_mips_kernels() {
     swap_endianness l2b
     kmake "${KMAKE_ARGS[@]}" ${MIPS_BE_LD:+LD=${MIPS_BE_LD}} olddefconfig all
     KRNL_RC=${?}
-    log "mips malta_kvm_guest_defconfig (plus CONFIG_CPU_BIG_ENDIAN=y) $(results "${KRNL_RC}")"
+    log "mips malta_kvm_guest_defconfig + CONFIG_CPU_BIG_ENDIAN=y $(results "${KRNL_RC}")"
     qemu_boot_kernel mips
-    log "mips malta_kvm_guest_defconfig (plus CONFIG_CPU_BIG_ENDIAN=y) qemu boot $(QEMU=1 results "${?}")"
+    log "mips malta_kvm_guest_defconfig + CONFIG_CPU_BIG_ENDIAN=y qemu boot $(QEMU=1 results "${?}")"
 
     KLOG=mips-32r1
     kmake "${KMAKE_ARGS[@]}" ${MIPS_BE_LD:+LD=${MIPS_BE_LD}} distclean 32r1_defconfig all
