@@ -110,7 +110,7 @@ function build_llvm_binutils() {
 
     "${TC_BLD}"/build-llvm.py \
         --assertions \
-        --branch "${LLVM_BRANCH:=llvmorg-11.0.1}" \
+        --branch "${LLVM_BRANCH:=llvmorg-11.1.0}" \
         --check-targets clang lld llvm \
         --install-folder "${LLVM_PREFIX}" \
         "${BLD_LLVM_ARGS[@]}" || die "build-llvm.py failed" "${?}"
