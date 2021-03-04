@@ -430,7 +430,10 @@ function results() {
 function build_arm32_kernels() {
     local CROSS_COMPILE KMAKE_ARGS LOG_COMMENT
     CROSS_COMPILE=arm-linux-gnueabi-
-    KMAKE_ARGS=("ARCH=arm" "CROSS_COMPILE=${CROSS_COMPILE}")
+    KMAKE_ARGS=(
+        ARCH=arm
+        CROSS_COMPILE="${CROSS_COMPILE}"
+    )
 
     header "Building arm32 kernels"
 
@@ -541,7 +544,10 @@ function build_arm32_kernels() {
 function build_arm64_kernels() {
     local KMAKE_ARGS
     CROSS_COMPILE=aarch64-linux-gnu-
-    KMAKE_ARGS=("ARCH=arm64" "CROSS_COMPILE=${CROSS_COMPILE}")
+    KMAKE_ARGS=(
+        ARCH=arm64
+        CROSS_COMPILE="${CROSS_COMPILE}"
+    )
 
     header "Building arm64 kernels"
 
@@ -649,7 +655,10 @@ function build_arm64_kernels() {
 function build_mips_kernels() {
     local CROSS_COMPILE KMAKE_ARGS
     CROSS_COMPILE=mipsel-linux-gnu-
-    KMAKE_ARGS=("ARCH=mips" "CROSS_COMPILE=${CROSS_COMPILE}")
+    KMAKE_ARGS=(
+        ARCH=mips
+        CROSS_COMPILE="${CROSS_COMPILE}"
+    )
 
     header "Building mips kernels"
 
@@ -735,7 +744,10 @@ function build_mips_kernels() {
 function build_powerpc_kernels() {
     local CROSS_COMPILE CTOD KMAKE_ARGS LOG_COMMENT
     CROSS_COMPILE=powerpc-linux-gnu-
-    KMAKE_ARGS=("ARCH=powerpc" "CROSS_COMPILE=${CROSS_COMPILE}")
+    KMAKE_ARGS=(
+        ARCH=powerpc
+        CROSS_COMPILE="${CROSS_COMPILE}"
+    )
 
     header "Building powerpc kernels"
 
@@ -790,7 +802,10 @@ function build_powerpc_kernels() {
     log "powerpc pseries_defconfig qemu boot${LOG_COMMENT} $(QEMU=1 results "${?}")"
 
     CROSS_COMPILE=powerpc64-linux-gnu-
-    KMAKE_ARGS=("ARCH=powerpc" "CROSS_COMPILE=${CROSS_COMPILE}")
+    KMAKE_ARGS=(
+        ARCH=powerpc
+        CROSS_COMPILE="${CROSS_COMPILE}"
+    )
 
     KLOG=powerpc64le-powernv_defconfig
     kmake "${KMAKE_ARGS[@]}" distclean powernv_defconfig all
@@ -801,7 +816,10 @@ function build_powerpc_kernels() {
 
     # https://github.com/ClangBuiltLinux/linux/issues/666
     # https://github.com/ClangBuiltLinux/linux/issues/811
-    PPC64LE_ARGS=("LD=${CROSS_COMPILE}ld" "OBJDUMP=${CROSS_COMPILE}objdump")
+    PPC64LE_ARGS=(
+        LD="${CROSS_COMPILE}"ld
+        OBJDUMP="${CROSS_COMPILE}"objdump
+    )
 
     KLOG=powerpc64le-defconfig
     kmake "${KMAKE_ARGS[@]}" "${PPC64LE_ARGS[@]}" distclean ppc64le_defconfig all
@@ -858,7 +876,10 @@ function build_powerpc_kernels() {
 function build_riscv_kernels() {
     local KMAKE_ARGS
     CROSS_COMPILE=riscv64-linux-gnu-
-    KMAKE_ARGS=("ARCH=riscv" "CROSS_COMPILE=${CROSS_COMPILE}")
+    KMAKE_ARGS=(
+        ARCH=riscv
+        CROSS_COMPILE="${CROSS_COMPILE}"
+    )
 
     # riscv did not build properly for Linux prior to 5.7 and there is an
     # inordinate amount of spam about '-save-restore' before LLVM 11: https://llvm.org/pr44853
@@ -919,12 +940,12 @@ function build_s390x_kernels() {
     # Disable it so that real issues/errors can be found
     # TODO: Investigate and file a bug or fix
     KMAKE_ARGS=(
-        "ARCH=s390"
-        "CROSS_COMPILE=${CROSS_COMPILE}"
-        "KCFLAGS=-Wno-address-of-packed-member"
-        "LD=${CROSS_COMPILE}ld"
-        "OBJCOPY=${CROSS_COMPILE}objcopy"
-        "OBJDUMP=${CROSS_COMPILE}objdump"
+        ARCH=s390
+        CROSS_COMPILE="${CROSS_COMPILE}"
+        KCFLAGS=-Wno-address-of-packed-member
+        LD="${CROSS_COMPILE}"ld
+        OBJCOPY="${CROSS_COMPILE}"objcopy
+        OBJDUMP="${CROSS_COMPILE}"objdump
     )
 
     # s390 did not build properly until Linux 5.6
@@ -1184,7 +1205,12 @@ function build_x86_64_kernels() {
 # Build Sami Tolvanen's LTO/CFI tree
 function build_lto_cfi_kernels() {
     local KMAKE_ARGS
-    KMAKE_ARGS=("ARCH=arm64" "CROSS_COMPILE=aarch64-linux-gnu-" "LLVM=1" "LLVM_IAS=1")
+    KMAKE_ARGS=(
+        ARCH=arm64
+        CROSS_COMPILE=aarch64-linux-gnu-
+        LLVM=1
+        LLVM_IAS=1
+    )
 
     [[ ${LLVM_VER_CODE} -ge 110000 ]] || return 0
 
