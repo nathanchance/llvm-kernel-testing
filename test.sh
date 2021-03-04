@@ -246,6 +246,15 @@ function scripts_config() {
     set +x
 }
 
+function merge_config() {
+    case "${*}" in
+        *"-s "*) ;;
+        *) set -x ;;
+    esac
+    "${LINUX_SRC}"/scripts/kconfig/merge_config.sh -m -O "${OUT:?}" "${OUT}"/.config "${@}"
+    set +x
+}
+
 # Set up an out of tree config
 function setup_config() {
     # Cleanup the previous artifacts
@@ -1217,26 +1226,28 @@ function build_lto_cfi_kernels() {
     header "Building LTO/CFI kernels"
 
     # Grab the latest kernel source
-    LINUX_SRC=${SRC}/linux-clang-cfi
-    OUT=${LINUX_SRC}/out
-    rm -rf "${LINUX_SRC}"
-    curl -LSso "${LINUX_SRC}.zip" https://github.com/samitolvanen/linux/archive/clang-cfi.zip
-    (cd "${SRC}" && unzip -q "${LINUX_SRC}.zip")
-    rm -rf "${LINUX_SRC}.zip"
+    LINUX_SRC=${SRC}/linux/clang-cfi
+    OUT=${LINUX_SRC}/build
+    [[ -d ${LINUX_SRC} ]] || git clone -b clang-cfi https://github.com/samitolvanen/linux "${LINUX_SRC}"
+    git -C "${LINUX_SRC}" remote update || return ${?}
+    git -C "${LINUX_SRC}" reset --hard origin/clang-cfi
+
+    TMP_CONFIG=$(mktemp --suffix=.config)
 
     # arm64
     KLOG=arm64-lto-cfi
     kmake "${KMAKE_ARGS[@]}" distclean defconfig
-    scripts_config \
-        -d LTO_NONE \
-        -e LTO_CLANG_THIN \
-        -e CFI_CLANG \
-        -e SHADOW_CALL_STACK \
-        -e FTRACE \
-        -e FUNCTION_TRACER \
-        -e DYNAMIC_FTRACE \
-        -e LOCK_TORTURE_TEST \
-        -e RCU_TORTURE_TEST
+    cat <<EOF >"${TMP_CONFIG}"
+CONFIG_CFI_CLANG=y
+CONFIG_DYNAMIC_FTRACE=y
+CONFIG_FTRACE=y
+CONFIG_FUNCTION_TRACER=y
+CONFIG_LOCK_TORTURE_TEST=y
+CONFIG_LTO_CLANG_THIN=y
+CONFIG_RCU_TORTURE_TEST=y
+CONFIG_SHADOW_CALL_STACK=y
+EOF
+    merge_config "${TMP_CONFIG}"
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
     KRNL_RC=${?}
     log "arm64 LTO+CFI+SCS config $(results "${KRNL_RC}")"
@@ -1246,20 +1257,23 @@ function build_lto_cfi_kernels() {
     # x86_64
     KLOG=x86_64-lto-cfi
     kmake LLVM=1 LLVM_IAS=1 distclean defconfig
-    scripts_config \
-        -d LTO_NONE \
-        -e LTO_CLANG_THIN \
-        -e CFI_CLANG \
-        -e KVM \
-        -e KVM_AMD \
-        -e KVM_INTEL \
-        -e LOCK_TORTURE_TEST \
-        -e RCU_TORTURE_TEST
+    cat <<EOF >"${TMP_CONFIG}"
+CONFIG_CFI_CLANG=y
+CONFIG_LOCK_TORTURE_TEST=y
+CONFIG_KVM=y
+CONFIG_KVM_AMD=y
+CONFIG_KVM_INTEL=y
+CONFIG_LTO_CLANG_THIN=y
+CONFIG_RCU_TORTURE_TEST=y
+EOF
+    merge_config "${TMP_CONFIG}"
     kmake LLVM=1 LLVM_IAS=1 olddefconfig all
     KRNL_RC=${?}
     log "x86_64 LTO+CFI config $(results "${KRNL_RC}")"
     qemu_boot_kernel x86_64
     log "x86_64 LTO+CFI config qemu boot $(QEMU=1 results "${?}")"
+
+    rm "${TMP_CONFIG}"
 }
 
 # Print LLVM/clang version as a 5-6 digit number (e.g. clang 11.0.0 will be 110000)
