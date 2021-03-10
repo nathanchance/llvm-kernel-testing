@@ -1211,8 +1211,7 @@ function build_x86_64_kernels() {
     log "x86_64 opensuse config${LOG_COMMENT} qemu boot $(QEMU=1 results "${?}")"
 }
 
-# Build Sami Tolvanen's LTO/CFI tree
-function build_lto_cfi_kernels() {
+function build_arm64_lto_cfi_kernels() {
     local KMAKE_ARGS
     KMAKE_ARGS=(
         ARCH=arm64
@@ -1221,20 +1220,8 @@ function build_lto_cfi_kernels() {
         LLVM_IAS=1
     )
 
-    [[ ${LLVM_VER_CODE} -ge 110000 ]] || return 0
+    header "Building arm64 LTO/CFI kernels"
 
-    header "Building LTO/CFI kernels"
-
-    # Grab the latest kernel source
-    LINUX_SRC=${SRC}/linux/clang-cfi
-    OUT=${LINUX_SRC}/build
-    [[ -d ${LINUX_SRC} ]] || git clone -b clang-cfi https://github.com/samitolvanen/linux "${LINUX_SRC}"
-    git -C "${LINUX_SRC}" remote update || return ${?}
-    git -C "${LINUX_SRC}" reset --hard origin/clang-cfi
-
-    TMP_CONFIG=$(mktemp --suffix=.config)
-
-    # arm64
     KLOG=arm64-lto-cfi
     kmake "${KMAKE_ARGS[@]}" distclean defconfig
     cat <<EOF >"${TMP_CONFIG}"
@@ -1250,12 +1237,15 @@ EOF
     merge_config "${TMP_CONFIG}"
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
     KRNL_RC=${?}
-    log "arm64 LTO+CFI+SCS config $(results "${KRNL_RC}")"
+    log "arm64 defconfig+LTO+CFI+SCS $(results "${KRNL_RC}")"
     qemu_boot_kernel arm64
-    log "arm64 LTO+CFI+SCS config qemu boot $(QEMU=1 results "${?}")"
+    log "arm64 defconfig+LTO+CFI+SCS qemu boot $(QEMU=1 results "${?}")"
+}
 
-    # x86_64
-    KLOG=x86_64-lto-cfi
+function build_x86_64_lto_cfi_kernels() {
+    header "Building x86_64 LTO/CFI kernels"
+
+    KLOG=x86_64-lto-cfi-defconfig
     kmake LLVM=1 LLVM_IAS=1 distclean defconfig
     cat <<EOF >"${TMP_CONFIG}"
 CONFIG_CFI_CLANG=y
@@ -1269,10 +1259,39 @@ EOF
     merge_config "${TMP_CONFIG}"
     kmake LLVM=1 LLVM_IAS=1 olddefconfig all
     KRNL_RC=${?}
-    log "x86_64 LTO+CFI config $(results "${KRNL_RC}")"
+    log "x86_64 defconfig+LTO+CFI $(results "${KRNL_RC}")"
     qemu_boot_kernel x86_64
     log "x86_64 LTO+CFI config qemu boot $(QEMU=1 results "${?}")"
+}
 
+# Build Sami Tolvanen's LTO/CFI tree
+function build_lto_cfi_kernels() {
+    [[ ${LLVM_VER_CODE} -ge 110000 ]] || return 0
+
+    header "Updating LTO/CFI kernel source"
+
+    # Grab the latest kernel source
+    LINUX_SRC=${SRC}/linux-clang-cfi
+    OUT=${LINUX_SRC}/build
+    [[ -d ${LINUX_SRC} ]] || git clone -b clang-cfi https://github.com/samitolvanen/linux "${LINUX_SRC}"
+    git -C "${LINUX_SRC}" remote update || return ${?}
+    git -C "${LINUX_SRC}" reset --hard origin/clang-cfi
+
+    TMP_CONFIG=$(mktemp --suffix=.config)
+    for ARCH in "${ARCHES[@]}"; do
+        case ${ARCH} in
+            arm64 | x86_64)
+                OUT=$(cd "${LINUX_SRC}" && readlink -f -m "${O:-build}")/${ARCH}
+                if ! check_clang_target "${ARCH}"; then
+                    header "Skipping ${ARCH} LTO/CFI kernels"
+                    echo "Reason: clang was not configured with this target"
+                    continue
+                fi
+                build_"${ARCH}"_lto_cfi_kernels || exit ${?}
+                ;;
+            *) ;;
+        esac
+    done
     rm "${TMP_CONFIG}"
 }
 
