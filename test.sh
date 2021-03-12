@@ -676,34 +676,38 @@ function build_mips_kernels() {
 
     # Upstream
     KLOG=mipsel-malta
-    kmake "${KMAKE_ARGS[@]}" distclean malta_kvm_guest_defconfig all
+    kmake "${KMAKE_ARGS[@]}" distclean malta_defconfig
+    scripts_config -e BLK_DEV_INITRD
+    kmake "${KMAKE_ARGS[@]}" olddefconfig all
     KRNL_RC=${?}
-    log "mips malta_kvm_guest_defconfig $(results "${KRNL_RC}")"
+    log "mips malta_defconfig + CONFIG_BLK_DEV_INITRD=y $(results "${KRNL_RC}")"
     qemu_boot_kernel mipsel
-    log "mips malta_kvm_guest_defconfig qemu boot $(QEMU=1 results "${?}")"
+    log "mips malta_defconfig + CONFIG_BLK_DEV_INITRD=y qemu boot $(QEMU=1 results "${?}")"
 
     KLOG=mipsel-malta-kaslr
-    kmake "${KMAKE_ARGS[@]}" distclean malta_kvm_guest_defconfig
+    kmake "${KMAKE_ARGS[@]}" distclean malta_defconfig
     scripts_config \
+        -e BLK_DEV_INITRD \
         -e RELOCATABLE \
         --set-val RELOCATION_TABLE_SIZE 0x00200000 \
         -e RANDOMIZE_BASE
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
     KRNL_RC=${?}
-    log "mips malta_kvm_guest_defconfig + CONFIG_RANDOMIZE_BASE=y $(results "${KRNL_RC}")"
+    log "mips malta_defconfig + CONFIG_BLK_DEV_INITRD=y + CONFIG_RANDOMIZE_BASE=y $(results "${KRNL_RC}")"
     qemu_boot_kernel mipsel
-    log "mips malta_kvm_guest_defconfig + CONFIG_RANDOMIZE_BASE=y qemu boot $(QEMU=1 results "${?}")"
+    log "mips malta_defconfig + CONFIG_BLK_DEV_INITRD=y + CONFIG_RANDOMIZE_BASE=y qemu boot $(QEMU=1 results "${?}")"
 
     # https://github.com/ClangBuiltLinux/linux/issues/1025
     KLOG=mips-malta
     [[ -f ${LINUX_SRC}/arch/mips/vdso/Kconfig && ${LLVM_VER_CODE} -lt 130000 ]] && MIPS_BE_LD=${CROSS_COMPILE}ld
-    kmake "${KMAKE_ARGS[@]}" ${MIPS_BE_LD:+LD=${MIPS_BE_LD}} distclean malta_kvm_guest_defconfig
+    kmake "${KMAKE_ARGS[@]}" ${MIPS_BE_LD:+LD=${MIPS_BE_LD}} distclean malta_defconfig
+    scripts_config -e BLK_DEV_INITRD
     swap_endianness l2b
     kmake "${KMAKE_ARGS[@]}" ${MIPS_BE_LD:+LD=${MIPS_BE_LD}} olddefconfig all
     KRNL_RC=${?}
-    log "mips malta_kvm_guest_defconfig + CONFIG_CPU_BIG_ENDIAN=y $(results "${KRNL_RC}")"
+    log "mips malta_defconfig + CONFIG_BLK_DEV_INITRD=y + CONFIG_CPU_BIG_ENDIAN=y $(results "${KRNL_RC}")"
     qemu_boot_kernel mips
-    log "mips malta_kvm_guest_defconfig + CONFIG_CPU_BIG_ENDIAN=y qemu boot $(QEMU=1 results "${?}")"
+    log "mips malta_defconfig + CONFIG_BLK_DEV_INITRD=y + CONFIG_CPU_BIG_ENDIAN=y qemu boot $(QEMU=1 results "${?}")"
 
     KLOG=mips-32r1
     kmake "${KMAKE_ARGS[@]}" ${MIPS_BE_LD:+LD=${MIPS_BE_LD}} distclean 32r1_defconfig all
