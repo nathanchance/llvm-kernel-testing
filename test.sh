@@ -359,6 +359,11 @@ function setup_config() {
         SCRIPTS_CONFIG_ARGS+=(-e POWER_RESET_SC27XX)
     fi
 
+    # CONFIG_PVPANIC as a module is invalid after https://git.kernel.org/gregkh/char-misc/c/6861d27cf590d20a95b5d0724ac3768583b62947
+    if [[ "$(scripts_config -s PVPANIC)" = "m" && -f ${LINUX_SRC}/drivers/misc/pvpanic/Kconfig ]]; then
+        SCRIPTS_CONFIG_ARGS+=(-e PVPANIC -m PVPANIC_MMIO)
+    fi
+
     # CONFIG_QCOM_RPMPD as a module is invalid before https://git.kernel.org/linus/f29808b2fb85a7ff2d4830aa1cb736c8c9b986f4
     if [[ "$(scripts_config -s QCOM_RPMPD)" = "m" ]] &&
         grep -q 'bool "Qualcomm RPM Power domain driver"' "${LINUX_SRC}"/drivers/soc/qcom/Kconfig; then
