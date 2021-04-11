@@ -255,6 +255,22 @@ function merge_config() {
     set +x
 }
 
+function handle_bpf_configs() {
+    # CONFIG_DEBUG_INFO_BTF has two conditions:
+    #
+    #   * pahole needs to be available
+    #
+    #   * The kernel needs https://git.kernel.org/linus/90ceddcb495008ac8ba7a3dce297841efcd7d584,
+    #     which is first available in 5.7: https://github.com/ClangBuiltLinux/linux/issues/871
+    #
+    # If either of those conditions are false, we need to disable this config so
+    # that the build does not error.
+    (command -v pahole &>/dev/null && [[ ${LNX_VER_CODE} -ge 507000 ]]) || scripts_config -d CONFIG_DEBUG_INFO_BTF
+
+    # https://lore.kernel.org/bpf/20201119085022.3606135-1-davidgow@google.com/
+    [[ "$(scripts_config -s BPF_PRELOAD)" = "y" ]] && scripts_config -d BPF_PRELOAD
+}
+
 # Set up an out of tree config
 function setup_config() {
     # Cleanup the previous artifacts
@@ -263,6 +279,8 @@ function setup_config() {
 
     # Grab the config we are testing
     cp -v "${BASE}"/configs/"${1:?}" "${OUT}"/.config
+
+    handle_bpf_configs
 
     # Some distro configs have options that are specific to their distro,
     # which will break in a generic environment
@@ -276,24 +294,8 @@ function setup_config() {
             [[ "$(scripts_config -s ASHMEM)" = "m" ]] && scripts_config -e ASHMEM
             ;;
 
-        # Arch Linux, Fedora, and OpenSUSE enable BTF, which has to be handled in a special manner:
-        #
-        #   * pahole needs to be available
-        #
-        #   * The kernel needs https://git.kernel.org/linus/90ceddcb495008ac8ba7a3dce297841efcd7d584,
-        #     which is first available in 5.7: https://github.com/ClangBuiltLinux/linux/issues/871
-        #
-        # If either of those conditions are false, we need to disable this config so
-        # that the build does not error.
-        archlinux/* | fedora/* | opensuse/*)
-            if ! (command -v pahole &>/dev/null && [[ ${LNX_VER_CODE} -ge 507000 ]]); then
-                scripts_config -d CONFIG_DEBUG_INFO_BTF
-            fi
-            if [[ ${1%/*} = "archlinux" ]]; then
-                [[ -z "$(scripts_config -s CONFIG_EXTRA_FIRMWARE)" ]] || scripts_config -u CONFIG_EXTRA_FIRMWARE
-            fi
-            # https://lore.kernel.org/bpf/20201119085022.3606135-1-davidgow@google.com/
-            [[ "$(scripts_config -s BPF_PRELOAD)" = "y" ]] && scripts_config -d BPF_PRELOAD
+        archlinux/*)
+            [[ -z "$(scripts_config -s CONFIG_EXTRA_FIRMWARE)" ]] || scripts_config -u CONFIG_EXTRA_FIRMWARE
             ;;
     esac
 
