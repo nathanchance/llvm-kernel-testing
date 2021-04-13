@@ -349,6 +349,12 @@ function setup_config() {
         SCRIPTS_CONFIG_ARGS+=(-e MTD_NAND_ECC_SW_HAMMING)
     fi
 
+    # CONFIG_PCI_EXYNOS as a module is invalid before https://git.kernel.org/linus/778f7c194b1dac351d345ce723f8747026092949
+    if [[ "$(scripts_config -s PCI_EXYNOS)" = "m" ]] &&
+        grep -q 'bool "Samsung Exynos PCIe controller"' "${LINUX_SRC}"/drivers/pci/controller/dwc/Kconfig; then
+        SCRIPTS_CONFIG_ARGS+=(-e PCI_EXYNOS)
+    fi
+
     # CONFIG_PCI_MESON as a module is invalid before https://git.kernel.org/linus/a98d2187efd9e6d554efb50e3ed3a2983d340fe5
     if [[ "$(scripts_config -s PCI_MESON)" = "m" ]] &&
         grep -q 'bool "MESON PCIe controller"' "${LINUX_SRC}"/drivers/pci/controller/dwc/Kconfig; then
@@ -359,6 +365,12 @@ function setup_config() {
     if [[ "$(scripts_config -s POWER_RESET_SC27XX)" = "m" ]] &&
         grep -q 'bool "Spreadtrum SC27xx PMIC power-off driver"' "${LINUX_SRC}"/drivers/power/reset/Kconfig; then
         SCRIPTS_CONFIG_ARGS+=(-e POWER_RESET_SC27XX)
+    fi
+
+    # CONFIG_PROC_THERMAL_MMIO_RAPL as a module is invalid before https://git.kernel.org/linus/a5923b6c3137b9d4fc2ea1c997f6e4d51ac5d774
+    if [[ "$(scripts_config -s PROC_THERMAL_MMIO_RAPL)" = "m" ]] &&
+        grep -oPqz '(?s)config PROC_THERMAL_MMIO_RAPL.*?tristate' "${LINUX_SRC}"/drivers/thermal/intel/int340x_thermal/Kconfig; then
+        SCRIPTS_CONFIG_ARGS+=(-e PROC_THERMAL_MMIO_RAPL)
     fi
 
     # CONFIG_PVPANIC as a module is invalid after https://git.kernel.org/gregkh/char-misc/c/6861d27cf590d20a95b5d0724ac3768583b62947
@@ -376,6 +388,12 @@ function setup_config() {
     if [[ "$(scripts_config -s QCOM_RPMHPD)" = "m" ]] &&
         grep -q 'bool "Qualcomm RPMh Power domain driver"' "${LINUX_SRC}"/drivers/soc/qcom/Kconfig; then
         SCRIPTS_CONFIG_ARGS+=(-e QCOM_RPMHPD)
+    fi
+
+    # CONFIG_RESET_MESON as a module is invalid before https://git.kernel.org/linus/3bfe8933f9d187f93f0d0910b741a59070f58c4c
+    if [[ "$(scripts_config -s RESET_MESON)" = "m" ]] &&
+        grep -q 'bool "Meson Reset Driver" if COMPILE_TEST' "${LINUX_SRC}"/drivers/reset/Kconfig; then
+        SCRIPTS_CONFIG_ARGS+=(-e RESET_MESON)
     fi
 
     # CONFIG_RTW88_8822BE as a module is invalid before https://git.kernel.org/linus/416e87fcc780cae8d72cb9370fa0f46007faa69a
@@ -400,6 +418,18 @@ function setup_config() {
     if [[ "$(scripts_config -s SND_SOC_SPRD_MCDT)" = "m" ]] &&
         grep -q 'bool "Spreadtrum multi-channel data transfer support"' "${LINUX_SRC}"/sound/soc/sprd/Kconfig; then
         SCRIPTS_CONFIG_ARGS+=(-e SND_SOC_SPRD_MCDT)
+    fi
+
+    # CONFIG_TEGRA124_EMC as a module is invalid before https://git.kernel.org/linus/281462e593483350d8072a118c6e072c550a80fa
+    if [[ "$(scripts_config -s TEGRA124_EMC)" = "m" ]] &&
+        grep -q 'bool "NVIDIA Tegra124 External Memory Controller driver"' "${LINUX_SRC}"/drivers/memory/tegra/Kconfig; then
+        SCRIPTS_CONFIG_ARGS+=(-e TEGRA124_EMC)
+    fi
+
+    # CONFIG_TEGRA20_EMC as a module is invalid before https://git.kernel.org/linus/0260979b018faaf90ff5a7bb04ac3f38e9dee6e3
+    if [[ "$(scripts_config -s TEGRA20_EMC)" = "m" ]] &&
+        grep -q 'bool "NVIDIA Tegra20 External Memory Controller driver"' "${LINUX_SRC}"/drivers/memory/tegra/Kconfig; then
+        SCRIPTS_CONFIG_ARGS+=(-e TEGRA20_EMC)
     fi
 
     # CONFIG_TI_CPTS as a module is invalid before https://git.kernel.org/linus/92db978f0d686468e527d49268e7c7e8d97d334b
