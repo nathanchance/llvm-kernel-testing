@@ -517,6 +517,15 @@ function build_arm32_kernels() {
     kmake "${KMAKE_ARGS[@]}" ${CONFIG_FILE:+KCONFIG_ALLCONFIG=${CONFIG_FILE}} distclean allyesconfig all
     log "arm32 allyesconfig${LOG_COMMENT} $(results "${?}")"
 
+    # Alpine Linux
+    KLOG=arm32-alpine
+    setup_config alpine/armv7.config
+    kmake "${KMAKE_ARGS[@]}" olddefconfig all
+    KRNL_RC=${?}
+    log "armv7 alpine config $(results "${KRNL_RC}")"
+    qemu_boot_kernel arm32_v7
+    log "armv7 alpine config qemu boot $(QEMU=1 results "${?}")"
+
     # Arch Linux ARM
     KLOG=arm32-v5-archlinux
     setup_config archlinux/armv5.config
@@ -622,6 +631,17 @@ function build_arm64_kernels() {
     KLOG=arm64-allyesconfig
     kmake "${KMAKE_ARGS[@]}" ${CONFIG_FILE:+KCONFIG_ALLCONFIG=${CONFIG_FILE}} distclean allyesconfig all
     log "arm64 allyesconfig${LOG_COMMENT} $(results "${?}")"
+
+    # Alpine Linux
+    KLOG=arm64-alpine
+    setup_config alpine/aarch64.config
+    # https://lore.kernel.org/r/20210413200057.ankb4e26ytgal7ev@archlinux-ax161/
+    scripts_configs -e PERF_EVENTS
+    kmake "${KMAKE_ARGS[@]}" olddefconfig all
+    KRNL_RC=${?}
+    log "arm64 alpine config $(results "${KRNL_RC}")"
+    qemu_boot_kernel arm64
+    log "arm64 alpine config qemu boot $(QEMU=1 results "${?}")"
 
     # Arch Linux ARM
     KLOG=arm64-archlinux
@@ -1161,6 +1181,22 @@ function build_x86_64_kernels() {
     fi
     kmake olddefconfig all KCFLAGS="${KCFLAGS:+${KCFLAGS} }-O3"
     log "x86_64 allyesconfig at -O3${LOG_COMMENT} $(results "${?}")"
+
+    # Alpine Linux
+    KLOG=x86_64-alpine
+    setup_config alpine/x86_64.config
+    # https://github.com/ClangBuiltLinux/linux/issues/515
+    if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
+        LOG_COMMENT=" + CONFIG_STM=n (https://github.com/ClangBuiltLinux/linux/issues/515)"
+        scripts_config -d CONFIG_STM
+    else
+        unset LOG_COMMENT
+    fi
+    kmake olddefconfig all
+    KRNL_RC=${?}
+    log "x86_64 alpine config${LOG_COMMENT} $(results "${KRNL_RC}")"
+    qemu_boot_kernel x86_64
+    log "x86_64 alpine config${LOG_COMMENT} qemu boot $(QEMU=1 results "${?}")"
 
     # Arch Linux
     KLOG=x86_64-archlinux
