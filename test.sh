@@ -666,7 +666,7 @@ function build_arm64_kernels() {
     KLOG=arm64-alpine
     setup_config alpine/aarch64.config
     # https://lore.kernel.org/r/20210413200057.ankb4e26ytgal7ev@archlinux-ax161/
-    scripts_configs -e PERF_EVENTS
+    scripts_config -e PERF_EVENTS
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
     KRNL_RC=${?}
     log "arm64 alpine config $(results "${KRNL_RC}")"
