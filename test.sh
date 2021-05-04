@@ -369,7 +369,7 @@ function setup_config() {
 
     # CONFIG_PROC_THERMAL_MMIO_RAPL as a module is invalid before https://git.kernel.org/linus/a5923b6c3137b9d4fc2ea1c997f6e4d51ac5d774
     if [[ "$(scripts_config -s PROC_THERMAL_MMIO_RAPL)" = "m" ]] &&
-        grep -oPqz '(?s)config PROC_THERMAL_MMIO_RAPL.*?tristate' "${LINUX_SRC}"/drivers/thermal/intel/int340x_thermal/Kconfig; then
+        grep -oPqz '(?s)config PROC_THERMAL_MMIO_RAPL.*?bool' "${LINUX_SRC}"/drivers/thermal/intel/int340x_thermal/Kconfig; then
         SCRIPTS_CONFIG_ARGS+=(-e PROC_THERMAL_MMIO_RAPL)
     fi
 
@@ -430,6 +430,12 @@ function setup_config() {
     if [[ "$(scripts_config -s TEGRA20_EMC)" = "m" ]] &&
         grep -q 'bool "NVIDIA Tegra20 External Memory Controller driver"' "${LINUX_SRC}"/drivers/memory/tegra/Kconfig; then
         SCRIPTS_CONFIG_ARGS+=(-e TEGRA20_EMC)
+    fi
+
+    # CONFIG_TEGRA30_EMC as a module is invalid before https://git.kernel.org/linus/0c56eda86f8cad705d7d14e81e0e4efaeeaf4613
+    if [[ "$(scripts_config -s TEGRA30_EMC)" = "m" ]] &&
+        grep -q 'bool "NVIDIA Tegra30 External Memory Controller driver"' "${LINUX_SRC}"/drivers/memory/tegra/Kconfig; then
+        SCRIPTS_CONFIG_ARGS+=(-e TEGRA30_EMC)
     fi
 
     # CONFIG_TI_CPTS as a module is invalid before https://git.kernel.org/linus/92db978f0d686468e527d49268e7c7e8d97d334b
