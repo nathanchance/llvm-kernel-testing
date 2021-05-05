@@ -1091,11 +1091,17 @@ function build_s390x_kernels() {
     # Fedora
     KLOG=s390x-fedora
     setup_config fedora/s390x.config
+    if grep -Eq '"(o|n|x)i.*%0,%b1.*n"' "${LINUX_SRC}"/arch/s390/include/asm/bitops.h; then
+        LOG_COMMENT=" + CONFIG_MARCH_Z196=y"
+        scripts_config -d MARCH_ZEC12 -e MARCH_Z196
+    else
+        unset LOG_COMMENT
+    fi
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
     KRNL_RC=${?}
-    log "s390x fedora config $(results "${KRNL_RC}")"
+    log "s390x fedora config${LOG_COMMENT} $(results "${KRNL_RC}")"
     qemu_boot_kernel s390
-    log "s390x fedora config qemu boot $(QEMU=1 results "${?}")"
+    log "s390x fedora config${LOG_COMMENT} qemu boot $(QEMU=1 results "${?}")"
 
     # OpenSUSE
     KLOG=s390x-opensuse
