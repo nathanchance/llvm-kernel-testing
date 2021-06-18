@@ -609,6 +609,7 @@ function build_arm64_kernels() {
         ARCH=arm64
         CROSS_COMPILE="${CROSS_COMPILE}"
     )
+    [[ ${LNX_VER_CODE} -gt 510000 && ${LLVM_VER_CODE} -gt 110000 ]] && KMAKE_ARGS+=(LLVM_IAS=1)
 
     header "Building arm64 kernels"
 
@@ -1177,6 +1178,8 @@ function build_x86_64_kernels() {
     local LOG_COMMENT
     header "Building x86_64 kernels"
 
+    [[ ${LNX_VER_CODE} -gt 510000 && ${LLVM_VER_CODE} -gt 110000 ]] && export LLVM_IAS=1
+
     unset CROSS_COMPILE
     print_binutils_info
     echo
@@ -1298,6 +1301,8 @@ function build_x86_64_kernels() {
     log "x86_64 opensuse config${LOG_COMMENT} $(results "${KRNL_RC}")"
     qemu_boot_kernel x86_64
     log "x86_64 opensuse config${LOG_COMMENT} qemu boot $(QEMU=1 results "${?}")"
+
+    unset LLVM_IAS
 }
 
 function build_arm64_lto_cfi_kernels() {
