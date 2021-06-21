@@ -1073,7 +1073,13 @@ function build_s390x_kernels() {
         KLOG=s390x-allyesconfig
         kmake "${KMAKE_ARGS[@]}" distclean allyesconfig
         # https://github.com/ClangBuiltLinux/linux/issues/1213
-        grep -q "config UBSAN_MISC" "${LINUX_SRC}"/lib/Kconfig.ubsan || scripts_config -d ${CTOD}
+        if ! grep -q "config UBSAN_MISC" "${LINUX_SRC}"/lib/Kconfig.ubsan && ! grep -q "depends on HAS_IOMEM" "${LINUX_SRC}"/init/Kconfig; then
+            CTOD=CONFIG_UBSAN_TRAP
+            LOG_COMMENT=" + ${CTOD}=n (https://github.com/ClangBuiltLinux/linux/issues/1213)"
+            scripts_config -d ${CTOD}
+        else
+            unset LOG_COMMENT
+        fi
         kmake "${KMAKE_ARGS[@]}" olddefconfig all
         log "s390x allyesconfig${LOG_COMMENT} $(results "${?}")"
     else
