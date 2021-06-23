@@ -878,7 +878,7 @@ function build_powerpc_kernels() {
     KLOG=powerpc64-pseries_defconfig
     PSERIES_TARGETS=(pseries_defconfig)
     # https://github.com/ClangBuiltLinux/linux/issues/1292
-    if [[ ${LLVM_VER_CODE} -ge 120000 ]]; then
+    if ! grep -q "noinline_for_stack void byteswap_pt_regs" "${LINUX_SRC}"/arch/powerpc/kvm/book3s_hv_nested.c && [[ ${LLVM_VER_CODE} -ge 120000 ]]; then
         CTOE=CONFIG_PPC_DISABLE_WERROR
         if [[ -f ${LINUX_SRC}/arch/powerpc/configs/disable-werror.config ]]; then
             PSERIES_TARGETS+=(disable-werror.config all)
