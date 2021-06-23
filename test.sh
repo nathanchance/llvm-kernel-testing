@@ -635,6 +635,29 @@ function build_arm64_kernels() {
         log "arm64 defconfig + CONFIG_CPU_BIG_ENDIAN=y qemu boot $(QEMU=1 results "${?}")"
     fi
 
+    if grep -q "config CFI_CLANG" "${LINUX_SRC}" && [[ ${LLVM_VER_CODE} -ge 120000 ]]; then
+        KLOG=arm64-lto-cfi-scs
+        kmake "${KMAKE_ARGS[@]}" distclean defconfig
+        TMP_CONFIG=$(mktemp --suffix=.config)
+        cat <<EOF >"${TMP_CONFIG}"
+CONFIG_CFI_CLANG=y
+CONFIG_DYNAMIC_FTRACE=y
+CONFIG_FTRACE=y
+CONFIG_FUNCTION_TRACER=y
+CONFIG_LOCK_TORTURE_TEST=y
+CONFIG_LTO_CLANG_THIN=y
+CONFIG_RCU_TORTURE_TEST=y
+CONFIG_SHADOW_CALL_STACK=y
+EOF
+        merge_config "${TMP_CONFIG}"
+        kmake "${KMAKE_ARGS[@]}" olddefconfig all
+        KRNL_RC=${?}
+        log "arm64 defconfig+LTO+CFI+SCS $(results "${KRNL_RC}")"
+        qemu_boot_kernel arm64
+        log "arm64 defconfig+LTO+CFI+SCS qemu boot $(QEMU=1 results "${?}")"
+        rm "${TMP_CONFIG}"
+    fi
+
     ${DEFCONFIGS_ONLY} && return 0
 
     CONFIGS_TO_DISABLE=()
@@ -1311,37 +1334,6 @@ function build_x86_64_kernels() {
     unset LLVM_IAS
 }
 
-function build_arm64_lto_cfi_kernels() {
-    local KMAKE_ARGS
-    KMAKE_ARGS=(
-        ARCH=arm64
-        CROSS_COMPILE=aarch64-linux-gnu-
-        LLVM=1
-        LLVM_IAS=1
-    )
-
-    header "Building arm64 LTO/CFI kernels"
-
-    KLOG=arm64-lto-cfi
-    kmake "${KMAKE_ARGS[@]}" distclean defconfig
-    cat <<EOF >"${TMP_CONFIG}"
-CONFIG_CFI_CLANG=y
-CONFIG_DYNAMIC_FTRACE=y
-CONFIG_FTRACE=y
-CONFIG_FUNCTION_TRACER=y
-CONFIG_LOCK_TORTURE_TEST=y
-CONFIG_LTO_CLANG_THIN=y
-CONFIG_RCU_TORTURE_TEST=y
-CONFIG_SHADOW_CALL_STACK=y
-EOF
-    merge_config "${TMP_CONFIG}"
-    kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    KRNL_RC=${?}
-    log "arm64 defconfig+LTO+CFI+SCS $(results "${KRNL_RC}")"
-    qemu_boot_kernel arm64
-    log "arm64 defconfig+LTO+CFI+SCS qemu boot $(QEMU=1 results "${?}")"
-}
-
 function build_x86_64_lto_cfi_kernels() {
     header "Building x86_64 LTO/CFI kernels"
 
@@ -1380,7 +1372,7 @@ function build_lto_cfi_kernels() {
     TMP_CONFIG=$(mktemp --suffix=.config)
     for ARCH in "${ARCHES[@]}"; do
         case ${ARCH} in
-            arm64 | x86_64)
+            x86_64)
                 OUT=$(cd "${LINUX_SRC}" && readlink -f -m "${O:-build}")/${ARCH}
                 if ! check_clang_target "${ARCH}"; then
                     header "Skipping ${ARCH} LTO/CFI kernels"
