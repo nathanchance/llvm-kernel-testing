@@ -635,7 +635,7 @@ function build_arm64_kernels() {
         log "arm64 defconfig + CONFIG_CPU_BIG_ENDIAN=y qemu boot $(QEMU=1 results "${?}")"
     fi
 
-    if grep -q "config CFI_CLANG" "${LINUX_SRC}" && [[ ${LLVM_VER_CODE} -ge 120000 ]]; then
+    if grep -q "config CFI_CLANG" "${LINUX_SRC}"/arch/Kconfig && [[ ${LLVM_VER_CODE} -ge 120000 ]]; then
         KLOG=arm64-lto-cfi-scs
         kmake "${KMAKE_ARGS[@]}" distclean defconfig
         TMP_CONFIG=$(mktemp --suffix=.config)
