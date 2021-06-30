@@ -635,26 +635,33 @@ function build_arm64_kernels() {
         log "arm64 defconfig + CONFIG_CPU_BIG_ENDIAN=y qemu boot $(QEMU=1 results "${?}")"
     fi
 
+    if grep -q "config LTO_CLANG_THIN" "${LINUX_SRC}"/arch/Kconfig && [[ ${LLVM_VER_CODE} -ge 110000 ]]; then
+        KLOG=arm64-defconfig-lto
+        kmake "${KMAKE_ARGS[@]}" distclean defconfig
+        scripts_config -d LTO_NONE -e LTO_CLANG_THIN
+        kmake "${KMAKE_ARGS[@]}" olddefconfig all
+        KRNL_RC=${?}
+        log "arm64 defconfig + CONFIG_LTO_CLANG_THIN=y $(results "${KRNL_RC}")"
+        qemu_boot_kernel arm64
+        log "arm64 defconfig + CONFIG_LTO_CLANG_THIN=y $(QEMU=1 results "${?}")"
+    fi
+
     if grep -q "config CFI_CLANG" "${LINUX_SRC}"/arch/Kconfig && [[ ${LLVM_VER_CODE} -ge 120000 ]]; then
-        KLOG=arm64-lto-cfi-scs
+        KLOG=arm64-defconfig-lto-scs-cfi
         kmake "${KMAKE_ARGS[@]}" distclean defconfig
         TMP_CONFIG=$(mktemp --suffix=.config)
         cat <<EOF >"${TMP_CONFIG}"
 CONFIG_CFI_CLANG=y
-CONFIG_DYNAMIC_FTRACE=y
-CONFIG_FTRACE=y
-CONFIG_FUNCTION_TRACER=y
-CONFIG_LOCK_TORTURE_TEST=y
 CONFIG_LTO_CLANG_THIN=y
-CONFIG_RCU_TORTURE_TEST=y
+CONFIG_LTO_NONE=n
 CONFIG_SHADOW_CALL_STACK=y
 EOF
         merge_config "${TMP_CONFIG}"
         kmake "${KMAKE_ARGS[@]}" olddefconfig all
         KRNL_RC=${?}
-        log "arm64 defconfig+LTO+CFI+SCS $(results "${KRNL_RC}")"
+        log "arm64 defconfig + CONFIG_CFI_CLANG=y + CONFIG_SHADOW_CALL_STACK=y $(results "${KRNL_RC}")"
         qemu_boot_kernel arm64
-        log "arm64 defconfig+LTO+CFI+SCS qemu boot $(QEMU=1 results "${?}")"
+        log "arm64 defconfig + CONFIG_CFI_CLANG=y + CONFIG_SHADOW_CALL_STACK=y $(QEMU=1 results "${?}")"
         rm "${TMP_CONFIG}"
     fi
 
@@ -1337,23 +1344,25 @@ function build_x86_64_kernels() {
 function build_x86_64_lto_cfi_kernels() {
     header "Building x86_64 LTO/CFI kernels"
 
-    KLOG=x86_64-lto-cfi-defconfig
+    KLOG=x86_64-defconfig-lto
     kmake LLVM=1 LLVM_IAS=1 distclean defconfig
-    cat <<EOF >"${TMP_CONFIG}"
-CONFIG_CFI_CLANG=y
-CONFIG_LOCK_TORTURE_TEST=y
-CONFIG_KVM=y
-CONFIG_KVM_AMD=y
-CONFIG_KVM_INTEL=y
-CONFIG_LTO_CLANG_THIN=y
-CONFIG_RCU_TORTURE_TEST=y
-EOF
-    merge_config "${TMP_CONFIG}"
+    scripts_config -d LTO_NONE -e LTO_CLANG_THIN
     kmake LLVM=1 LLVM_IAS=1 olddefconfig all
     KRNL_RC=${?}
-    log "x86_64 defconfig+LTO+CFI $(results "${KRNL_RC}")"
+    log "x86_64 defconfig + CONFIG_LTO_CLANG_THIN=y $(results "${KRNL_RC}")"
     qemu_boot_kernel x86_64
-    log "x86_64 LTO+CFI config qemu boot $(QEMU=1 results "${?}")"
+    log "x86_64 defconfig + CONFIG_LTO_CLANG_THIN=y qemu boot $(QEMU=1 results "${?}")"
+
+    if [[ ${LLVM_VER_CODE} -gt 120000 ]]; then
+        KLOG=x86_64-defconfig-lto-cfi
+        kmake LLVM=1 LLVM_IAS=1 distclean defconfig
+        scripts_config -d LTO_NONE -e CFI_CLANG -e LTO_CLANG_THIN
+        kmake LLVM=1 LLVM_IAS=1 olddefconfig all
+        KRNL_RC=${?}
+        log "x86_64 defconfig + CONFIG_CFI_CLANG=y $(results "${KRNL_RC}")"
+        qemu_boot_kernel x86_64
+        log "x86_64 defconfig + CONFIG_CFI_CLANG=y qemu boot $(QEMU=1 results "${?}")"
+    fi
 }
 
 # Build Sami Tolvanen's LTO/CFI tree
