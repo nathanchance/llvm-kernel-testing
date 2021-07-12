@@ -24,7 +24,7 @@ function fetch_alpine_config() {
 function fetch_archlinux_config() {
     case ${1} in
         armv5 | armv7 | aarch64) URL=https://github.com/archlinuxarm/PKGBUILDs/raw/master/core/linux-${1}/config ;;
-        x86_64) URL="https://git.archlinux.org/svntogit/packages.git/plain/trunk/config?h=packages/linux" ;;
+        x86_64) URL=https://github.com/archlinux/svntogit-packages/raw/packages/linux/trunk/config ;;
         *) return ;;
     esac
     curl -LSso archlinux/"${1}".config "${URL}"
@@ -35,8 +35,8 @@ function fetch_debian_config() { (
     TMP_DIR=$(mktemp -d -p "${PWD}")
     cd "${TMP_DIR}" || exit ${?}
 
-    PACK_VER=5.10.0-5
-    KER_VER=5.10.26-1
+    PACK_VER=5.10.0-8
+    KER_VER=5.10.46-1
     case ${1} in
         amd64 | arm64) URL=linux-signed-${1}/linux-image-${PACK_VER}-${1}_${KER_VER}_${1}.deb ;;
         armmp) URL=linux/linux-image-${PACK_VER}-${1}_${KER_VER}_armhf.deb ;;
