@@ -590,11 +590,18 @@ function build_arm32_kernels() {
     # OpenSUSE
     KLOG=arm32-opensuse
     setup_config opensuse/armv7hl.config
+    if grep -q "config CRYPTO_ECDSA" "${LINUX_SRC}"/crypto/Kconfig; then
+        CONFIG_TO_DISABLE=CRYPTO_ECDSA
+        scripts_config -d ${CONFIG_TO_DISABLE}
+        LOG_COMMENT=" + CONFIG_${CONFIG_TO_DISABLE}=n"
+    else
+        unset LOG_COMMENT
+    fi
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
     KRNL_RC=${?}
-    log "armv7hl opensuse config $(results "${KRNL_RC}")"
+    log "armv7hl opensuse config${LOG_COMMENT} $(results "${KRNL_RC}")"
     qemu_boot_kernel arm32_v7
-    log "armv7hl opensuse config qemu boot $(QEMU=1 results "${?}")"
+    log "armv7hl opensuse config${LOG_COMMENT} qemu boot $(QEMU=1 results "${?}")"
 }
 
 # Build arm64 kernels
