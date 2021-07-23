@@ -549,10 +549,6 @@ function build_arm32_kernels() {
     kmake "${KMAKE_ARGS[@]}" distclean tinyconfig all
     log "arm32 tinyconfig $(results "${?}")"
 
-    KLOG=arm32-allyesconfig
-    kmake "${KMAKE_ARGS[@]}" ${CONFIG_FILE:+KCONFIG_ALLCONFIG=${CONFIG_FILE}} distclean allyesconfig all
-    log "arm32 allyesconfig${LOG_COMMENT} $(results "${?}")"
-
     # Alpine Linux
     KLOG=arm32-alpine
     setup_config alpine/armv7.config
@@ -694,10 +690,6 @@ EOF
     KLOG=arm64-tinyconfig
     kmake "${KMAKE_ARGS[@]}" distclean tinyconfig all
     log "arm64 tinyconfig $(results "${?}")"
-
-    KLOG=arm64-allyesconfig
-    kmake "${KMAKE_ARGS[@]}" ${CONFIG_FILE:+KCONFIG_ALLCONFIG=${CONFIG_FILE}} distclean allyesconfig all
-    log "arm64 allyesconfig${LOG_COMMENT} $(results "${?}")"
 
     # Alpine Linux
     KLOG=arm64-alpine
@@ -1099,21 +1091,8 @@ function build_s390x_kernels() {
         fi
         kmake "${KMAKE_ARGS[@]}" olddefconfig all
         log "s390x allmodconfig${LOG_COMMENT} $(results "${?}")"
-
-        KLOG=s390x-allyesconfig
-        kmake "${KMAKE_ARGS[@]}" distclean allyesconfig
-        # https://github.com/ClangBuiltLinux/linux/issues/1213
-        if ! grep -q "config UBSAN_MISC" "${LINUX_SRC}"/lib/Kconfig.ubsan && ! grep -q "depends on HAS_IOMEM" "${LINUX_SRC}"/init/Kconfig; then
-            CTOD=CONFIG_UBSAN_TRAP
-            LOG_COMMENT=" + ${CTOD}=n (https://github.com/ClangBuiltLinux/linux/issues/1213)"
-            scripts_config -d ${CTOD}
-        else
-            unset LOG_COMMENT
-        fi
-        kmake "${KMAKE_ARGS[@]}" olddefconfig all
-        log "s390x allyesconfig${LOG_COMMENT} $(results "${?}")"
     else
-        log "s390x all{mod,yes}config skipped (https://reviews.llvm.org/D90065)"
+        log "s390x allmodconfig skipped (https://reviews.llvm.org/D90065)"
     fi
 
     # Debian
@@ -1242,12 +1221,8 @@ function build_x86_64_kernels() {
     kmake olddefconfig all
     log "x86_64 allmodconfig${LOG_COMMENT} $(results "${?}")"
 
-    KLOG=x86_64-allyesconfig
-    kmake distclean allyesconfig all
-    log "x86_64 allyesconfig $(results "${?}")"
-
-    KLOG=x86_64-allyesconfig-O3
-    kmake distclean allyesconfig
+    KLOG=x86_64-allmodconfig-O3
+    kmake distclean allmodconfig
     # https://github.com/ClangBuiltLinux/linux/issues/678
     if [[ ${LNX_VER_CODE} -lt 508000 ]]; then
         LOG_COMMENT=" + CONFIG_SENSORS_APPLESMC=n (https://github.com/ClangBuiltLinux/linux/issues/678)"
@@ -1261,7 +1236,7 @@ function build_x86_64_kernels() {
         unset LOG_COMMENT
     fi
     kmake olddefconfig all KCFLAGS="${KCFLAGS:+${KCFLAGS} }-O3"
-    log "x86_64 allyesconfig at -O3${LOG_COMMENT} $(results "${?}")"
+    log "x86_64 allmodconfig at -O3${LOG_COMMENT} $(results "${?}")"
 
     # Alpine Linux
     KLOG=x86_64-alpine
