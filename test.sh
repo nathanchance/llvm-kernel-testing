@@ -1057,19 +1057,40 @@ function build_riscv_kernels() {
 
     KLOG=riscv-defconfig
     # https://github.com/ClangBuiltLinux/linux/issues/1020
-    kmake "${KMAKE_ARGS[@]}" LD=riscv64-linux-gnu-ld LLVM_IAS=1 distclean defconfig
+    if [[ ${LLVM_VER_CODE} -lt 130000 ]] || ! grep -q 'mno-relax' "${LINUX_SRC}"/arch/riscv/Makefile; then
+        RISCV_LD=riscv64-linux-gnu-ld
+    fi
+    kmake "${KMAKE_ARGS[@]}" ${RISCV_LD:+LD=${RISCV_LD}} LLVM_IAS=1 distclean defconfig
     # https://github.com/ClangBuiltLinux/linux/issues/1143
-    if grep -q "config EFI" "${LINUX_SRC}"/arch/riscv/Kconfig; then
+    if [[ ${LLVM_VER_CODE} -lt 130000 ]] && grep -q "config EFI" "${LINUX_SRC}"/arch/riscv/Kconfig; then
         LOG_COMMENT=" + CONFIG_EFI=n (https://github.com/ClangBuiltLinux/linux/issues/1143)"
         scripts_config -d CONFIG_EFI
+    else
+        unset LOG_COMMENT
     fi
-    kmake "${KMAKE_ARGS[@]}" LD=riscv64-linux-gnu-ld LLVM_IAS=1 olddefconfig all
+    kmake "${KMAKE_ARGS[@]}" ${RISCV_LD:+LD=${RISCV_LD}} LLVM_IAS=1 olddefconfig all
     KRNL_RC=${?}
     log "riscv defconfig${LOG_COMMENT} $(results "${KRNL_RC}")"
     # https://github.com/ClangBuiltLinux/linux/issues/867
     if grep -q "(long)__old" "${LINUX_SRC}"/arch/riscv/include/asm/cmpxchg.h; then
         qemu_boot_kernel riscv
         log "riscv defconfig qemu boot $(QEMU=1 results "${?}")"
+    fi
+
+    # https://github.com/ClangBuiltLinux/linux/issues/999
+    if false && [[ ${LNX_VER_CODE} -gt 508000 ]] && grep -q 'mno-relax' "${LINUX_SRC}"/arch/riscv/Makefile; then
+        [[ ${LLVM_VER_CODE} -ge 130000 ]] && KMAKE_ARGS+=(LLVM_IAS=1)
+        KLOG=riscv-allmodconfig
+        kmake "${KMAKE_ARGS[@]}" LLVM_IAS=1 distclean allmodconfig all
+        KRNL_RC=${?}
+
+        KLOG=riscv-opensuse
+        setup_config opensuse/riscv64.config
+        kmake "${KMAKE_ARGS[@]}" olddefconfig all
+        KRNL_RC=${?}
+        log "riscv opensuse config $(results "${KRNL_RC}")"
+        qemu_boot_kernel riscv
+        log "riscv opensuse config qemu boot $(QEMU=1 results "${?}")"
     fi
 }
 
