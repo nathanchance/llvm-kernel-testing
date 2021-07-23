@@ -68,7 +68,7 @@ function parse_parameters() {
         shift
     done
 
-    [[ -z ${ARCHES[*]} ]] && ARCHES=(arm32 arm64 mips powerpc riscv s390x x86 x86_64)
+    [[ -z ${ARCHES[*]} ]] && ARCHES=(arm32 arm64 hexagon mips powerpc riscv s390x x86 x86_64)
     [[ -z ${DEFCONFIGS_ONLY} ]] && DEFCONFIGS_ONLY=false
     [[ -z ${BLD_LOG_DIR} ]] && BLD_LOG_DIR=${BASE}/logs/$(date +%Y%m%d-%H%M)
     [[ -z ${TC_PREFIX} ]] && TC_PREFIX=${BASE}/toolchain
@@ -98,6 +98,8 @@ function build_llvm_binutils() {
         case ${ARCH} in
             arm32) BINUTILS_TARGETS=("${BINUTILS_TARGETS[@]}" arm) ;;
             arm64) BINUTILS_TARGETS=("${BINUTILS_TARGETS[@]}" aarch64) ;;
+            # Hexagon does not build binutils
+            hexagon) ;;
             mips) BINUTILS_TARGETS=("${BINUTILS_TARGETS[@]}" mips mipsel) ;;
             powerpc) BINUTILS_TARGETS=("${BINUTILS_TARGETS[@]}" powerpc powerpc64 powerpc64le) ;;
             riscv) BINUTILS_TARGETS=("${BINUTILS_TARGETS[@]}" riscv64) ;;
@@ -196,7 +198,7 @@ function kmake() {
         while ((${#})); do
             case ${1} in
                 # Consume these to avoid duplicates in the 'set -x' print out
-                LD=* | OBJCOPY=* | OBJDUMP=*) export "${1:?}" ;;
+                LD=* | LLVM_IAS=* | OBJCOPY=* | OBJDUMP=*) export "${1:?}" ;;
                 *) MAKE_ARGS=("${MAKE_ARGS[@]}" "${1}") ;;
             esac
             shift
@@ -751,6 +753,43 @@ EOF
     log "arm64 opensuse config $(results "${KRNL_RC}")"
     qemu_boot_kernel arm64
     log "arm64 opensuse config qemu boot $(QEMU=1 results "${?}")"
+}
+
+# Build hexagon kernels
+function build_hexagon_kernels() {
+    KMAKE_ARGS=(
+        ARCH=hexagon
+        CROSS_COMPILE=hexagon-linux-gnu-
+        LLVM_IAS=1
+    )
+
+    # Hexagon was broken without some fixes
+    if ! grep -q "KBUILD_CFLAGS += -mlong-calls" "${LINUX_SRC}"/arch/hexagon/Makefile || ! [[ -f ${LINUX_SRC}/arch/hexagon/lib/divsi3.S ]]; then
+        echo
+        echo "Hexagon needs the following fixes from Linux 5.13 to build properly:"
+        echo
+        echo '  * https://git.kernel.org/linus/788dcee0306e1bdbae1a76d1b3478bb899c5838e'
+        echo '  * https://git.kernel.org/linus/6fff7410f6befe5744d54f0418d65a6322998c09'
+        echo '  * https://git.kernel.org/linus/f1f99adf05f2138ff2646d756d4674e302e8d02d'
+        echo
+        echo "Provide a kernel tree with Linux 5.13+ or one with these fixes to build Hexagon kernels"
+        return 0
+    fi
+
+    header "Building hexagon kernels"
+
+    # Upstream
+    KLOG=hexagon-defconfig
+    kmake "${KMAKE_ARGS[@]}" distclean defconfig all
+    KRNL_RC=${?}
+    log "hexagon defconfig $(results "${KRNL_RC}")"
+
+    if grep -Fq "EXPORT_SYMBOL(__raw_readsw)" "${LINUX_SRC}"/arch/hexagon/lib/io.c; then
+        KLOG=hexagon-allmodconfig
+        kmake "${KMAKE_ARGS[@]}" distclean allmodconfig all
+        KRNL_RC=${?}
+        log "hexagon allmodconfig $(results "${KRNL_RC}")"
+    fi
 }
 
 # Build mips kernels
@@ -1400,6 +1439,7 @@ function check_clang_target() {
     case "${1:?}" in
         arm32) target=arm-linux-gnueabi ;;
         arm64) target=aarch64-linux-gnu ;;
+        hexagon) target=hexagon-linux-gnu ;;
         mips) target=mips-linux-gnu ;;
         powerpc) target=powerpc-linux-gnu ;;
         riscv) target=riscv64-linux-gnu ;;
