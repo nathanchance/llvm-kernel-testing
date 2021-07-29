@@ -1071,7 +1071,7 @@ function build_riscv_kernels() {
     fi
 
     # https://github.com/ClangBuiltLinux/linux/issues/999
-    if false && [[ ${LNX_VER_CODE} -gt 508000 ]] && grep -q 'mno-relax' "${LINUX_SRC}"/arch/riscv/Makefile; then
+    if [[ ${LNX_VER_CODE} -gt 508000 ]] && grep -q 'mno-relax' "${LINUX_SRC}"/arch/riscv/Makefile; then
         [[ ${LLVM_VER_CODE} -ge 130000 ]] && KMAKE_ARGS+=(LLVM_IAS=1)
         KLOG=riscv-allmodconfig
         kmake "${KMAKE_ARGS[@]}" LLVM_IAS=1 distclean allmodconfig all
