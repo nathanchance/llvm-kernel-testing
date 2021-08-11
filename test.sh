@@ -777,6 +777,8 @@ function build_hexagon_kernels() {
     KRNL_RC=${?}
     log "hexagon defconfig $(results "${KRNL_RC}")"
 
+    ${DEFCONFIGS_ONLY} && return 0
+
     if grep -Fq "EXPORT_SYMBOL(__raw_readsw)" "${LINUX_SRC}"/arch/hexagon/lib/io.c; then
         KLOG=hexagon-allmodconfig
         kmake "${KMAKE_ARGS[@]}" distclean allmodconfig all
