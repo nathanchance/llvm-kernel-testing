@@ -608,7 +608,7 @@ function build_arm64_kernels() {
         ARCH=arm64
         CROSS_COMPILE="${CROSS_COMPILE}"
     )
-    [[ ${LNX_VER_CODE} -gt 510000 && ${LLVM_VER_CODE} -gt 110000 ]] && KMAKE_ARGS+=(LLVM_IAS=1)
+    [[ ${LNX_VER_CODE} -ge 510000 && ${LLVM_VER_CODE} -ge 110000 ]] && KMAKE_ARGS+=(LLVM_IAS=1)
 
     header "Building arm64 kernels"
 
@@ -1222,6 +1222,19 @@ function build_x86_kernels() {
     qemu_boot_kernel x86
     log "i386 defconfig qemu boot $(QEMU=1 results "${?}")"
 
+    if grep -q "select ARCH_SUPPORTS_LTO_CLANG_THIN" "${LINUX_SRC}"/arch/x86/Kconfig &&
+        ! grep -Pq "select ARCH_SUPPORTS_LTO_CLANG_THIN\tif X86_64" "${LINUX_SRC}"/arch/x86/Kconfig &&
+        [[ ${LLVM_VER_CODE} -ge 110000 ]]; then
+        KLOG=i386-defconfig-lto
+        kmake distclean i386_defconfig
+        scripts_config -d LTO_NONE -e LTO_CLANG_THIN
+        kmake olddefconfig all
+        KRNL_RC=${?}
+        log "i386 defconfig + CONFIG_LTO_CLANG_THIN=y $(results "${KRNL_RC}")"
+        qemu_boot_kernel x86
+        log "i386 defconfig + CONFIG_LTO_CLANG_THIN=y qemu boot $(QEMU=1 results "${?}")"
+    fi
+
     ${DEFCONFIGS_ONLY} && return 0
 
     KLOG=x86-allnoconfig
@@ -1270,7 +1283,7 @@ function build_x86_64_kernels() {
     qemu_boot_kernel x86_64
     log "x86_64 qemu boot $(QEMU=1 results "${?}")"
 
-    if [[ ${LNX_VER_CODE} -ge 512000 && ${LLVM_VER_CODE} -ge 110000 ]]; then
+    if grep -q "config LTO_CLANG_THIN" "${LINUX_SRC}"/arch/Kconfig && [[ ${LLVM_VER_CODE} -ge 110000 ]]; then
         KLOG=x86_64-defconfig-lto
         kmake distclean defconfig
         scripts_config -d LTO_NONE -e LTO_CLANG_THIN
