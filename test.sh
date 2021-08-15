@@ -1256,7 +1256,7 @@ function build_x86_64_kernels() {
     local LOG_COMMENT
     header "Building x86_64 kernels"
 
-    [[ ${LNX_VER_CODE} -gt 510000 && ${LLVM_VER_CODE} -gt 110000 ]] && export LLVM_IAS=1
+    [[ ${LNX_VER_CODE} -ge 510000 && ${LLVM_VER_CODE} -ge 110000 ]] && export LLVM_IAS=1
 
     unset CROSS_COMPILE
     print_binutils_info
@@ -1269,6 +1269,17 @@ function build_x86_64_kernels() {
     log "x86_64 defconfig $(results "${KRNL_RC}")"
     qemu_boot_kernel x86_64
     log "x86_64 qemu boot $(QEMU=1 results "${?}")"
+
+    if [[ ${LNX_VER_CODE} -ge 512000 && ${LLVM_VER_CODE} -ge 110000 ]]; then
+        KLOG=x86_64-defconfig-lto
+        kmake distclean defconfig
+        scripts_config -d LTO_NONE -e LTO_CLANG_THIN
+        kmake olddefconfig all
+        KRNL_RC=${?}
+        log "x86_64 defconfig + CONFIG_LTO_CLANG_THIN=y $(results "${KRNL_RC}")"
+        qemu_boot_kernel x86_64
+        log "x86_64 defconfig + CONFIG_LTO_CLANG_THIN=y qemu boot $(QEMU=1 results "${?}")"
+    fi
 
     ${DEFCONFIGS_ONLY} && return 0
 
@@ -1380,18 +1391,9 @@ function build_x86_64_kernels() {
 }
 
 function build_x86_64_lto_cfi_kernels() {
-    header "Building x86_64 LTO/CFI kernels"
+    header "Building x86_64 CFI kernels"
 
-    KLOG=x86_64-defconfig-lto
-    kmake LLVM=1 LLVM_IAS=1 distclean defconfig
-    scripts_config -d LTO_NONE -e LTO_CLANG_THIN
-    kmake LLVM=1 LLVM_IAS=1 olddefconfig all
-    KRNL_RC=${?}
-    log "x86_64 defconfig + CONFIG_LTO_CLANG_THIN=y $(results "${KRNL_RC}")"
-    qemu_boot_kernel x86_64
-    log "x86_64 defconfig + CONFIG_LTO_CLANG_THIN=y qemu boot $(QEMU=1 results "${?}")"
-
-    if [[ ${LLVM_VER_CODE} -gt 120000 ]]; then
+    if [[ ${LLVM_VER_CODE} -ge 140000 ]]; then
         KLOG=x86_64-defconfig-lto-cfi
         kmake LLVM=1 LLVM_IAS=1 distclean defconfig
         scripts_config -d LTO_NONE -e CFI_CLANG -e LTO_CLANG_THIN
@@ -1403,11 +1405,9 @@ function build_x86_64_lto_cfi_kernels() {
     fi
 }
 
-# Build Sami Tolvanen's LTO/CFI tree
+# Build Sami Tolvanen's CFI tree
 function build_lto_cfi_kernels() {
-    [[ ${LLVM_VER_CODE} -ge 110000 ]] || return 0
-
-    header "Updating LTO/CFI kernel source"
+    header "Updating CFI kernel source"
 
     # Grab the latest kernel source
     LINUX_SRC=${SRC}/linux-clang-cfi
