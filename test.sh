@@ -219,7 +219,7 @@ function kmake() {
             ${KGZIP:+KGZIP=pigz} \
             ${LD:+LD="${LD}"} \
             LLVM=1 \
-            ${LLVM_IAS:+LLVM_IAS="${LLVM_IAS}"} \
+            LLVM_IAS="${LLVM_IAS:-0}" \
             ${LOCALVERSION:+LOCALVERSION="${LOCALVERSION}"} \
             ${NM:+NM="${NM}"} \
             O="${OUT#${LINUX_SRC}/*}" \
@@ -488,6 +488,7 @@ function build_arm32_kernels() {
         ARCH=arm
         CROSS_COMPILE="${CROSS_COMPILE}"
     )
+    [[ ${LLVM_VER_CODE} -ge 130000 && ${LNX_VER_CODE} -ge 513000 ]] && KMAKE_ARGS+=(LLVM_IAS=1)
 
     header "Building arm32 kernels"
 
