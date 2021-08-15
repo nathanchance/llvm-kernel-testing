@@ -60,7 +60,7 @@ function parse_parameters() {
             -o | --out-dir) shift && O=${1} ;;
             -s | --skip-tc-build) SKIP_TC_BUILD=true ;;
             -t | --tc-prefix) shift && TC_PREFIX=$(readlink -f "${1}") ;;
-            --test-lto-cfi-kernel) TEST_LTO_CFI_KERNEL=true ;;
+            --test-cfi-kernel) TEST_CFI_KERNEL=true ;;
             *=*) export "${1:?}" ;;
             "") ;;
             *) die "Invalid parameter '${1}'" ;;
@@ -1403,7 +1403,7 @@ function build_x86_64_kernels() {
     unset LLVM_IAS
 }
 
-function build_x86_64_lto_cfi_kernels() {
+function build_x86_64_cfi_kernels() {
     header "Building x86_64 CFI kernels"
 
     if [[ ${LLVM_VER_CODE} -ge 140000 ]]; then
@@ -1419,7 +1419,7 @@ function build_x86_64_lto_cfi_kernels() {
 }
 
 # Build Sami Tolvanen's CFI tree
-function build_lto_cfi_kernels() {
+function build_cfi_kernels() {
     header "Updating CFI kernel source"
 
     # Grab the latest kernel source
@@ -1439,7 +1439,7 @@ function build_lto_cfi_kernels() {
                     echo "Reason: clang was not configured with this target"
                     continue
                 fi
-                build_"${ARCH}"_lto_cfi_kernels || exit ${?}
+                build_"${ARCH}"_cfi_kernels || exit ${?}
                 ;;
             *) ;;
         esac
@@ -1503,7 +1503,7 @@ function build_kernels() {
         fi
         build_"${ARCH}"_kernels || exit ${?}
     done
-    ${TEST_LTO_CFI_KERNEL:=false} && build_lto_cfi_kernels
+    ${TEST_CFI_KERNEL:=false} && build_cfi_kernels
 }
 
 # Boot the kernel in QEMU
