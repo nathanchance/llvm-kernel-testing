@@ -1424,7 +1424,6 @@ function build_cfi_kernels() {
 
     # Grab the latest kernel source
     LINUX_SRC=${SRC}/linux-clang-cfi
-    OUT=${LINUX_SRC}/build
     [[ -d ${LINUX_SRC} ]] || git clone -b clang-cfi https://github.com/samitolvanen/linux "${LINUX_SRC}"
     git -C "${LINUX_SRC}" remote update || return ${?}
     git -C "${LINUX_SRC}" reset --hard origin/clang-cfi
@@ -1433,7 +1432,7 @@ function build_cfi_kernels() {
     for ARCH in "${ARCHES[@]}"; do
         case ${ARCH} in
             x86_64)
-                OUT=$(cd "${LINUX_SRC}" && readlink -f -m "${O:-build}")/${ARCH}
+                OUT=$(cd "${LINUX_SRC}" && readlink -f -m "${O:-.build}")/${ARCH}
                 if ! check_clang_target "${ARCH}"; then
                     header "Skipping ${ARCH} LTO/CFI kernels"
                     echo "Reason: clang was not configured with this target"
@@ -1495,7 +1494,7 @@ function build_kernels() {
     create_llvm_ver_code
 
     for ARCH in "${ARCHES[@]}"; do
-        OUT=$(cd "${LINUX_SRC}" && readlink -f -m "${O:-build}")/${ARCH}
+        OUT=$(cd "${LINUX_SRC}" && readlink -f -m "${O:-.build}")/${ARCH}
         if ! check_clang_target "${ARCH}"; then
             header "Skipping ${ARCH} kernels"
             echo "Reason: clang was not configured with this target"
