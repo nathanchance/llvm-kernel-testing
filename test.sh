@@ -955,12 +955,12 @@ function build_powerpc_kernels() {
     qemu_boot_kernel ppc64le
     log "powerpc powernv_defconfig qemu boot $(QEMU=1 results "${?}")"
 
+    PPC64LE_ARGS=()
     # https://github.com/ClangBuiltLinux/linux/issues/666
+    [[ ${LLVM_VER_CODE} -lt 110000 ]] && PPC64LE_ARGS+=(OBJDUMP="${CROSS_COMPILE}"objdump)
     # https://github.com/ClangBuiltLinux/linux/issues/811
-    PPC64LE_ARGS=(
-        LD="${CROSS_COMPILE}"ld
-        OBJDUMP="${CROSS_COMPILE}"objdump
-    )
+    # shellcheck disable=SC2016
+    grep -Fq 'LDFLAGS_vmlinux-$(CONFIG_RELOCATABLE) += -z notext' "${LINUX_SRC}"/arch/powerpc/Makefile || PPC64LE_ARGS+=(LD="${CROSS_COMPILE}"ld)
 
     KLOG=powerpc64le-defconfig
     kmake "${KMAKE_ARGS[@]}" "${PPC64LE_ARGS[@]}" distclean ppc64le_defconfig all
