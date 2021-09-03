@@ -185,7 +185,7 @@ function print_tc_lnx_info() {
 
 # Set tool variables based on availability
 function set_tool_vars() {
-    CCACHE=$(command -v ccache)
+    # CCACHE=$(command -v ccache)
     KBZIP2=$(command -v pbzip2)
     KGZIP=$(command -v pigz)
 }
