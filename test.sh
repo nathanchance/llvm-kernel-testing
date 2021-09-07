@@ -267,10 +267,17 @@ function handle_bpf_configs() {
     #
     # If either of those conditions are false, we need to disable this config so
     # that the build does not error.
-    (command -v pahole &>/dev/null && [[ ${LNX_VER_CODE} -ge 507000 ]]) || scripts_config -d CONFIG_DEBUG_INFO_BTF
+    if [[ "$(scripts_config -s DEBUG_INFO_BTF)" = "y" ]] &&
+        ! (command -v pahole &>/dev/null && [[ ${LNX_VER_CODE} -ge 507000 ]]); then
+        DISABLED_CONFIGS+=(DEBUG_INFO_BTF)
+        scripts_config -d DEBUG_INFO_BTF
+    fi
 
     # https://lore.kernel.org/bpf/20201119085022.3606135-1-davidgow@google.com/
-    [[ "$(scripts_config -s BPF_PRELOAD)" = "y" ]] && scripts_config -d BPF_PRELOAD
+    if [[ "$(scripts_config -s BPF_PRELOAD)" = "y" ]]; then
+        DISABLED_CONFIGS+=(BPF_PRELOAD)
+        scripts_config -d BPF_PRELOAD
+    fi
 }
 
 # Set up an out of tree config
@@ -282,22 +289,29 @@ function setup_config() {
     # Grab the config we are testing
     cp -v "${BASE}"/configs/"${1:?}" "${OUT}"/.config
 
+    DISABLED_CONFIGS=()
+
     handle_bpf_configs
 
     # Some distro configs have options that are specific to their distro,
     # which will break in a generic environment
     case ${1} in
-        # We are building upstream kernels, which do not have Debian's
-        # signing keys in their source
-        # The Android drivers are not modular in upstream
         debian/*)
-            scripts_config -d CONFIG_SYSTEM_TRUSTED_KEYS
+            # We are building upstream kernels, which do not have Debian's
+            # signing keys in their source
+            DISABLED_CONFIGS+=(SYSTEM_TRUSTED_KEYS)
+            scripts_config -d SYSTEM_TRUSTED_KEYS
+
+            # The Android drivers are not modular in upstream
             [[ "$(scripts_config -s ANDROID_BINDER_IPC)" = "m" ]] && scripts_config -e ANDROID_BINDER_IPC
             [[ "$(scripts_config -s ASHMEM)" = "m" ]] && scripts_config -e ASHMEM
             ;;
 
         archlinux/*)
-            [[ -z "$(scripts_config -s CONFIG_EXTRA_FIRMWARE)" ]] || scripts_config -u CONFIG_EXTRA_FIRMWARE
+            if [[ -n "$(scripts_config -s CONFIG_EXTRA_FIRMWARE)" ]]; then
+                DISABLED_CONFIGS+=(EXTRA_FIRMWARE)
+                scripts_config -u EXTRA_FIRMWARE
+            fi
             ;;
     esac
 
@@ -447,6 +461,19 @@ function setup_config() {
     fi
 
     [[ -n "${SCRIPTS_CONFIG_ARGS[*]}" ]] && scripts_config "${SCRIPTS_CONFIG_ARGS[@]}"
+    LOG_COMMENT=""
+    for DISABLED_CONFIG in "${DISABLED_CONFIGS[@]}"; do
+        LOG_COMMENT+=" + CONFIG_${DISABLED_CONFIG}=n"
+        case ${DISABLED_CONFIG} in
+            BPF_PRELOAD)
+                LOG_COMMENT+=" (https://github.com/ClangBuiltLinux/linux/issues/1433)"
+                ;;
+            DEBUG_INFO_BTF)
+                command -v pahole &>/dev/null || LOG_COMMENT+=" (pahole is not installed)"
+                ;;
+        esac
+    done
+
 }
 
 function swap_endianness() {
@@ -557,7 +584,7 @@ function build_arm32_kernels() {
     setup_config alpine/armv7.config
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
     KRNL_RC=${?}
-    log "armv7 alpine config $(results "${KRNL_RC}")"
+    log "armv7 alpine config${LOG_COMMENT} $(results "${KRNL_RC}")"
     qemu_boot_kernel arm32_v7
     log "armv7 alpine config qemu boot $(QEMU=1 results "${?}")"
 
@@ -565,13 +592,13 @@ function build_arm32_kernels() {
     KLOG=arm32-v5-archlinux
     setup_config archlinux/armv5.config
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "armv5 archlinux config $(results "${?}")"
+    log "armv5 archlinux config${LOG_COMMENT} $(results "${?}")"
 
     KLOG=arm32-v7-archlinux
     setup_config archlinux/armv7.config
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
     KRNL_RC=${?}
-    log "armv7 archlinux config $(results "${KRNL_RC}")"
+    log "armv7 archlinux config${LOG_COMMENT} $(results "${KRNL_RC}")"
     qemu_boot_kernel arm32_v7
     log "armv7 archlinux config qemu boot $(QEMU=1 results "${?}")"
 
@@ -580,7 +607,7 @@ function build_arm32_kernels() {
     setup_config debian/armmp.config
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
     KRNL_RC=${?}
-    log "arm32 debian config $(results "${KRNL_RC}")"
+    log "arm32 debian config${LOG_COMMENT} $(results "${KRNL_RC}")"
     qemu_boot_kernel arm32_v7
     log "arm32 debian config qemu boot $(QEMU=1 results "${?}")"
 
@@ -588,14 +615,14 @@ function build_arm32_kernels() {
     KLOG=arm32-fedora
     setup_config fedora/armv7hl.config
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
-    log "armv7hl fedora config $(results "${?}")"
+    log "armv7hl fedora config${LOG_COMMENT} $(results "${?}")"
 
     # OpenSUSE
     KLOG=arm32-opensuse
     setup_config opensuse/armv7hl.config
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
     KRNL_RC=${?}
-    log "armv7hl opensuse config $(results "${KRNL_RC}")"
+    log "armv7hl opensuse config${LOG_COMMENT} $(results "${KRNL_RC}")"
     qemu_boot_kernel arm32_v7
     log "armv7hl opensuse config qemu boot $(QEMU=1 results "${?}")"
 }
@@ -701,7 +728,7 @@ EOF
     scripts_config -e PERF_EVENTS
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
     KRNL_RC=${?}
-    log "arm64 alpine config $(results "${KRNL_RC}")"
+    log "arm64 alpine config${LOG_COMMENT} $(results "${KRNL_RC}")"
     qemu_boot_kernel arm64
     log "arm64 alpine config qemu boot $(QEMU=1 results "${?}")"
 
@@ -710,7 +737,7 @@ EOF
     setup_config archlinux/aarch64.config
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
     KRNL_RC=${?}
-    log "arm64 archlinux config $(results "${KRNL_RC}")"
+    log "arm64 archlinux config${LOG_COMMENT} $(results "${KRNL_RC}")"
     qemu_boot_kernel arm64
     log "arm64 archlinux config qemu boot $(QEMU=1 results "${?}")"
 
@@ -719,19 +746,18 @@ EOF
     setup_config debian/arm64.config
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
     KRNL_RC=${?}
-    log "arm64 debian config $(results "${KRNL_RC}")"
+    log "arm64 debian config${LOG_COMMENT} $(results "${KRNL_RC}")"
     qemu_boot_kernel arm64
     log "arm64 debian config qemu boot $(QEMU=1 results "${?}")"
 
     # Fedora
     KLOG=arm64-fedora
+    LOG_COMMENT=""
     setup_config fedora/aarch64.config
     # https://github.com/ClangBuiltLinux/linux/issues/515
     if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
-        LOG_COMMENT=" + CONFIG_STM=n (https://github.com/ClangBuiltLinux/linux/issues/515)"
+        LOG_COMMENT+=" + CONFIG_STM=n (https://github.com/ClangBuiltLinux/linux/issues/515)"
         scripts_config -d CONFIG_STM
-    else
-        unset LOG_COMMENT
     fi
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
     KRNL_RC=${?}
@@ -744,7 +770,7 @@ EOF
     setup_config opensuse/arm64.config
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
     KRNL_RC=${?}
-    log "arm64 opensuse config $(results "${KRNL_RC}")"
+    log "arm64 opensuse config${LOG_COMMENT} $(results "${KRNL_RC}")"
     qemu_boot_kernel arm64
     log "arm64 opensuse config qemu boot $(QEMU=1 results "${?}")"
 }
@@ -971,14 +997,6 @@ function build_powerpc_kernels() {
     # Debian
     KLOG=powerpc64le-debian
     setup_config debian/powerpc64le.config
-    # https://github.com/ClangBuiltLinux/linux/issues/944
-    if [[ ${LLVM_VER_CODE} -lt 100001 ]]; then
-        CTOD=CONFIG_DRM_AMD_DC
-        LOG_COMMENT=" + ${CTOD}=n (https://github.com/ClangBuiltLinux/linux/issues/944)"
-        scripts_config -d ${CTOD}
-    else
-        unset LOG_COMMENT
-    fi
     kmake "${KMAKE_ARGS[@]}" "${PPC64LE_ARGS[@]}" olddefconfig all
     KRNL_RC=${?}
     log "ppc64le debian config${LOG_COMMENT} $(results "${KRNL_RC}")"
@@ -988,8 +1006,6 @@ function build_powerpc_kernels() {
     # Fedora
     KLOG=powerpc64le-fedora
     setup_config fedora/ppc64le.config
-    # https://github.com/ClangBuiltLinux/linux/issues/944
-    [[ ${LLVM_VER_CODE} -lt 100001 ]] && scripts_config -d ${CTOD}
     kmake "${KMAKE_ARGS[@]}" "${PPC64LE_ARGS[@]}" olddefconfig all
     KRNL_RC=${?}
     log "ppc64le fedora config${LOG_COMMENT} $(results "${KRNL_RC}")"
@@ -1001,11 +1017,9 @@ function build_powerpc_kernels() {
     if ! grep -q "depends on PPC32 || COMPAT" "${LINUX_SRC}"/arch/powerpc/platforms/Kconfig.cputype || [[ ${LLVM_VER_CODE} -ge 120000 ]]; then
         KLOG=powerpc64le-opensuse
         setup_config opensuse/ppc64le.config
-        # https://github.com/ClangBuiltLinux/linux/issues/944
-        [[ ${LLVM_VER_CODE} -lt 100001 ]] && scripts_config -d ${CTOD}
         kmake "${KMAKE_ARGS[@]}" "${PPC64LE_ARGS[@]}" olddefconfig all
         KRNL_RC=${?}
-        log "ppc64le opensuse config $(results "${KRNL_RC}")"
+        log "ppc64le opensuse config${LOG_COMMENT} $(results "${KRNL_RC}")"
         qemu_boot_kernel ppc64le
         log "ppc64le opensuse config qemu boot $(QEMU=1 results "${?}")"
     else
@@ -1052,6 +1066,7 @@ function build_riscv_kernels() {
     echo
 
     KLOG=riscv-defconfig
+    LOG_COMMENT=""
     # https://github.com/ClangBuiltLinux/linux/issues/1020
     if [[ ${LLVM_VER_CODE} -lt 130000 ]] || ! grep -q 'mno-relax' "${LINUX_SRC}"/arch/riscv/Makefile; then
         RISCV_LD=riscv64-linux-gnu-ld
@@ -1059,10 +1074,8 @@ function build_riscv_kernels() {
     kmake "${KMAKE_ARGS[@]}" ${RISCV_LD:+LD=${RISCV_LD}} LLVM_IAS=1 distclean defconfig
     # https://github.com/ClangBuiltLinux/linux/issues/1143
     if [[ ${LLVM_VER_CODE} -lt 130000 ]] && grep -q "config EFI" "${LINUX_SRC}"/arch/riscv/Kconfig; then
-        LOG_COMMENT=" + CONFIG_EFI=n (https://github.com/ClangBuiltLinux/linux/issues/1143)"
+        LOG_COMMENT+=" + CONFIG_EFI=n (https://github.com/ClangBuiltLinux/linux/issues/1143)"
         scripts_config -d CONFIG_EFI
-    else
-        unset LOG_COMMENT
     fi
     kmake "${KMAKE_ARGS[@]}" ${RISCV_LD:+LD=${RISCV_LD}} LLVM_IAS=1 olddefconfig all
     KRNL_RC=${?}
@@ -1084,7 +1097,7 @@ function build_riscv_kernels() {
         setup_config opensuse/riscv64.config
         kmake "${KMAKE_ARGS[@]}" olddefconfig all
         KRNL_RC=${?}
-        log "riscv opensuse config $(results "${KRNL_RC}")"
+        log "riscv opensuse config${LOG_COMMENT} $(results "${KRNL_RC}")"
         qemu_boot_kernel riscv
         log "riscv opensuse config qemu boot $(QEMU=1 results "${?}")"
     fi
@@ -1143,14 +1156,13 @@ function build_s390x_kernels() {
 
     if [[ ${LLVM_VER_CODE} -ge 120000 ]]; then
         KLOG=s390x-allmodconfig
+        LOG_COMMENT=""
         kmake "${KMAKE_ARGS[@]}" distclean allmodconfig
         # https://github.com/ClangBuiltLinux/linux/issues/1213
         if ! grep -q "config UBSAN_MISC" "${LINUX_SRC}"/lib/Kconfig.ubsan && ! grep -q "depends on HAS_IOMEM" "${LINUX_SRC}"/init/Kconfig; then
             CTOD=CONFIG_UBSAN_TRAP
-            LOG_COMMENT=" + ${CTOD}=n (https://github.com/ClangBuiltLinux/linux/issues/1213)"
+            LOG_COMMENT+=" + ${CTOD}=n (https://github.com/ClangBuiltLinux/linux/issues/1213)"
             scripts_config -d ${CTOD}
-        else
-            unset LOG_COMMENT
         fi
         kmake "${KMAKE_ARGS[@]}" olddefconfig all
         log "s390x allmodconfig${LOG_COMMENT} $(results "${?}")"
@@ -1163,18 +1175,17 @@ function build_s390x_kernels() {
     setup_config debian/s390x.config
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
     KRNL_RC=${?}
-    log "s390x debian config $(results "${KRNL_RC}")"
+    log "s390x debian config${LOG_COMMENT} $(results "${KRNL_RC}")"
     qemu_boot_kernel s390
     log "s390x debian config qemu boot $(QEMU=1 results "${?}")"
 
     # Fedora
     KLOG=s390x-fedora
+    LOG_COMMENT=""
     setup_config fedora/s390x.config
     if grep -Eq '"(o|n|x)i.*%0,%b1.*n"' "${LINUX_SRC}"/arch/s390/include/asm/bitops.h; then
-        LOG_COMMENT=" + CONFIG_MARCH_Z196=y"
+        LOG_COMMENT+=" + CONFIG_MARCH_Z196=y (https://github.com/ClangBuiltLinux/linux/issues/1264)"
         scripts_config -d MARCH_ZEC12 -e MARCH_Z196
-    else
-        unset LOG_COMMENT
     fi
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
     KRNL_RC=${?}
@@ -1187,7 +1198,7 @@ function build_s390x_kernels() {
     setup_config opensuse/s390x.config
     kmake "${KMAKE_ARGS[@]}" olddefconfig all
     KRNL_RC=${?}
-    log "s390x opensuse config $(results "${KRNL_RC}")"
+    log "s390x opensuse config${LOG_COMMENT} $(results "${KRNL_RC}")"
     qemu_boot_kernel s390
     log "s390x opensuse config qemu boot $(QEMU=1 results "${?}")"
 }
@@ -1249,19 +1260,19 @@ function build_x86_kernels() {
     KLOG=i386-debian
     setup_config debian/i386.config
     kmake olddefconfig all
-    log "i386 debian config $(results "${?}")"
+    log "i386 debian config${LOG_COMMENT} $(results "${?}")"
 
     # Fedora
     KLOG=i686-fedora
     setup_config fedora/i686.config
     kmake olddefconfig all
-    log "i686 fedora config $(results "${?}")"
+    log "i686 fedora config${LOG_COMMENT} $(results "${?}")"
 
     # OpenSUSE
     KLOG=i386-opensuse
     setup_config opensuse/i386.config
     kmake olddefconfig all
-    log "i386 opensuse config $(results "${?}")"
+    log "i386 opensuse config${LOG_COMMENT} $(results "${?}")"
 }
 
 # Build x86_64 kernels
@@ -1327,13 +1338,12 @@ function build_x86_64_kernels() {
 
     # Alpine Linux
     KLOG=x86_64-alpine
+    LOG_COMMENT=""
     setup_config alpine/x86_64.config
     # https://github.com/ClangBuiltLinux/linux/issues/515
     if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
-        LOG_COMMENT=" + CONFIG_STM=n (https://github.com/ClangBuiltLinux/linux/issues/515)"
+        LOG_COMMENT+=" + CONFIG_STM=n (https://github.com/ClangBuiltLinux/linux/issues/515)"
         scripts_config -d CONFIG_STM
-    else
-        unset LOG_COMMENT
     fi
     kmake olddefconfig all
     KRNL_RC=${?}
@@ -1343,13 +1353,12 @@ function build_x86_64_kernels() {
 
     # Arch Linux
     KLOG=x86_64-archlinux
+    LOG_COMMENT=""
     setup_config archlinux/x86_64.config
     # https://github.com/ClangBuiltLinux/linux/issues/515
     if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
-        LOG_COMMENT=" + CONFIG_STM=n (https://github.com/ClangBuiltLinux/linux/issues/515)"
+        LOG_COMMENT+=" + CONFIG_STM=n (https://github.com/ClangBuiltLinux/linux/issues/515)"
         scripts_config -d CONFIG_STM
-    else
-        unset LOG_COMMENT
     fi
     kmake olddefconfig all
     KRNL_RC=${?}
@@ -1369,13 +1378,12 @@ function build_x86_64_kernels() {
 
     # Fedora
     KLOG=x86_64-fedora
+    LOG_COMMENT=""
     setup_config fedora/x86_64.config
     # https://github.com/ClangBuiltLinux/linux/issues/515
     if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
-        LOG_COMMENT=" + CONFIG_STM=n + CONFIG_TEST_MEMCAT_P=n (https://github.com/ClangBuiltLinux/linux/issues/515)"
+        LOG_COMMENT+=" + CONFIG_STM=n + CONFIG_TEST_MEMCAT_P=n (https://github.com/ClangBuiltLinux/linux/issues/515)"
         scripts_config -d CONFIG_STM -d CONFIG_TEST_MEMCAT_P
-    else
-        unset LOG_COMMENT
     fi
     kmake olddefconfig all
     KRNL_RC=${?}
@@ -1385,13 +1393,12 @@ function build_x86_64_kernels() {
 
     # OpenSUSE
     KLOG=x86_64-opensuse
+    LOG_COMMENT=""
     setup_config opensuse/x86_64.config
     # https://github.com/ClangBuiltLinux/linux/issues/515
     if [[ ${LNX_VER_CODE} -lt 507000 ]]; then
-        LOG_COMMENT=" + CONFIG_STM=n (https://github.com/ClangBuiltLinux/linux/issues/515)"
+        LOG_COMMENT+=" + CONFIG_STM=n (https://github.com/ClangBuiltLinux/linux/issues/515)"
         scripts_config -d CONFIG_STM
-    else
-        unset LOG_COMMENT
     fi
     # https://github.com/ClangBuiltLinux/linux/issues/514
     kmake OBJCOPY=objcopy olddefconfig all
