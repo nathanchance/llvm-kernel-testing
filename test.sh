@@ -554,6 +554,17 @@ function build_arm32_kernels() {
     qemu_boot_kernel arm32_v7
     log "arm32 multi_v7_defconfig qemu boot $(QEMU=1 results "${?}")"
 
+    if grep -q "select HAVE_FUTEX_CMPXCHG if FUTEX" "${LINUX_SRC}"/arch/arm/Kconfig; then
+        KLOG=arm32-multi_v7_defconfig-thumb2
+        kmake "${KMAKE_ARGS[@]}" LLVM_IAS=0 distclean multi_v7_defconfig
+        scripts_config -e THUMB2_KERNEL
+        kmake "${KMAKE_ARGS[@]}" LLVM_IAS=0 olddefconfig all
+        KRNL_RC=${?}
+        log "arm32 multi_v7_defconfig + CONFIG_THUMB2_KERNEL=y $(results "${KRNL_RC}")"
+        qemu_boot_kernel arm32_v7
+        log "arm32 multi_v7_defconfig + CONFIG_THUMB2_KERNEL=y qemu boot $(QEMU=1 results "${?}")"
+    fi
+
     ${DEFCONFIGS_ONLY} && return 0
 
     CONFIGS_TO_DISABLE=()
