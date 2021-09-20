@@ -17,7 +17,7 @@ function parse_parameters() {
 
 # Alpine Linux
 function fetch_alpine_config() {
-    curl -LSso alpine/"${1}".config https://git.alpinelinux.org/aports/plain/testing/linux-edge/config-edge."${1}"
+    curl -LSso alpine/"${1}".config https://git.alpinelinux.org/aports/plain/community/linux-edge/config-edge."${1}"
 }
 
 # Arch Linux
@@ -35,21 +35,23 @@ function fetch_debian_config() { (
     TMP_DIR=$(mktemp -d -p "${PWD}")
     cd "${TMP_DIR}" || exit ${?}
 
-    PACK_VER=5.10.0-8
-    KER_VER=5.10.46-1
+    PACK_VER_SIGNED=5.14.0-trunk
+    KER_VER_SIGNED=5.14.3-1~exp1
+    PACK_VER_UNSIGNED=5.14.0-1
+    KER_VER_UNSIGNED=5.14.6-2
     case ${1} in
-        amd64 | arm64) URL=linux-signed-${1}/linux-image-${PACK_VER}-${1}_${KER_VER}_${1}.deb ;;
-        armmp) URL=linux/linux-image-${PACK_VER}-${1}_${KER_VER}_armhf.deb ;;
-        i386) DEB_CONFIG=686 && URL=linux-signed-${1}/linux-image-${PACK_VER}-${DEB_CONFIG}_${KER_VER}_${1}.deb ;;
-        powerpc64le) URL=linux/linux-image-${PACK_VER}-${1}_${KER_VER}_ppc64el.deb ;;
-        s390x) URL=linux/linux-image-${PACK_VER}-${1}_${KER_VER}_${1}.deb ;;
+        amd64 | arm64) URL=linux-signed-${1}/linux-image-${PACK_VER_SIGNED}-${1}_${KER_VER_SIGNED}_${1}.deb ;;
+        armmp) URL=linux/linux-image-${PACK_VER_UNSIGNED}-${1}_${KER_VER_UNSIGNED}_armhf.deb ;;
+        i386) DEB_CONFIG=686 && URL=linux-signed-${1}/linux-image-${PACK_VER_SIGNED}-${DEB_CONFIG}_${KER_VER_SIGNED}_${1}.deb ;;
+        powerpc64le) URL=linux/linux-image-${PACK_VER_UNSIGNED}-${1}_${KER_VER_UNSIGNED}_ppc64el.deb ;;
+        s390x) URL=linux/linux-image-${PACK_VER_UNSIGNED}-${1}_${KER_VER_UNSIGNED}_${1}.deb ;;
         *) return ;;
     esac
 
     curl -LSsO http://ftp.us.debian.org/debian/pool/main/l/"${URL}"
     ar x "${URL##*/}"
     tar xJf data.tar.xz
-    cp -v boot/config-${PACK_VER}-"${DEB_CONFIG:-${1}}" ../debian/"${1}".config
+    cp -v boot/config-*-"${DEB_CONFIG:-${1}}" ../debian/"${1}".config
     rm -rf "${TMP_DIR}"
 ); }
 
