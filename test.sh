@@ -335,6 +335,16 @@ function setup_config() {
         done
     fi
 
+    # CONFIG_CLK_RK3399 and CONFIG_CLK_RK3568 as modules is invalid after 9af0cbeb477cf36327eec4246a60c5e981b2bd1a
+    for NUM in 3399 3568; do
+        KCONFIG=CLK_RK${NUM}
+        KCONFIG_TEXT="bool \"Rockchip RK${NUM} clock controller support\""
+        if [[ "$(scripts_config -s ${KCONFIG})" = "m" ]] &&
+            grep -q "${KCONFIG_TEXT}" "${LINUX_SRC}"/drivers/clk/rockchip/Kconfig; then
+            SCRIPTS_CONFIG_ARGS+=(-e "${KCONFIG}")
+        fi
+    done
+
     # CONFIG_GPIO_MXC as a module is invalid before https://git.kernel.org/linus/12d16b397ce0a999d13762c4c0cae2fb82eb60ee
     if [[ "$(scripts_config -s GPIO_MXC)" = "m" ]] &&
         ! grep -q 'tristate "i.MX GPIO support"' "${LINUX_SRC}"/drivers/gpio/Kconfig; then
@@ -392,6 +402,12 @@ function setup_config() {
     # CONFIG_PVPANIC as a module is invalid after https://git.kernel.org/gregkh/char-misc/c/6861d27cf590d20a95b5d0724ac3768583b62947
     if [[ "$(scripts_config -s PVPANIC)" = "m" && -f ${LINUX_SRC}/drivers/misc/pvpanic/Kconfig ]]; then
         SCRIPTS_CONFIG_ARGS+=(-e PVPANIC -m PVPANIC_MMIO)
+    fi
+
+    # CONFIG_MCTP as a module is invalid after https://git.kernel.org/linus/78476d315e190533757ab894255c4f2c2f254bce
+    if [[ "$(scripts_config -s MCTP)" = "m" ]] &&
+        grep -q 'bool "MCTP core protocol support"' "${LINUX_SRC}"/net/mctp/Kconfig; then
+        SCRIPTS_CONFIG_ARGS+=(-e MCTP)
     fi
 
     # CONFIG_QCOM_RPMPD as a module is invalid before https://git.kernel.org/linus/f29808b2fb85a7ff2d4830aa1cb736c8c9b986f4
