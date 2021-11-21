@@ -222,7 +222,7 @@ function kmake() {
             LLVM_IAS="${LLVM_IAS:-0}" \
             ${LOCALVERSION:+LOCALVERSION="${LOCALVERSION}"} \
             ${NM:+NM="${NM}"} \
-            O="${OUT#${LINUX_SRC}/*}" \
+            O="${OUT#"${LINUX_SRC}"/*}" \
             ${OBJCOPY:+OBJCOPY="${OBJCOPY}"} \
             ${OBJDUMP:+OBJDUMP="${OBJDUMP}"} \
             ${OBJSIZE:+OBJSIZE="${OBJSIZE}"} \
