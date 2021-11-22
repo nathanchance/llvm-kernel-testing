@@ -53,6 +53,7 @@ function parse_parameters() {
             --llvm-prefix) shift && llvm_prefix=$(readlink -f "$1") ;;
             --log-dir) shift && bld_log_dir=$1 ;;
             -o | --out-dir) shift && O=$1 ;;
+            -q | --qemu-prefix) shift && qemu_prefix=$(readlink -f "$1") ;;
             -t | --tc-prefix) shift && tc_prefix=$(readlink -f "$1") ;;
             --test-cfi-kernel) test_cfi_kernel=true ;;
             *=*) export "${1:?}" ;;
@@ -120,13 +121,14 @@ function print_binutils_info() {
 }
 
 # Print clang, binutils, and kernel versions being tested into the build log
-function print_tc_lnx_info() {
+function print_tc_lnx_env_info() {
     clang --version | head -n1
     clang --version | tail -n1
 
     print_binutils_info
 
     echo "Linux $(make -C "$linux_src" -s kernelversion)$(get_config_localversion_auto)"
+    echo "PATH: $PATH"
 }
 
 # Set tool variables based on availability
@@ -453,6 +455,10 @@ function swap_endianness() {
 function results() {
     if [[ -n $qemu && $krnl_rc -ne 0 ]]; then
         result=skipped
+    elif [[ -n $qemu && $1 -eq 32 ]]; then
+        result="skipped due to a newer QEMU binary than 5.0.1 (found $raw_qemu_ver)"
+    elif [[ -n $qemu && $1 -eq 127 ]]; then
+        result="skipped due to missing QEMU binary in PATH"
     elif [[ $1 -eq 0 ]]; then
         result=successful
     else
@@ -1455,6 +1461,13 @@ function create_lnx_ver_code() {
     lnx_ver_code=$(printf "%d%02d%03d" "${lnx_ver[@]}")
 }
 
+# Print QEMU version as a 5-6 digit number (e.g. QEMU 6.1.0 will be 60100)
+function create_qemu_ver_code() {
+    raw_qemu_ver=$(qemu-system-"$qemu_suffix" --version | head -1 | cut -d ' ' -f 4)
+    IFS=. read -ra qemu_ver <<<"$raw_qemu_ver"
+    qemu_ver_code=$(printf "%d%02d%02d" "${qemu_ver[@]}")
+}
+
 # Check if the clang binary supports the target before attempting to build
 function check_clang_target() {
     local target
@@ -1483,12 +1496,13 @@ function build_kernels() {
     export_path_if_exists "$binutils_prefix/bin"
     export_path_if_exists "$llvm_prefix/bin"
     export_path_if_exists "$tc_prefix/bin"
+    export_path_if_exists "$qemu_prefix/bin"
 
     set_tool_vars
     header "Build information"
-    print_tc_lnx_info
+    print_tc_lnx_env_info
     {
-        print_tc_lnx_info
+        print_tc_lnx_env_info
         echo
     } >"$bld_log"
     create_lnx_ver_code
@@ -1509,7 +1523,25 @@ function build_kernels() {
 # Boot the kernel in qemu
 function qemu_boot_kernel() {
     if [[ $krnl_rc -eq 0 ]]; then
-        "$boot_utils"/boot-qemu.sh -a "${1:?}" -k "$out"
+        case ${1:?} in
+            arm64*) qemu_suffix=aarch64 ;;
+            arm*) qemu_suffix=arm ;;
+            mips*) qemu_suffix=$1 ;;
+            ppc32) qemu_suffix=ppc ;;
+            ppc64*) qemu_suffix=ppc64 ;;
+            riscv) qemu_suffix=riscv64 ;;
+            s390) qemu_suffix=s390x ;;
+            x86) qemu_suffix=i386 ;;
+            x86_64) qemu_suffix=x86_64 ;;
+            *)
+                unset qemu_suffix
+                return 127
+                ;;
+        esac
+        command -v qemu-system-"$qemu_suffix" &>/dev/null || return 127
+        create_qemu_ver_code
+        [[ $1 = "ppc32" && $qemu_ver_code -gt 50001 ]] && return 32
+        "$boot_utils"/boot-qemu.sh -a "$1" -k "$out"
     fi
 }
 
@@ -1518,7 +1550,7 @@ function report_results() {
     # Remove last blank line and full path from errors/warnings because I am OCD :^)
     sed -i -e '${/^$/d}' -e "s;$linux_src/;;g" "$bld_log"
     header "Toolchain and kernel information"
-    head -n4 "$bld_log"
+    head -n5 "$bld_log"
     header "List of successes"
     grep "success" "$bld_log"
     fails=$(tail -n +5 "$bld_log" | grep "failed")
