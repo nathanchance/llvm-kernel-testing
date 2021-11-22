@@ -99,11 +99,24 @@ function get_config_localversion_auto() { (
     rm -rf include/config
 ); }
 
+function check_binutils() {
+    as=${CROSS_COMPILE}as
+    if command -v "$as" &>/dev/null; then
+        return 0
+    else
+        msg="$1 kernels skipped due to missing binutils"
+        log "$msg"
+        echo "$msg"
+        echo
+        return 1
+    fi
+}
+
 # Print binutils version for specific architectures
 function print_binutils_info() {
     as=${CROSS_COMPILE}as
     echo "binutils version: $("$as" --version | head -n1)"
-    echo "binutils location $(dirname "$(command -v "$as")")"
+    echo "binutils location: $(dirname "$(command -v "$as")")"
 }
 
 # Print clang, binutils, and kernel versions being tested into the build log
@@ -469,6 +482,7 @@ function build_arm32_kernels() {
     if [[ $llvm_ver_code -ge 130000 && $lnx_ver_code -ge 513000 ]]; then
         kmake_args+=(LLVM_IAS=1)
     else
+        check_binutils arm32 || return
         print_binutils_info
         echo
     fi
@@ -603,6 +617,7 @@ function build_arm64_kernels() {
     if [[ $lnx_ver_code -ge 510000 && $llvm_ver_code -ge 110000 ]]; then
         kmake_args+=(LLVM_IAS=1)
     else
+        check_binutils arm64 || return
         print_binutils_info
         echo
     fi
@@ -790,6 +805,7 @@ function build_mips_kernels() {
 
     header "Building mips kernels"
 
+    check_binutils mips || return
     print_binutils_info
     echo
 
@@ -883,6 +899,7 @@ function build_powerpc_kernels() {
 
     header "Building powerpc kernels"
 
+    check_binutils powerpc || return
     print_binutils_info
     echo
 
@@ -1027,6 +1044,7 @@ function build_riscv_kernels() {
 
     header "Building riscv kernels"
 
+    check_binutils riscv || return
     print_binutils_info
     echo
 
@@ -1098,6 +1116,7 @@ function build_s390x_kernels() {
 
     header "Building s390x kernels"
 
+    check_binutils s390x || return
     print_binutils_info
     echo
 
@@ -1248,6 +1267,7 @@ function build_x86_64_kernels() {
     if [[ $lnx_ver_code -ge 510000 && $llvm_ver_code -ge 110000 ]]; then
         export LLVM_IAS=1
     else
+        check_binutils x86_64 || return
         print_binutils_info
         echo
     fi
