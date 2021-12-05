@@ -703,6 +703,16 @@ EOF
     log "arm64 allmodconfig$log_comment $(results "$?")"
     rm -f "$config_file"
 
+    if grep -q "config LTO_CLANG_THIN" "$linux_src"/arch/Kconfig && [[ $llvm_ver_code -ge 110000 ]]; then
+        configs_to_disable=(CONFIG_GCOV_KERNEL CONFIG_KASAN)
+        grep -q "config WERROR" "$linux_src"/init/Kconfig && configs_to_disable+=(CONFIG_WERROR)
+        gen_allconfig
+        echo "CONFIG_LTO_CLANG_THIN=y" >>"$config_file"
+        kmake "${kmake_args[@]}" KCONFIG_ALLCONFIG="$config_file" distclean allmodconfig all
+        log "arm64 allmodconfig$log_comment + CONFIG_LTO_CLANG_THIN=y $(results "$?")"
+        rm -f "$config_file"
+    fi
+
     klog=arm64-allnoconfig
     kmake "${kmake_args[@]}" distclean allnoconfig all
     log "arm64 allnoconfig $(results "$?")"
@@ -1349,6 +1359,16 @@ function build_x86_64_kernels() {
     fi
     kmake olddefconfig all KCFLAGS="${KCFLAGS:+${KCFLAGS} }-O3"
     log "x86_64 allmodconfig at -O3$log_comment $(results "$?")"
+
+    if grep -q "config LTO_CLANG_THIN" "$linux_src"/arch/Kconfig && [[ $llvm_ver_code -ge 110000 ]]; then
+        configs_to_disable=(CONFIG_GCOV_KERNEL CONFIG_KASAN)
+        grep -q "config WERROR" "$linux_src"/init/Kconfig && configs_to_disable+=(CONFIG_WERROR)
+        gen_allconfig
+        echo "CONFIG_LTO_CLANG_THIN=y" >>"$config_file"
+        kmake KCONFIG_ALLCONFIG="$config_file" distclean allmodconfig all
+        log "x86_64 allmodconfig$log_comment + CONFIG_LTO_CLANG_THIN=y $(results "$?")"
+        rm -f "$config_file"
+    fi
 
     # Alpine Linux
     klog=x86_64-alpine
