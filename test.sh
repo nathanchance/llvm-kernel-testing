@@ -1252,6 +1252,13 @@ function build_x86_kernels() {
 
     $defconfigs_only && return 0
 
+    klog=x86-allmodconfig
+    configs_to_disable=()
+    grep -q "config WERROR" "$linux_src"/init/Kconfig && configs_to_disable+=(CONFIG_WERROR)
+    gen_allconfig
+    kmake ARCH=i386 ${config_file:+KCONFIG_ALLCONFIG=$config_file} distclean allmodconfig all
+    log "x86 allmodconfig $(results "$?")"
+
     klog=x86-allnoconfig
     kmake distclean allnoconfig all
     log "x86 allnoconfig $(results "$?")"
