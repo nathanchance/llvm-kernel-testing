@@ -452,6 +452,21 @@ function swap_endianness() {
         "$l_opt" CPU_LITTLE_ENDIAN
 }
 
+function gen_allconfig() {
+    if [[ -n ${configs_to_disable[*]} ]]; then
+        config_file=$(mktemp --suffix=.config)
+        log_comment=""
+        for config_to_disable in "${configs_to_disable[@]}"; do
+            config_value=${config_to_disable}=n
+            echo "$config_value" >>"$config_file"
+            log_comment+=" + $config_value"
+        done
+    else
+        unset config_file
+        unset log_comment
+    fi
+}
+
 function results() {
     if [[ -n $qemu && $krnl_rc -ne 0 ]]; then
         result=skipped
@@ -540,18 +555,12 @@ function build_arm32_kernels() {
 
     configs_to_disable=()
     grep -oPqz '(?s)depends on ARCH_SUPPORTS_BIG_ENDIAN.*?depends on \!LD_IS_LLD' "$linux_src"/arch/arm/mm/Kconfig || configs_to_disable+=(CONFIG_CPU_BIG_ENDIAN)
-    if [[ -n ${configs_to_disable[*]} ]]; then
-        config_file=$(mktemp --suffix=.config)
-        log_comment=""
-        for config_to_disable in "${configs_to_disable[@]}"; do
-            config_value=${config_to_disable}=n
-            echo "${config_value}" >>"${config_file}"
-            log_comment+=" + ${config_value}"
-        done
-    fi
+    grep -q "config WERROR" "$linux_src"/init/Kconfig && configs_to_disable+=(CONFIG_WERROR)
+    gen_allconfig
     klog=arm32-allmodconfig
-    kmake "${kmake_args[@]}" ${config_file:+KCONFIG_ALLCONFIG=${config_file}} distclean allmodconfig all
+    kmake "${kmake_args[@]}" ${config_file:+KCONFIG_ALLCONFIG=$config_file} distclean allmodconfig all
     log "arm32 allmodconfig$log_comment $(results "$?")"
+    rm -f "$config_file"
 
     klog=arm32-allnoconfig
     kmake "${kmake_args[@]}" distclean allnoconfig all
@@ -686,18 +695,13 @@ EOF
     # https://github.com/ClangBuiltLinux/linux/issues/1243
     gpi_c=$linux_src/drivers/dma/qcom/gpi.c
     { [[ -f $gpi_c ]] && ! grep -oPqz '(?s)static __always_inline void.*?gpi_update_reg' "$gpi_c"; } && configs_to_disable+=(CONFIG_QCOM_GPI_DMA)
-    if [[ -n ${configs_to_disable[*]} ]]; then
-        config_file=$(mktemp --suffix=.config)
-        log_comment=""
-        for config_to_disable in "${configs_to_disable[@]}"; do
-            config_value=${config_to_disable}=n
-            echo "$config_value" >>"$config_file"
-            log_comment+=" + $config_value"
-        done
-    fi
+    # https://github.com/ClangBuiltLinux/continuous-integration2/issues/246
+    grep -q "config WERROR" "$linux_src"/init/Kconfig && configs_to_disable+=(CONFIG_WERROR)
+    gen_allconfig
     klog=arm64-allmodconfig
-    kmake "${kmake_args[@]}" ${config_file:+KCONFIG_ALLCONFIG=${config_file}} distclean allmodconfig all
+    kmake "${kmake_args[@]}" ${config_file:+KCONFIG_ALLCONFIG=$config_file} distclean allmodconfig all
     log "arm64 allmodconfig$log_comment $(results "$?")"
+    rm -f "$config_file"
 
     klog=arm64-allnoconfig
     kmake "${kmake_args[@]}" distclean allnoconfig all
@@ -794,9 +798,13 @@ function build_hexagon_kernels() {
 
     if grep -Fq "EXPORT_SYMBOL(__raw_readsw)" "$linux_src"/arch/hexagon/lib/io.c; then
         klog=hexagon-allmodconfig
-        kmake "${kmake_args[@]}" distclean allmodconfig all
+        configs_to_disable=()
+        grep -q "config WERROR" "$linux_src"/init/Kconfig && configs_to_disable+=(CONFIG_WERROR)
+        gen_allconfig
+        kmake "${kmake_args[@]}" ${config_file:+KCONFIG_ALLCONFIG=$config_file} distclean allmodconfig all
         krnl_rc=$?
         log "hexagon allmodconfig $(results "$krnl_rc")"
+        rm -f "$config_file"
     fi
 }
 
@@ -1079,8 +1087,13 @@ function build_riscv_kernels() {
     if [[ $lnx_ver_code -gt 508000 ]] && grep -q 'mno-relax' "$linux_src"/arch/riscv/Makefile; then
         [[ $llvm_ver_code -ge 130000 ]] && kmake_args+=(LLVM_IAS=1)
         klog=riscv-allmodconfig
-        kmake "${kmake_args[@]}" LLVM_IAS=1 distclean allmodconfig all
+        configs_to_disable=()
+        grep -q "config WERROR" "$linux_src"/init/Kconfig && configs_to_disable+=(CONFIG_WERROR)
+        gen_allconfig
+        kmake "${kmake_args[@]}" LLVM_IAS=1 ${config_file:+KCONFIG_ALLCONFIG=$config_file} distclean allmodconfig all
         krnl_rc=$?
+        log "riscv allmodconfig$log_comment $(results "$krnl_rc")"
+        rm -f "$config_file"
 
         klog=riscv-opensuse
         setup_config opensuse/riscv64.config
@@ -1144,21 +1157,13 @@ function build_s390x_kernels() {
     kmake "${kmake_args[@]}" distclean tinyconfig all
     log "s390x tinyconfig $(results "$?")"
 
-    if [[ $llvm_ver_code -ge 120000 ]]; then
-        klog=s390x-allmodconfig
-        log_comment=""
-        kmake "${kmake_args[@]}" distclean allmodconfig
-        # https://github.com/ClangBuiltLinux/linux/issues/1213
-        if ! grep -q "config UBSAN_MISC" "$linux_src"/lib/Kconfig.ubsan && ! grep -q "depends on HAS_IOMEM" "$linux_src"/init/Kconfig; then
-            ctod=CONFIG_UBSAN_TRAP
-            log_comment+=" + ${ctod}=n (https://github.com/ClangBuiltLinux/linux/issues/1213)"
-            scripts_config -d $ctod
-        fi
-        kmake "${kmake_args[@]}" olddefconfig all
-        log "s390x allmodconfig$log_comment $(results "$?")"
-    else
-        log "s390x allmodconfig skipped (https://reviews.llvm.org/D90065)"
-    fi
+    klog=s390x-allmodconfig
+    configs_to_disable=()
+    grep -q "config WERROR" "$linux_src"/init/Kconfig && configs_to_disable+=(CONFIG_WERROR)
+    gen_allconfig
+    kmake "${kmake_args[@]}" ${config_file:+KCONFIG_ALLCONFIG=$config_file} distclean allmodconfig all
+    log "s390x allmodconfig$log_comment $(results "$?")"
+    rm -f "$config_file"
 
     # Debian
     klog=s390x-debian
@@ -1287,7 +1292,7 @@ function build_x86_64_kernels() {
     if [[ $lnx_ver_code -ge 510000 && $llvm_ver_code -ge 110000 ]]; then
         export LLVM_IAS=1
     else
-        heck_binutils x86_64 || return
+        check_binutils x86_64 || return
         print_binutils_info
         echo
     fi
@@ -1314,16 +1319,15 @@ function build_x86_64_kernels() {
     $defconfigs_only && return 0
 
     klog=x86_64-allmodconfig
-    kmake distclean allmodconfig
+    configs_to_disable=()
+    grep -q "config WERROR" "$linux_src"/init/Kconfig && configs_to_disable+=(CONFIG_WERROR)
     # https://github.com/ClangBuiltLinux/linux/issues/515
-    if [[ $lnx_ver_code -lt 507000 ]]; then
-        log_comment=" + CONFIG_STM=n + CONFIG_TEST_MEMCAT_P=n (https://github.com/ClangBuiltLinux/linux/issues/515)"
-        scripts_config -d CONFIG_STM -d CONFIG_TEST_MEMCAT_P
-    else
-        unset log_comment
-    fi
-    kmake olddefconfig all
+    [[ $lnx_ver_code -lt 507000 ]] && configs_to_disable+=(CONFIG_STM CONFIG_TEST_MEMCAT_P)
+    gen_allconfig
+    [[ $lnx_ver_code -lt 507000 ]] && log_comment+=" + (https://github.com/ClangBuiltLinux/linux/issues/515)"
+    kmake ${config_file:+KCONFIG_ALLCONFIG=$config_file} distclean allmodconfig all
     log "x86_64 allmodconfig$log_comment $(results "$?")"
+    rm -f "$config_file"
 
     klog=x86_64-allmodconfig-O3
     kmake distclean allmodconfig
