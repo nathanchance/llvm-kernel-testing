@@ -494,15 +494,16 @@ function results() {
 function build_arm32_kernels() {
     local CROSS_COMPILE kmake_args log_comment
     CROSS_COMPILE=arm-linux-gnueabi-
-    kmake_args=(
-        ARCH=arm
-        CROSS_COMPILE="$CROSS_COMPILE"
-    )
+    kmake_args=(ARCH=arm)
     header "Building arm32 kernels"
 
     if [[ $llvm_ver_code -ge 130000 && $lnx_ver_code -ge 513000 ]]; then
         kmake_args+=(LLVM_IAS=1)
+        if [[ ! -f $linux_src/scripts/Makefile.clang ]]; then
+            kmake_args+=(CROSS_COMPILE="$CROSS_COMPILE")
+        fi
     else
+        kmake_args+=(CROSS_COMPILE="$CROSS_COMPILE")
         check_binutils arm32 || return
         print_binutils_info
         echo
@@ -621,17 +622,25 @@ function build_arm32_kernels() {
 # Build arm64 kernels
 function build_arm64_kernels() {
     local kmake_args
-    CROSS_COMPILE=aarch64-linux-gnu-
-    kmake_args=(
-        ARCH=arm64
-        CROSS_COMPILE="$CROSS_COMPILE"
-    )
+    kmake_args=(ARCH=arm64)
 
     header "Building arm64 kernels"
 
+    if [[ $(uname -m) = "aarch64" ]]; then
+        unset CROSS_COMPILE
+    else
+        CROSS_COMPILE=aarch64-linux-gnu-
+    fi
+
     if [[ $lnx_ver_code -ge 510000 && $llvm_ver_code -ge 110000 ]]; then
         kmake_args+=(LLVM_IAS=1)
+        if [[ ! -f $linux_src/scripts/Makefile.clang && -n $CROSS_COMPILE ]]; then
+            kmake_args+=(CROSS_COMPILE="$CROSS_COMPILE")
+        fi
     else
+        if [[ -n $CROSS_COMPILE ]]; then
+            kmake_args+=(CROSS_COMPILE="$CROSS_COMPILE")
+        fi
         check_binutils arm64 || return
         print_binutils_info
         echo
@@ -779,9 +788,11 @@ EOF
 function build_hexagon_kernels() {
     kmake_args=(
         ARCH=hexagon
-        CROSS_COMPILE=hexagon-linux-gnu-
         LLVM_IAS=1
     )
+    if [[ ! -f $linux_src/scripts/Makefile.clang ]]; then
+        kmake_args+=(CROSS_COMPILE=hexagon-linux-gnu-)
+    fi
 
     # Hexagon was broken without some fixes
     if ! grep -q "KBUILD_CFLAGS += -mlong-calls" "$linux_src"/arch/hexagon/Makefile || ! [[ -f $linux_src/arch/hexagon/lib/divsi3.S ]]; then
@@ -1226,12 +1237,18 @@ function build_x86_kernels() {
 
     header "Building x86 kernels"
 
-    unset CROSS_COMPILE
+    kmake_args=(ARCH=i386)
+
     export LLVM_IAS=1
+    if [[ $(uname -m) = "x86_64" || $(uname -m) = "i386" ]]; then
+        unset CROSS_COMPILE
+    else
+        [[ -f $linux_src/scripts/Makefile.clang ]] || kmake_args+=(CROSS_COMPILE=x86_64-linux-gnu-)
+    fi
 
     # Upstream
     klog=i386-defconfig
-    kmake distclean i386_defconfig all
+    kmake "${kmake_args[@]}" distclean i386_defconfig all
     krnl_rc=$?
     log "i386 defconfig $(results "$krnl_rc")"
     qemu_boot_kernel x86
@@ -1241,9 +1258,9 @@ function build_x86_kernels() {
         ! grep -Pq "select ARCH_SUPPORTS_LTO_CLANG_THIN\tif X86_64" "$linux_src"/arch/x86/Kconfig &&
         [[ $llvm_ver_code -ge 110000 ]]; then
         klog=i386-defconfig-lto
-        kmake distclean i386_defconfig
+        kmake "${kmake_args[@]}" distclean i386_defconfig
         scripts_config -d LTO_NONE -e LTO_CLANG_THIN
-        kmake olddefconfig all
+        kmake "${kmake_args[@]}" olddefconfig all
         krnl_rc=$?
         log "i386 defconfig + CONFIG_LTO_CLANG_THIN=y $(results "$krnl_rc")"
         qemu_boot_kernel x86
@@ -1256,15 +1273,15 @@ function build_x86_kernels() {
     configs_to_disable=()
     grep -q "config WERROR" "$linux_src"/init/Kconfig && configs_to_disable+=(CONFIG_WERROR)
     gen_allconfig
-    kmake ARCH=i386 ${config_file:+KCONFIG_ALLCONFIG=$config_file} distclean allmodconfig all
+    kmake "${kmake_args[@]}" ARCH=i386 ${config_file:+KCONFIG_ALLCONFIG=$config_file} distclean allmodconfig all
     log "x86 allmodconfig $(results "$?")"
 
     klog=x86-allnoconfig
-    kmake distclean allnoconfig all
+    kmake "${kmake_args[@]}" distclean allnoconfig all
     log "x86 allnoconfig $(results "$?")"
 
     klog=x86-tinyconfig
-    kmake distclean tinyconfig all
+    kmake "${kmake_args[@]}" distclean tinyconfig all
     log "x86 tinyconfig $(results "$?")"
 
     # Debian
@@ -1277,7 +1294,7 @@ function build_x86_kernels() {
             -d IP6_NF_TARGET_SYNPROXY \
             -d NFT_SYNPROXY
     fi
-    kmake olddefconfig all
+    kmake "${kmake_args[@]}" olddefconfig all
     log "i386 debian config$log_comment $(results "$?")"
 
     # Fedora
@@ -1290,25 +1307,38 @@ function build_x86_kernels() {
             -d IP6_NF_TARGET_SYNPROXY \
             -d NFT_SYNPROXY
     fi
-    kmake olddefconfig all
+    kmake "${kmake_args[@]}" olddefconfig all
     log "i686 fedora config$log_comment $(results "$?")"
 
     # OpenSUSE
     klog=i386-opensuse
     setup_config opensuse/i386.config
-    kmake olddefconfig all
+    kmake "${kmake_args[@]}" olddefconfig all
     log "i386 opensuse config$log_comment $(results "$?")"
 }
 
 # Build x86_64 kernels
 function build_x86_64_kernels() {
-    local log_comment
+    local log_comment kmake_args
     header "Building x86_64 kernels"
 
-    unset CROSS_COMPILE
+    kmake_args=(ARCH=x86_64)
+
+    if [[ $(uname -m) = "x86_64" ]]; then
+        unset CROSS_COMPILE
+    else
+        CROSS_COMPILE=x86_64-linux-gnu-
+    fi
+
     if [[ $lnx_ver_code -ge 510000 && $llvm_ver_code -ge 110000 ]]; then
         export LLVM_IAS=1
+        if [[ ! -f $linux_src/scripts/Makefile.clang && -n $CROSS_COMPILE ]]; then
+            kmake_args+=(CROSS_COMPILE="$CROSS_COMPILE")
+        fi
     else
+        if [[ -n $CROSS_COMPILE ]]; then
+            kmake_args+=(CROSS_COMPILE="$CROSS_COMPILE")
+        fi
         check_binutils x86_64 || return
         print_binutils_info
         echo
@@ -1316,7 +1346,7 @@ function build_x86_64_kernels() {
 
     # Upstream
     klog=x86_64-defconfig
-    kmake distclean defconfig all
+    kmake "${kmake_args[@]}" distclean defconfig all
     krnl_rc=$?
     log "x86_64 defconfig $(results "$krnl_rc")"
     qemu_boot_kernel x86_64
@@ -1324,9 +1354,9 @@ function build_x86_64_kernels() {
 
     if grep -q "config LTO_CLANG_THIN" "$linux_src"/arch/Kconfig && [[ $llvm_ver_code -ge 110000 ]]; then
         klog=x86_64-defconfig-lto
-        kmake distclean defconfig
+        kmake "${kmake_args[@]}" distclean defconfig
         scripts_config -d LTO_NONE -e LTO_CLANG_THIN
-        kmake olddefconfig all
+        kmake "${kmake_args[@]}" olddefconfig all
         krnl_rc=$?
         log "x86_64 defconfig + CONFIG_LTO_CLANG_THIN=y $(results "$krnl_rc")"
         qemu_boot_kernel x86_64
@@ -1342,12 +1372,12 @@ function build_x86_64_kernels() {
     [[ $lnx_ver_code -lt 507000 ]] && configs_to_disable+=(CONFIG_STM CONFIG_TEST_MEMCAT_P)
     gen_allconfig
     [[ $lnx_ver_code -lt 507000 ]] && log_comment+=" + (https://github.com/ClangBuiltLinux/linux/issues/515)"
-    kmake ${config_file:+KCONFIG_ALLCONFIG=$config_file} distclean allmodconfig all
+    kmake "${kmake_args[@]}" ${config_file:+KCONFIG_ALLCONFIG=$config_file} distclean allmodconfig all
     log "x86_64 allmodconfig$log_comment $(results "$?")"
     rm -f "$config_file"
 
     klog=x86_64-allmodconfig-O3
-    kmake distclean allmodconfig
+    kmake "${kmake_args[@]}" distclean allmodconfig
     # https://github.com/ClangBuiltLinux/linux/issues/678
     if [[ $lnx_ver_code -lt 508000 ]]; then
         log_comment=" + CONFIG_SENSORS_APPLESMC=n (https://github.com/ClangBuiltLinux/linux/issues/678)"
@@ -1364,7 +1394,7 @@ function build_x86_64_kernels() {
     else
         unset log_comment
     fi
-    kmake olddefconfig all KCFLAGS="${KCFLAGS:+${KCFLAGS} }-O3"
+    kmake "${kmake_args[@]}" olddefconfig all KCFLAGS="${KCFLAGS:+${KCFLAGS} }-O3"
     log "x86_64 allmodconfig at -O3$log_comment $(results "$?")"
 
     if grep -q "config LTO_CLANG_THIN" "$linux_src"/arch/Kconfig && [[ $llvm_ver_code -ge 110000 ]]; then
@@ -1372,7 +1402,7 @@ function build_x86_64_kernels() {
         grep -q "config WERROR" "$linux_src"/init/Kconfig && configs_to_disable+=(CONFIG_WERROR)
         gen_allconfig
         echo "CONFIG_LTO_CLANG_THIN=y" >>"$config_file"
-        kmake KCONFIG_ALLCONFIG="$config_file" distclean allmodconfig all
+        kmake "${kmake_args[@]}" KCONFIG_ALLCONFIG="$config_file" distclean allmodconfig all
         log "x86_64 allmodconfig$log_comment + CONFIG_LTO_CLANG_THIN=y $(results "$?")"
         rm -f "$config_file"
     fi
@@ -1386,7 +1416,7 @@ function build_x86_64_kernels() {
         log_comment+=" + CONFIG_STM=n (https://github.com/ClangBuiltLinux/linux/issues/515)"
         scripts_config -d CONFIG_STM
     fi
-    kmake olddefconfig all
+    kmake "${kmake_args[@]}" olddefconfig all
     krnl_rc=$?
     log "x86_64 alpine config$log_comment $(results "$krnl_rc")"
     qemu_boot_kernel x86_64
@@ -1401,7 +1431,7 @@ function build_x86_64_kernels() {
         log_comment+=" + CONFIG_STM=n (https://github.com/ClangBuiltLinux/linux/issues/515)"
         scripts_config -d CONFIG_STM
     fi
-    kmake olddefconfig all
+    kmake "${kmake_args[@]}" olddefconfig all
     krnl_rc=$?
     log "x86_64 archlinux config$log_comment $(results "$krnl_rc")"
     qemu_boot_kernel x86_64
@@ -1411,7 +1441,7 @@ function build_x86_64_kernels() {
     klog=x86_64-debian
     setup_config debian/amd64.config
     # https://github.com/ClangBuiltLinux/linux/issues/514
-    kmake OBJCOPY=objcopy olddefconfig all
+    kmake "${kmake_args[@]}" OBJCOPY=objcopy olddefconfig all
     krnl_rc=$?
     log "x86_64 debian config $(results "$krnl_rc")"
     qemu_boot_kernel x86_64
@@ -1426,7 +1456,7 @@ function build_x86_64_kernels() {
         log_comment+=" + CONFIG_STM=n + CONFIG_TEST_MEMCAT_P=n (https://github.com/ClangBuiltLinux/linux/issues/515)"
         scripts_config -d CONFIG_STM -d CONFIG_TEST_MEMCAT_P
     fi
-    kmake olddefconfig all
+    kmake "${kmake_args[@]}" olddefconfig all
     krnl_rc=$?
     log "x86_64 fedora config$log_comment $(results "$krnl_rc")"
     qemu_boot_kernel x86_64
@@ -1442,7 +1472,7 @@ function build_x86_64_kernels() {
         scripts_config -d CONFIG_STM
     fi
     # https://github.com/ClangBuiltLinux/linux/issues/514
-    kmake OBJCOPY=objcopy olddefconfig all
+    kmake "${kmake_args[@]}" OBJCOPY=objcopy olddefconfig all
     krnl_rc=$?
     log "x86_64 opensuse config$log_comment $(results "$krnl_rc")"
     qemu_boot_kernel x86_64
