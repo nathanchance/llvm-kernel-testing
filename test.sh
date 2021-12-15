@@ -717,6 +717,7 @@ EOF
         grep -q "config WERROR" "$linux_src"/init/Kconfig && configs_to_disable+=(CONFIG_WERROR)
         gen_allconfig
         echo "CONFIG_LTO_CLANG_THIN=y" >>"$config_file"
+        klog=arm64-allmodconfig-thinlto
         kmake "${kmake_args[@]}" KCONFIG_ALLCONFIG="$config_file" distclean allmodconfig all
         log "arm64 allmodconfig$log_comment + CONFIG_LTO_CLANG_THIN=y $(results "$?")"
         rm -f "$config_file"
@@ -1410,6 +1411,7 @@ function build_x86_64_kernels() {
         grep -q "config WERROR" "$linux_src"/init/Kconfig && configs_to_disable+=(CONFIG_WERROR)
         gen_allconfig
         echo "CONFIG_LTO_CLANG_THIN=y" >>"$config_file"
+        klog=x86_64-allmodconfig-thinlto
         kmake "${kmake_args[@]}" KCONFIG_ALLCONFIG="$config_file" distclean allmodconfig all
         log "x86_64 allmodconfig$log_comment + CONFIG_LTO_CLANG_THIN=y $(results "$?")"
         rm -f "$config_file"
