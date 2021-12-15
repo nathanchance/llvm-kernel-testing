@@ -1272,9 +1272,17 @@ function build_x86_kernels() {
     klog=x86-allmodconfig
     configs_to_disable=()
     grep -q "config WERROR" "$linux_src"/init/Kconfig && configs_to_disable+=(CONFIG_WERROR)
+    if grep -q "https://bugs.llvm.org/show_bug.cgi?id=50322" "$linux_src"/security/Kconfig; then
+        configs_to_disable+=(
+            CONFIG_IP_NF_TARGET_SYNPROXY
+            CONFIG_IP6_NF_TARGET_SYNPROXY
+            CONFIG_NFT_SYNPROXY
+        )
+        nft_log_comment=" (https://github.com/ClangBuiltLinux/linux/issues/1442)"
+    fi
     gen_allconfig
     kmake "${kmake_args[@]}" ARCH=i386 ${config_file:+KCONFIG_ALLCONFIG=$config_file} distclean allmodconfig all
-    log "x86 allmodconfig $(results "$?")"
+    log "x86 allmodconfig$log_comment$nft_log_comment $(results "$?")"
 
     klog=x86-allnoconfig
     kmake "${kmake_args[@]}" distclean allnoconfig all
