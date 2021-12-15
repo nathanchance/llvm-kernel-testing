@@ -1451,7 +1451,7 @@ function build_x86_64_kernels() {
     klog=x86_64-debian
     setup_config debian/amd64.config
     # https://github.com/ClangBuiltLinux/linux/issues/514
-    kmake "${kmake_args[@]}" OBJCOPY=objcopy olddefconfig all
+    kmake "${kmake_args[@]}" OBJCOPY=${CROSS_COMPILE}objcopy olddefconfig all
     krnl_rc=$?
     log "x86_64 debian config $(results "$krnl_rc")"
     qemu_boot_kernel x86_64
@@ -1482,7 +1482,7 @@ function build_x86_64_kernels() {
         scripts_config -d CONFIG_STM
     fi
     # https://github.com/ClangBuiltLinux/linux/issues/514
-    kmake "${kmake_args[@]}" OBJCOPY=objcopy olddefconfig all
+    kmake "${kmake_args[@]}" OBJCOPY=${CROSS_COMPILE}objcopy olddefconfig all
     krnl_rc=$?
     log "x86_64 opensuse config$log_comment $(results "$krnl_rc")"
     qemu_boot_kernel x86_64
@@ -1496,9 +1496,9 @@ function build_x86_64_cfi_kernels() {
 
     if [[ $llvm_ver_code -ge 140000 ]]; then
         klog=x86_64-defconfig-lto-cfi
-        kmake LLVM=1 LLVM_IAS=1 distclean defconfig
+        kmake ARCH=x86_64 LLVM=1 LLVM_IAS=1 distclean defconfig
         scripts_config -d LTO_NONE -e CFI_CLANG -e LTO_CLANG_THIN
-        kmake LLVM=1 LLVM_IAS=1 olddefconfig all
+        kmake ARCH=x86_64 LLVM=1 LLVM_IAS=1 olddefconfig all
         krnl_rc=$?
         log "x86_64 defconfig + CONFIG_CFI_CLANG=y $(results "$krnl_rc")"
         qemu_boot_kernel x86_64
