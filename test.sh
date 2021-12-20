@@ -1080,23 +1080,32 @@ function build_riscv_kernels() {
 
     header "Building riscv kernels"
 
-    check_binutils riscv || return
-    print_binutils_info
-    echo
+    if [[ $llvm_ver_code -ge 130000 ]]; then
+        kmake_args+=(LLVM_IAS=1)
+    else
+        check_binutils riscv || return
+        print_binutils_info
+        echo
+    fi
 
     klog=riscv-defconfig
     log_comment=""
     # https://github.com/ClangBuiltLinux/linux/issues/1020
     if [[ $llvm_ver_code -lt 130000 ]] || ! grep -q 'mno-relax' "$linux_src"/arch/riscv/Makefile; then
-        RISCV_LD=riscv64-linux-gnu-ld
+        kmake_args+=(LD=riscv64-linux-gnu-ld)
+    else
+        # linux-5.10.y has a build problem with ld.lld
+        if [[ $lnx_ver_code -le 510999 ]]; then
+            kmake_args+=(LD=riscv64-linux-gnu-ld)
+        fi
     fi
-    kmake "${kmake_args[@]}" ${RISCV_LD:+LD=${RISCV_LD}} LLVM_IAS=1 distclean defconfig
+    kmake "${kmake_args[@]}" distclean defconfig
     # https://github.com/ClangBuiltLinux/linux/issues/1143
     if [[ $llvm_ver_code -lt 130000 ]] && grep -q "config EFI" "$linux_src"/arch/riscv/Kconfig; then
         log_comment+=" + CONFIG_EFI=n (https://github.com/ClangBuiltLinux/linux/issues/1143)"
         scripts_config -d CONFIG_EFI
     fi
-    kmake "${kmake_args[@]}" ${RISCV_LD:+LD=${RISCV_LD}} LLVM_IAS=1 olddefconfig all
+    kmake "${kmake_args[@]}" olddefconfig all
     krnl_rc=$?
     log "riscv defconfig$log_comment $(results "$krnl_rc")"
     # https://github.com/ClangBuiltLinux/linux/issues/867
@@ -1105,14 +1114,15 @@ function build_riscv_kernels() {
         log "riscv defconfig qemu boot $(qemu=1 results "$?")"
     fi
 
+    $defconfigs_only && return 0
+
     # https://github.com/ClangBuiltLinux/linux/issues/999
     if [[ $lnx_ver_code -gt 508000 ]] && grep -q 'mno-relax' "$linux_src"/arch/riscv/Makefile; then
-        [[ $llvm_ver_code -ge 130000 ]] && kmake_args+=(LLVM_IAS=1)
         klog=riscv-allmodconfig
         configs_to_disable=()
         grep -q "config WERROR" "$linux_src"/init/Kconfig && configs_to_disable+=(CONFIG_WERROR)
         gen_allconfig
-        kmake "${kmake_args[@]}" LLVM_IAS=1 ${config_file:+KCONFIG_ALLCONFIG=$config_file} distclean allmodconfig all
+        kmake "${kmake_args[@]}" ${config_file:+KCONFIG_ALLCONFIG=$config_file} distclean allmodconfig all
         krnl_rc=$?
         log "riscv allmodconfig$log_comment $(results "$krnl_rc")"
         rm -f "$config_file"
