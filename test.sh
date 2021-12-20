@@ -274,15 +274,6 @@ function setup_config() {
         scripts_config_args+=(-e CHELSIO_IPSEC_INLINE)
     fi
 
-    # CONFIG_CORESIGHT (and all of its drivers) as a module is invalid before https://git.kernel.org/linus/8e264c52e1dab8a7c1e036222ef376c8920c3423
-    if [[ "$(scripts_config -s CORESIGHT)" = "m" ]] &&
-        grep -q 'bool "CoreSight Tracing Support"' "$linux_src"/drivers/hwtracing/coresight/Kconfig; then
-        scripts_config_args+=(-e CORESIGHT)
-        for CORESIGHT_CONFIG in LINKS_AND_SINKS LINK_AND_SINK_TMC CATU SINK_TPIU SINK_ETBV10 SOURCE_ETM4X STM; do
-            [[ "$(scripts_config -s CORESIGHT_${CORESIGHT_CONFIG})" = "m" ]] && scripts_config_args+=(-e CORESIGHT_"${CORESIGHT_CONFIG}")
-        done
-    fi
-
     # CONFIG_CLK_RK3399 and CONFIG_CLK_RK3568 as modules is invalid after 9af0cbeb477cf36327eec4246a60c5e981b2bd1a
     for num in 3399 3568; do
         kconfig=CLK_RK$num
@@ -292,6 +283,27 @@ function setup_config() {
             scripts_config_args+=(-e "$kconfig")
         fi
     done
+
+    # CONFIG_CORESIGHT (and all of its drivers) as a module is invalid before https://git.kernel.org/linus/8e264c52e1dab8a7c1e036222ef376c8920c3423
+    if [[ "$(scripts_config -s CORESIGHT)" = "m" ]] &&
+        grep -q 'bool "CoreSight Tracing Support"' "$linux_src"/drivers/hwtracing/coresight/Kconfig; then
+        scripts_config_args+=(-e CORESIGHT)
+        for CORESIGHT_CONFIG in LINKS_AND_SINKS LINK_AND_SINK_TMC CATU SINK_TPIU SINK_ETBV10 SOURCE_ETM4X STM; do
+            [[ "$(scripts_config -s CORESIGHT_${CORESIGHT_CONFIG})" = "m" ]] && scripts_config_args+=(-e CORESIGHT_"${CORESIGHT_CONFIG}")
+        done
+    fi
+
+    # CONFIG_CS89x0_PLATFORM as a module is invalid before https://git.kernel.org/linus/47fd22f2b84765a2f7e3f150282497b902624547
+    if [[ "$(scripts_config -s CS89x0_PLATFORM)" = "m" ]] &&
+        grep -q 'bool "CS89x0 platform driver support"' "$linux_src"/drivers/net/ethernet/cirrus/Kconfig; then
+        scripts_config_args+=(-e CS89x0_PLATFORM)
+    fi
+
+    # CONFIG_FB_SIMPLE as a module is invalid before https://git.kernel.org/linus/ec7cc3f74b4236860ce612656aa5be7936d1c594
+    if [[ "$(scripts_config -s FB_SIMPLE)" = "m" ]] &&
+        grep -q 'bool "Simple framebuffer support"' "$linux_src"/drivers/video/fbdev/Kconfig; then
+        script_config_args+=(-e FB_SIMPLE)
+    fi
 
     # CONFIG_GPIO_MXC as a module is invalid before https://git.kernel.org/linus/12d16b397ce0a999d13762c4c0cae2fb82eb60ee
     if [[ "$(scripts_config -s GPIO_MXC)" = "m" ]] &&
@@ -315,6 +327,12 @@ function setup_config() {
     if [[ "$(scripts_config -s KASAN_STACK)" = "1" ]] &&
         ! grep -q "config KASAN_STACK_ENABLE" "$linux_src"/lib/Kconfig.kasan; then
         scripts_config_args+=(--set-val KASAN_STACK y)
+    fi
+
+    # CONFIG_MFD_ARIZONA as a module is invalid before https://git.kernel.org/linus/33d550701b915938bd35ca323ee479e52029adf2
+    if [[ "$(scripts_config -s MFD_ARIZONA)" = "m" ]] &&
+        ! grep -q 'arizona-objs' "$linux_src"/drivers/mfd/Makefile; then
+        script_config_args+=(-e MFD_ARIZONA)
     fi
 
     # CONFIG_MTD_NAND_ECC_SW_HAMMING as a module is invalid after https://git.kernel.org/next/linux-next/c/5c859c18150b57d47dc684cab6e12b99f5d14ad3
@@ -358,6 +376,12 @@ function setup_config() {
         scripts_config_args+=(-e MCTP)
     fi
 
+    # CONFIG_GPIO_PL061 as a module is invalid before https://git.kernel.org/linus/616844408de7f21546c3c2a71ea7f8d364f45e0d
+    if [[ "$(scripts_config -s GPIO_PL061)" = "m" ]] &&
+        grep -q 'bool "PrimeCell PL061 GPIO support"' "$linux_src"/drivers/gpio/Kconfig; then
+        script_config_args+=(-e GPIO_PL061)
+    fi
+
     # CONFIG_QCOM_RPMPD as a module is invalid before https://git.kernel.org/linus/f29808b2fb85a7ff2d4830aa1cb736c8c9b986f4
     if [[ "$(scripts_config -s QCOM_RPMPD)" = "m" ]] &&
         grep -q 'bool "Qualcomm RPM Power domain driver"' "$linux_src"/drivers/soc/qcom/Kconfig; then
@@ -368,6 +392,18 @@ function setup_config() {
     if [[ "$(scripts_config -s QCOM_RPMHPD)" = "m" ]] &&
         grep -q 'bool "Qualcomm RPMh Power domain driver"' "$linux_src"/drivers/soc/qcom/Kconfig; then
         scripts_config_args+=(-e QCOM_RPMHPD)
+    fi
+
+    # CONFIG_RATIONAL as a module is invalid before https://git.kernel.org/linus/bcda5fd34417c89f653cc0912cc0608b36ea032c
+    if [[ "$(scripts_config -s RATIONAL)" = "m" ]] &&
+        grep -oPqz '(?s)config RATIONAL.*?bool' "$linux_src"/lib/math/Kconfig; then
+        script_config_args+=(-e RATIONAL)
+    fi
+
+    # CONFIG_RESET_IMX7 as a module is invalid before https://git.kernel.org/linus/a442abbbe186e14128d18bc3e42fb0fbf1a62210
+    if [[ "$(scripts_config -s RESET_IMX7)" = "m" ]] &&
+        grep -q 'bool "i.MX7/8 Reset Driver"' "$linux_src"/drivers/reset/Kconfig; then
+        script_config_args+=(-e RESET_IMX7)
     fi
 
     # CONFIG_RESET_MESON as a module is invalid before https://git.kernel.org/linus/3bfe8933f9d187f93f0d0910b741a59070f58c4c
@@ -400,10 +436,22 @@ function setup_config() {
         scripts_config_args+=(-e SND_SOC_SPRD_MCDT)
     fi
 
+    # CONFIG_SYSCTL_KUNIT_TEST as a module is invalid before https://git.kernel.org/linus/c475c77d5b56398303e726969e81208196b3aab3
+    if [[ "$(scripts_config -s SYSCTL_KUNIT_TEST)" = "m" ]] &&
+        grep -q 'bool "KUnit test for sysctl"' "$linux_src"/lib/Kconfig.debug; then
+        script_config_args+=(-e SYSCTL_KUNIT_TEST)
+    fi
+
     # CONFIG_TEGRA124_EMC as a module is invalid before https://git.kernel.org/linus/281462e593483350d8072a118c6e072c550a80fa
     if [[ "$(scripts_config -s TEGRA124_EMC)" = "m" ]] &&
         grep -q 'bool "NVIDIA Tegra124 External Memory Controller driver"' "$linux_src"/drivers/memory/tegra/Kconfig; then
         scripts_config_args+=(-e TEGRA124_EMC)
+    fi
+
+    # CONFIG_TEGRA20_APB_DMA as a module is invalid before https://git.kernel.org/linus/703b70f4dc3d22b4ab587e0ca424b974a4489db4
+    if [[ "$(scripts_config -s TEGRA20_APB_DMA)" = "m" ]] &&
+        grep -q 'bool "NVIDIA Tegra20 APB DMA support"' "$linux_src"/drivers/dma/Kconfig; then
+        script_config_args+=(-e TEGRA20_APB_DMA)
     fi
 
     # CONFIG_TEGRA20_EMC as a module is invalid before https://git.kernel.org/linus/0260979b018faaf90ff5a7bb04ac3f38e9dee6e3
@@ -422,6 +470,12 @@ function setup_config() {
     if [[ "$(scripts_config -s TI_CPTS)" = "m" ]] &&
         grep -q 'bool "TI Common Platform Time Sync' "$linux_src"/drivers/net/ethernet/ti/Kconfig; then
         scripts_config_args+=(-e TI_CPTS)
+    fi
+
+    # CONFIG_VIRTIO_IOMMU as a module is invalid before https://git.kernel.org/linus/fa4afd78ea12cf31113f8b146b696c500d6a9dc3
+    if [[ "$(scripts_config -s VIRTIO_IOMMU)" = "m" ]] &&
+        grep -q 'bool "Virtio IOMMU driver"' "$linux_src"/drivers/iommu/Kconfig; then
+        script_config_args+=(-e VIRTIO_IOMMU)
     fi
 
     [[ -n "${scripts_config_args[*]}" ]] && scripts_config "${scripts_config_args[@]}"
