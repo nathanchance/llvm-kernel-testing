@@ -302,7 +302,7 @@ function setup_config() {
     # CONFIG_FB_SIMPLE as a module is invalid before https://git.kernel.org/linus/ec7cc3f74b4236860ce612656aa5be7936d1c594
     if [[ "$(scripts_config -s FB_SIMPLE)" = "m" ]] &&
         grep -q 'bool "Simple framebuffer support"' "$linux_src"/drivers/video/fbdev/Kconfig; then
-        script_config_args+=(-e FB_SIMPLE)
+        scripts_config_args+=(-e FB_SIMPLE)
     fi
 
     # CONFIG_GPIO_MXC as a module is invalid before https://git.kernel.org/linus/12d16b397ce0a999d13762c4c0cae2fb82eb60ee
@@ -332,7 +332,7 @@ function setup_config() {
     # CONFIG_MFD_ARIZONA as a module is invalid before https://git.kernel.org/linus/33d550701b915938bd35ca323ee479e52029adf2
     if [[ "$(scripts_config -s MFD_ARIZONA)" = "m" ]] &&
         ! grep -q 'arizona-objs' "$linux_src"/drivers/mfd/Makefile; then
-        script_config_args+=(-e MFD_ARIZONA)
+        scripts_config_args+=(-e MFD_ARIZONA)
     fi
 
     # CONFIG_MTD_NAND_ECC_SW_HAMMING as a module is invalid after https://git.kernel.org/next/linux-next/c/5c859c18150b57d47dc684cab6e12b99f5d14ad3
@@ -379,7 +379,7 @@ function setup_config() {
     # CONFIG_GPIO_PL061 as a module is invalid before https://git.kernel.org/linus/616844408de7f21546c3c2a71ea7f8d364f45e0d
     if [[ "$(scripts_config -s GPIO_PL061)" = "m" ]] &&
         grep -q 'bool "PrimeCell PL061 GPIO support"' "$linux_src"/drivers/gpio/Kconfig; then
-        script_config_args+=(-e GPIO_PL061)
+        scripts_config_args+=(-e GPIO_PL061)
     fi
 
     # CONFIG_QCOM_RPMPD as a module is invalid before https://git.kernel.org/linus/f29808b2fb85a7ff2d4830aa1cb736c8c9b986f4
@@ -397,13 +397,13 @@ function setup_config() {
     # CONFIG_RATIONAL as a module is invalid before https://git.kernel.org/linus/bcda5fd34417c89f653cc0912cc0608b36ea032c
     if [[ "$(scripts_config -s RATIONAL)" = "m" ]] &&
         grep -oPqz '(?s)config RATIONAL.*?bool' "$linux_src"/lib/math/Kconfig; then
-        script_config_args+=(-e RATIONAL)
+        scripts_config_args+=(-e RATIONAL)
     fi
 
     # CONFIG_RESET_IMX7 as a module is invalid before https://git.kernel.org/linus/a442abbbe186e14128d18bc3e42fb0fbf1a62210
     if [[ "$(scripts_config -s RESET_IMX7)" = "m" ]] &&
         grep -q 'bool "i.MX7/8 Reset Driver"' "$linux_src"/drivers/reset/Kconfig; then
-        script_config_args+=(-e RESET_IMX7)
+        scripts_config_args+=(-e RESET_IMX7)
     fi
 
     # CONFIG_RESET_MESON as a module is invalid before https://git.kernel.org/linus/3bfe8933f9d187f93f0d0910b741a59070f58c4c
@@ -439,7 +439,7 @@ function setup_config() {
     # CONFIG_SYSCTL_KUNIT_TEST as a module is invalid before https://git.kernel.org/linus/c475c77d5b56398303e726969e81208196b3aab3
     if [[ "$(scripts_config -s SYSCTL_KUNIT_TEST)" = "m" ]] &&
         grep -q 'bool "KUnit test for sysctl"' "$linux_src"/lib/Kconfig.debug; then
-        script_config_args+=(-e SYSCTL_KUNIT_TEST)
+        scripts_config_args+=(-e SYSCTL_KUNIT_TEST)
     fi
 
     # CONFIG_TEGRA124_EMC as a module is invalid before https://git.kernel.org/linus/281462e593483350d8072a118c6e072c550a80fa
@@ -451,7 +451,7 @@ function setup_config() {
     # CONFIG_TEGRA20_APB_DMA as a module is invalid before https://git.kernel.org/linus/703b70f4dc3d22b4ab587e0ca424b974a4489db4
     if [[ "$(scripts_config -s TEGRA20_APB_DMA)" = "m" ]] &&
         grep -q 'bool "NVIDIA Tegra20 APB DMA support"' "$linux_src"/drivers/dma/Kconfig; then
-        script_config_args+=(-e TEGRA20_APB_DMA)
+        scripts_config_args+=(-e TEGRA20_APB_DMA)
     fi
 
     # CONFIG_TEGRA20_EMC as a module is invalid before https://git.kernel.org/linus/0260979b018faaf90ff5a7bb04ac3f38e9dee6e3
@@ -475,7 +475,7 @@ function setup_config() {
     # CONFIG_VIRTIO_IOMMU as a module is invalid before https://git.kernel.org/linus/fa4afd78ea12cf31113f8b146b696c500d6a9dc3
     if [[ "$(scripts_config -s VIRTIO_IOMMU)" = "m" ]] &&
         grep -q 'bool "Virtio IOMMU driver"' "$linux_src"/drivers/iommu/Kconfig; then
-        script_config_args+=(-e VIRTIO_IOMMU)
+        scripts_config_args+=(-e VIRTIO_IOMMU)
     fi
 
     [[ -n "${scripts_config_args[*]}" ]] && scripts_config "${scripts_config_args[@]}"
