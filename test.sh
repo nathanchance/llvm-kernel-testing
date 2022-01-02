@@ -1693,7 +1693,7 @@ function qemu_boot_kernel() {
         esac
         command -v qemu-system-"$qemu_suffix" &>/dev/null || return 127
         create_qemu_ver_code
-        [[ $1 = "ppc32" && $qemu_ver_code -gt 50001 ]] && return 32
+        [[ $1 = "ppc32" && $qemu_ver_code -gt 50001 && $qemu_ver_code -lt 60200 ]] && return 32
         "$boot_utils"/boot-qemu.sh -a "$1" -k "$out"
     fi
 }
