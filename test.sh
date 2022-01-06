@@ -1679,7 +1679,7 @@ function build_kernels() {
             echo "Reason: clang was not configured with this target"
             continue
         fi
-        build_"$arch"_kernels || exit $?
+        build_"$arch"_kernels
     done
     ${test_cfi_kernel:=false} && build_cfi_kernels
 }
