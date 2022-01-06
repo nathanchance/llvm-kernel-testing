@@ -892,7 +892,10 @@ function build_hexagon_kernels() {
 # Build mips kernels
 function build_mips_kernels() {
     local CROSS_COMPILE kmake_args
-    CROSS_COMPILE=mipsel-linux-gnu-
+    for cross_compile in mips{64,el}-linux-gnu-; do
+        command -v "$cross_compile"as &>/dev/null && break
+    done
+    CROSS_COMPILE=$cross_compile
     kmake_args=(
         ARCH=mips
         CROSS_COMPILE="$CROSS_COMPILE"
@@ -986,7 +989,10 @@ function build_mips_kernels() {
 # Build powerpc kernels
 function build_powerpc_kernels() {
     local CROSS_COMPILE ctod kmake_args log_comment
-    CROSS_COMPILE=powerpc-linux-gnu-
+    for cross_compile in powerpc{64,}-linux-gnu-; do
+        command -v "$cross_compile"as &>/dev/null && break
+    done
+    CROSS_COMPILE=$cross_compile
     kmake_args=(
         ARCH=powerpc
         CROSS_COMPILE="$CROSS_COMPILE"
