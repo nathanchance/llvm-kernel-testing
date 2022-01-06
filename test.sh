@@ -549,7 +549,10 @@ function results() {
 # Build arm32 kernels
 function build_arm32_kernels() {
     local CROSS_COMPILE kmake_args log_comment
-    CROSS_COMPILE=arm-linux-gnueabi-
+    for cross_compile in arm-linux-gnu{,eabi{hf,}}-; do
+        command -v "$cross_compile"as &>/dev/null && break
+    done
+    CROSS_COMPILE=$cross_compile
     kmake_args=(ARCH=arm)
     header "Building arm32 kernels"
 
