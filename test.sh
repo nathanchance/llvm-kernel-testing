@@ -296,7 +296,7 @@ function setup_config() {
     # CONFIG_CS89x0_PLATFORM as a module is invalid before https://git.kernel.org/linus/47fd22f2b84765a2f7e3f150282497b902624547
     if [[ "$(scripts_config -s CS89x0_PLATFORM)" = "m" ]] &&
         grep -q 'bool "CS89x0 platform driver support"' "$linux_src"/drivers/net/ethernet/cirrus/Kconfig; then
-        scripts_config_args+=(-e CS89x0_PLATFORM)
+        scripts_config_args+=(-e CS89x0 -e CS89x0_PLATFORM)
     fi
 
     # CONFIG_FB_SIMPLE as a module is invalid before https://git.kernel.org/linus/ec7cc3f74b4236860ce612656aa5be7936d1c594
@@ -525,7 +525,9 @@ function results() {
     if [[ -n $qemu && $krnl_rc -ne 0 ]]; then
         result=skipped
     elif [[ -n $qemu && $1 -eq 32 ]]; then
-        result="skipped due to a newer QEMU binary than 5.0.1 (found $raw_qemu_ver)"
+        result="skipped due to a QEMU binary newer than 5.0.1 and older than 6.2.0 (found $raw_qemu_ver)"
+    elif [[ -n $qemu && $1 -eq 33 ]]; then
+        result="skipped due to a QEMU binary older than 6.0.0 (found $raw_qemu_ver)"
     elif [[ -n $qemu && $1 -eq 127 ]]; then
         result="skipped due to missing QEMU binary in PATH"
     elif [[ $1 -eq 0 ]]; then
@@ -1694,6 +1696,7 @@ function qemu_boot_kernel() {
         command -v qemu-system-"$qemu_suffix" &>/dev/null || return 127
         create_qemu_ver_code
         [[ $1 = "ppc32" && $qemu_ver_code -gt 50001 && $qemu_ver_code -lt 60200 ]] && return 32
+        [[ $1 = "s390x" && $qemu_ver_code -lt 60000 ]] && return 33
         "$boot_utils"/boot-qemu.sh -a "$1" -k "$out"
     fi
 }
