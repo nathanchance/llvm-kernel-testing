@@ -1716,6 +1716,9 @@ function qemu_boot_kernel() {
 
 # Show the results from the build log and show total script runtime
 function report_results() {
+    total_runtime="Total script runtime: $(print_time "$start_time" "$(date +%s)")"
+    log "$total_runtime"
+
     # Remove last blank line and full path from errors/warnings because I am OCD :^)
     sed -i -e '${/^$/d}' -e "s;$linux_src/;;g" "$bld_log"
     header "Toolchain and kernel information"
@@ -1728,7 +1731,7 @@ function report_results() {
         echo "$fails"
     fi
     echo
-    echo "Total script runtime: $(print_time "$start_time" "$(date +%s)")"
+    echo "$total_runtime"
 }
 
 parse_parameters "$@"
