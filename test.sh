@@ -52,6 +52,7 @@ function parse_parameters() {
             -l | --linux-src) shift && linux_src=$(readlink -f "$1") ;;
             --llvm-prefix) shift && llvm_prefix=$(readlink -f "$1") ;;
             --log-dir) shift && bld_log_dir=$1 ;;
+            --no-ccache) use_ccache=false ;;
             -o | --out-dir) shift && O=$1 ;;
             -q | --qemu-prefix) shift && qemu_prefix=$(readlink -f "$1") ;;
             -t | --tc-prefix) shift && tc_prefix=$(readlink -f "$1") ;;
@@ -67,6 +68,7 @@ function parse_parameters() {
     [[ -z $defconfigs_only ]] && defconfigs_only=false
     [[ -z $bld_log_dir ]] && bld_log_dir=$root/logs/$(date +%Y%m%d-%H%M)
     [[ -z $linux_src ]] && die "\$linux_src is empty"
+    [[ -z $use_ccache ]] && use_ccache=true
 
     # We purposefully do not use [[ -z ... ]] here so that a user can
     # override this with LOCALVERSION=
@@ -133,7 +135,9 @@ function print_tc_lnx_env_info() {
 
 # Set tool variables based on availability
 function set_tool_vars() {
-    ccache=$(command -v ccache)
+    if $use_ccache; then
+        ccache=$(command -v ccache)
+    fi
     kbzip2=$(command -v pbzip2)
     kgzip=$(command -v pigz)
 }
