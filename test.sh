@@ -297,6 +297,14 @@ function setup_config() {
         done
     fi
 
+    # CONFIG_CRYPTO_ARCH_HAVE_LIB_BLAKE2S and CONFIG_CRYPTO_LIB_BLAKE2S_GENERIC as modules is invalid after https://git.kernel.org/linus/6048fdcc5f269c7f31d774c295ce59081b36e6f9
+    if grep -oPqz '(?s)config CRYPTO_ARCH_HAVE_LIB_BLAKE2S.*?bool' "$linux_src"/lib/crypto/Kconfig; then
+        for config in CRYPTO_ARCH_HAVE_LIB_BLAKE2S CRYPTO_LIB_BLAKE2S_GENERIC; do
+            # These are not user selectable symbols; unset them and let Kconfig set them as necessary
+            [[ "$(scripts_config -s $config)" = "m" ]] && scripts_config_args+=(-u "$config")
+        done
+    fi
+
     # CONFIG_CS89x0_PLATFORM as a module is invalid before https://git.kernel.org/linus/47fd22f2b84765a2f7e3f150282497b902624547
     if [[ "$(scripts_config -s CS89x0_PLATFORM)" = "m" ]] &&
         grep -q 'bool "CS89x0 platform driver support"' "$linux_src"/drivers/net/ethernet/cirrus/Kconfig; then
