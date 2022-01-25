@@ -490,6 +490,15 @@ function setup_config() {
         scripts_config_args+=(-e VIRTIO_IOMMU)
     fi
 
+    # Several ZORAN configurations are invalid as modules after https://git.kernel.org/next/linux-next/c/fe047de480ca23e59ab797465902f2bc4fd937cd
+    for zoran_config in DC30 ZR36060 BUZ DC10 LML33 LML33R10 AVS6EYES; do
+        zoran_config=VIDEO_ZORAN_"$zoran_config"
+        if [[ "$(scripts_config -s $zoran_config)" = "m" ]] &&
+            grep -oPqz "(?s)config $zoran_config.*?bool" "$linux_src"/drivers/staging/media/zoran/Kconfig; then
+            scripts_config_args+=(-e "$zoran_config")
+        fi
+    done
+
     [[ -n "${scripts_config_args[*]}" ]] && scripts_config "${scripts_config_args[@]}"
     log_comment=""
     for disabled_config in "${disabled_configs[@]}"; do
