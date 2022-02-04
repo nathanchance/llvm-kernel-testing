@@ -1035,6 +1035,17 @@ function build_powerpc_kernels() {
         qemu_boot_kernel ppc32
         log "powerpc ppc44x_defconfig qemu boot $(qemu=1 results "$?")"
 
+        if grep -q " __restrict " "$linux_src"/arch/powerpc/lib/xor_vmx.c; then
+            klog=powerpc-pmac32_defconfig
+            kmake "${kmake_args[@]}" distclean pmac32_defconfig
+            scripts_config -e SERIAL_PMACZILOG -e SERIAL_PMACZILOG_CONSOLE
+            kmake "${kmake_args[@]}" olddefconfig all
+            krnl_rc=$?
+            log "powerpc pmac32_defconfig $(results "$krnl_rc")"
+            qemu_boot_kernel ppc32_mac
+            log "powerpc pmac32_defconfig qemu boot $(qemu=1 results "$?")"
+        fi
+
         klog=powerpc-allnoconfig
         kmake "${kmake_args[@]}" distclean allnoconfig all
         log "powerpc allnoconfig $(results "$?")"
@@ -1712,7 +1723,7 @@ function qemu_boot_kernel() {
             arm64*) qemu_suffix=aarch64 ;;
             arm*) qemu_suffix=arm ;;
             mips*) qemu_suffix=$1 ;;
-            ppc32) qemu_suffix=ppc ;;
+            ppc32*) qemu_suffix=ppc ;;
             ppc64*) qemu_suffix=ppc64 ;;
             riscv) qemu_suffix=riscv64 ;;
             s390) qemu_suffix=s390x ;;
