@@ -1380,7 +1380,8 @@ function build_x86_kernels() {
     klog=x86-allmodconfig
     configs_to_disable=()
     grep -q "config WERROR" "$linux_src"/init/Kconfig && configs_to_disable+=(CONFIG_WERROR)
-    if grep -q "https://bugs.llvm.org/show_bug.cgi?id=50322" "$linux_src"/security/Kconfig; then
+    if grep -q "https://bugs.llvm.org/show_bug.cgi?id=50322" "$linux_src"/security/Kconfig ||
+        grep -q "https://github.com/llvm/llvm-project/issues/53645" "$linux_src"/security/Kconfig; then
         configs_to_disable+=(
             CONFIG_IP_NF_TARGET_SYNPROXY
             CONFIG_IP6_NF_TARGET_SYNPROXY
@@ -1403,7 +1404,8 @@ function build_x86_kernels() {
     # Debian
     klog=i386-debian
     setup_config debian/i386.config
-    if grep -q "https://bugs.llvm.org/show_bug.cgi?id=50322" "$linux_src"/security/Kconfig; then
+    if grep -q "https://bugs.llvm.org/show_bug.cgi?id=50322" "$linux_src"/security/Kconfig ||
+        grep -q "https://github.com/llvm/llvm-project/issues/53645" "$linux_src"/security/Kconfig; then
         log_comment+=" + CONFIG_NETFILTER_SYNPROXY=n (https://github.com/ClangBuiltLinux/linux/issues/1442)"
         scripts_config \
             -d IP_NF_TARGET_SYNPROXY \
@@ -1416,7 +1418,8 @@ function build_x86_kernels() {
     # Fedora
     klog=i686-fedora
     setup_config fedora/i686.config
-    if grep -q "https://bugs.llvm.org/show_bug.cgi?id=50322" "$linux_src"/security/Kconfig; then
+    if grep -q "https://bugs.llvm.org/show_bug.cgi?id=50322" "$linux_src"/security/Kconfig ||
+        grep -q "https://github.com/llvm/llvm-project/issues/53645" "$linux_src"/security/Kconfig; then
         log_comment+=" + CONFIG_NETFILTER_SYNPROXY=n (https://github.com/ClangBuiltLinux/linux/issues/1442)"
         scripts_config \
             -d IP_NF_TARGET_SYNPROXY \
