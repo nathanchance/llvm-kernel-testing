@@ -323,6 +323,12 @@ function setup_config() {
         scripts_config_args+=(-e GPIO_MXC)
     fi
 
+    # CONFIG_I8K as a module is invalid after https://git.kernel.org/linus/9a78ed9a6ed2c3666ac6a4157635f635be62eed2
+    if [[ "$(scripts_config -s I8K)" = "m" ]] &&
+        grep -q "config I8K" "$linux_src"/drivers/hwmon/Kconfig; then
+        scripts_config_args+=(-e I8K)
+    fi
+
     # CONFIG_IMX_DSP as a module is invalid before https://git.kernel.org/linus/f52cdcce9197fef9d4a68792dd3b840ad2b77117
     if [[ "$(scripts_config -s IMX_DSP)" = "m" ]] &&
         grep -q 'bool "IMX DSP Protocol driver"' "$linux_src"/drivers/firmware/imx/Kconfig; then
