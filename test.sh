@@ -272,6 +272,12 @@ function setup_config() {
     # that we support but that is a lot more effort.
     scripts_config_args=()
 
+    # CONFIG_BCM7120_L2_IRQ as a module is invalid before https://git.kernel.org/linus/3ac268d5ed2233d4a2db541d8fd744ccc13f46b0
+    if [[ "$(scripts_config -s BCM7120_L2_IRQ)" = "m" ]] &&
+        ! grep -q 'tristate "Broadcom STB 7120-style L2 interrupt controller driver"' "$linux_src"/drivers/irqchip/Kconfig; then
+        scripts_config_args+=(-e BCM7120_L2_IRQ)
+    fi
+
     # CONFIG_CHELSIO_IPSEC_INLINE as a module is invalid before https://git.kernel.org/linus/1b77be463929e6d3cefbc929f710305714a89723
     if [[ "$(scripts_config -s CHELSIO_IPSEC_INLINE)" = "m" ]] &&
         grep -q 'bool "Chelsio IPSec XFRM Tx crypto offload"' "$linux_src"/drivers/crypto/chelsio/Kconfig; then
@@ -306,7 +312,7 @@ function setup_config() {
     fi
 
     # CONFIG_CS89x0_PLATFORM as a module is invalid before https://git.kernel.org/linus/47fd22f2b84765a2f7e3f150282497b902624547
-    if [[ "$(scripts_config -s CS89x0_PLATFORM)" = "m" ]] &&
+    if [[ "$(scripts_config -k -s CS89x0_PLATFORM)" = "m" ]] &&
         grep -q 'bool "CS89x0 platform driver support"' "$linux_src"/drivers/net/ethernet/cirrus/Kconfig; then
         scripts_config_args+=(-e CS89x0 -e CS89x0_PLATFORM)
     fi
@@ -357,6 +363,13 @@ function setup_config() {
     if [[ "$(scripts_config -s MTD_NAND_ECC_SW_HAMMING)" = "m" ]] &&
         grep -q 'bool "Software Hamming ECC engine"' "$linux_src"/drivers/mtd/nand/Kconfig; then
         scripts_config_args+=(-e MTD_NAND_ECC_SW_HAMMING)
+    fi
+
+    # CONFIG_PCI_DRA7XX{,_HOST,_EP} as modules is invalid before https://git.kernel.org/linus/3b868d150efd3c586762cee4410cfc75f46d2a07
+    if grep -q 'tristate "TI DRA7xx PCIe controller Host Mode"' "$linux_src"/drivers/pci/controller/dwc/Kconfig; then
+        for config in PCI_DRA7XX{,_HOST,_EP}; do
+            [[ "$(scripts_config -s "$config")" = "m" ]] && scripts_config_args+=(-e "$config")
+        done
     fi
 
     # CONFIG_PCI_EXYNOS as a module is invalid before https://git.kernel.org/linus/778f7c194b1dac351d345ce723f8747026092949
@@ -505,7 +518,7 @@ function setup_config() {
         fi
     done
 
-    [[ -n "${scripts_config_args[*]}" ]] && scripts_config "${scripts_config_args[@]}"
+    [[ -n "${scripts_config_args[*]}" ]] && scripts_config -k "${scripts_config_args[@]}"
     log_comment=""
     for disabled_config in "${disabled_configs[@]}"; do
         log_comment+=" + CONFIG_$disabled_config=n"
