@@ -366,7 +366,7 @@ function setup_config() {
     fi
 
     # CONFIG_PCI_DRA7XX{,_HOST,_EP} as modules is invalid before https://git.kernel.org/linus/3b868d150efd3c586762cee4410cfc75f46d2a07
-    if grep -q 'tristate "TI DRA7xx PCIe controller Host Mode"' "$linux_src"/drivers/pci/controller/dwc/Kconfig; then
+    if grep -q 'bool "TI DRA7xx PCIe controller Host Mode"' "$linux_src"/drivers/pci/controller/dwc/Kconfig; then
         for config in PCI_DRA7XX{,_HOST,_EP}; do
             [[ "$(scripts_config -s "$config")" = "m" ]] && scripts_config_args+=(-e "$config")
         done
