@@ -562,6 +562,32 @@ function gen_allconfig() {
     fi
 }
 
+function x86_fortify_configs() {
+    if grep -q "https://bugs.llvm.org/show_bug.cgi?id=50322" "$linux_src"/security/Kconfig ||
+        grep -q "https://github.com/llvm/llvm-project/issues/53645" "$linux_src"/security/Kconfig; then
+        while (($#)); do
+            case $1 in
+                -a | --allconfig)
+                    configs_to_disable+=(
+                        CONFIG_IP_NF_TARGET_SYNPROXY
+                        CONFIG_IP6_NF_TARGET_SYNPROXY
+                        CONFIG_NFT_SYNPROXY
+                    )
+                    nft_log_comment=" (https://github.com/ClangBuiltLinux/linux/issues/1442)"
+                    return 0
+                    ;;
+            esac
+            shift
+        done
+
+        log_comment+=" + CONFIG_NETFILTER_SYNPROXY=n (https://github.com/ClangBuiltLinux/linux/issues/1442)"
+        scripts_config \
+            -d IP_NF_TARGET_SYNPROXY \
+            -d IP6_NF_TARGET_SYNPROXY \
+            -d NFT_SYNPROXY
+    fi
+}
+
 function results() {
     if [[ -n $qemu && $krnl_rc -ne 0 ]]; then
         result=skipped
@@ -1375,15 +1401,7 @@ function build_x86_kernels() {
     klog=x86-allmodconfig
     configs_to_disable=()
     grep -q "config WERROR" "$linux_src"/init/Kconfig && configs_to_disable+=(CONFIG_WERROR)
-    if grep -q "https://bugs.llvm.org/show_bug.cgi?id=50322" "$linux_src"/security/Kconfig ||
-        grep -q "https://github.com/llvm/llvm-project/issues/53645" "$linux_src"/security/Kconfig; then
-        configs_to_disable+=(
-            CONFIG_IP_NF_TARGET_SYNPROXY
-            CONFIG_IP6_NF_TARGET_SYNPROXY
-            CONFIG_NFT_SYNPROXY
-        )
-        nft_log_comment=" (https://github.com/ClangBuiltLinux/linux/issues/1442)"
-    fi
+    x86_fortify_configs -a
     gen_allconfig
     kmake "${kmake_args[@]}" ARCH=i386 ${config_file:+KCONFIG_ALLCONFIG=$config_file} distclean allmodconfig all
     log "x86 allmodconfig$log_comment$nft_log_comment $(results "$?")"
@@ -1399,28 +1417,14 @@ function build_x86_kernels() {
     # Debian
     klog=i386-debian
     setup_config debian/i386.config
-    if grep -q "https://bugs.llvm.org/show_bug.cgi?id=50322" "$linux_src"/security/Kconfig ||
-        grep -q "https://github.com/llvm/llvm-project/issues/53645" "$linux_src"/security/Kconfig; then
-        log_comment+=" + CONFIG_NETFILTER_SYNPROXY=n (https://github.com/ClangBuiltLinux/linux/issues/1442)"
-        scripts_config \
-            -d IP_NF_TARGET_SYNPROXY \
-            -d IP6_NF_TARGET_SYNPROXY \
-            -d NFT_SYNPROXY
-    fi
+    x86_fortify_configs
     kmake "${kmake_args[@]}" olddefconfig all
     log "i386 debian config$log_comment $(results "$?")"
 
     # Fedora
     klog=i686-fedora
     setup_config fedora/i686.config
-    if grep -q "https://bugs.llvm.org/show_bug.cgi?id=50322" "$linux_src"/security/Kconfig ||
-        grep -q "https://github.com/llvm/llvm-project/issues/53645" "$linux_src"/security/Kconfig; then
-        log_comment+=" + CONFIG_NETFILTER_SYNPROXY=n (https://github.com/ClangBuiltLinux/linux/issues/1442)"
-        scripts_config \
-            -d IP_NF_TARGET_SYNPROXY \
-            -d IP6_NF_TARGET_SYNPROXY \
-            -d NFT_SYNPROXY
-    fi
+    x86_fortify_configs
     kmake "${kmake_args[@]}" olddefconfig all
     log "i686 fedora config$log_comment $(results "$?")"
 
