@@ -611,24 +611,14 @@ function build_arm32_kernels() {
 
     # Upstream
     klog=arm32-multi_v5_defconfig
-    kmake "${kmake_args[@]}" distclean multi_v5_defconfig
-    # https://github.com/ClangBuiltLinux/linux/issues/954
-    if [[ $llvm_ver_code -lt 100001 ]]; then
-        log_comment=" + CONFIG_TRACING=n + CONFIG_OPROFILE=n + CONFIG_RCU_TRACE=n (https://github.com/ClangBuiltLinux/linux/issues/954)"
-        scripts_config -d CONFIG_TRACING -d CONFIG_OPROFILE -d CONFIG_RCU_TRACE
-    else
-        unset log_comment
-    fi
-    kmake "${kmake_args[@]}" olddefconfig all
+    kmake "${kmake_args[@]}" distclean multi_v5_defconfig all
     krnl_rc=$?
     log "arm32 multi_v5_defconfig$log_comment $(results "$krnl_rc")"
     qemu_boot_kernel arm32_v5
     log "arm32 multi_v5_defconfig$log_comment qemu boot $(qemu=1 results "$?")"
 
     klog=arm32-aspeed_g5_defconfig
-    # https://github.com/ClangBuiltLinux/linux/issues/732
-    [[ $llvm_ver_code -lt 110000 ]] && arm32_v6_ld=${CROSS_COMPILE}ld
-    kmake "${kmake_args[@]}" ${arm32_v6_ld:+LD=$arm32_v6_ld} distclean aspeed_g5_defconfig all
+    kmake "${kmake_args[@]}" distclean aspeed_g5_defconfig all
     krnl_rc=$?
     log "arm32 aspeed_g5_defconfig $(results "$krnl_rc")"
     qemu_boot_kernel arm32_v6
@@ -732,7 +722,7 @@ function build_arm64_kernels() {
         CROSS_COMPILE=aarch64-linux-gnu-
     fi
 
-    if [[ $lnx_ver_code -ge 510000 && $llvm_ver_code -ge 110000 ]]; then
+    if [[ $lnx_ver_code -ge 510000 ]]; then
         kmake_args+=(LLVM_IAS=1)
         if [[ ! -f $linux_src/scripts/Makefile.clang && -n $CROSS_COMPILE ]]; then
             kmake_args+=(CROSS_COMPILE="$CROSS_COMPILE")
@@ -765,7 +755,7 @@ function build_arm64_kernels() {
         log "arm64 defconfig + CONFIG_CPU_BIG_ENDIAN=y qemu boot $(qemu=1 results "$?")"
     fi
 
-    if grep -q "config LTO_CLANG_THIN" "$linux_src"/arch/Kconfig && [[ $llvm_ver_code -ge 110000 ]]; then
+    if grep -q "config LTO_CLANG_THIN" "$linux_src"/arch/Kconfig; then
         klog=arm64-defconfig-lto
         kmake "${kmake_args[@]}" distclean defconfig
         scripts_config -d LTO_NONE -e LTO_CLANG_THIN
@@ -799,11 +789,6 @@ EOF
 
     configs_to_disable=()
     grep -q 'prompt "Endianness"' "$linux_src"/arch/arm64/Kconfig || configs_to_disable+=(CONFIG_CPU_BIG_ENDIAN)
-    # https://github.com/ClangBuiltLinux/linux/issues/1116
-    [[ -f $linux_src/drivers/media/platform/ti-vpe/cal-camerarx.c && $llvm_ver_code -lt 110000 ]] && configs_to_disable+=(CONFIG_VIDEO_TI_CAL)
-    # https://github.com/ClangBuiltLinux/linux/issues/1243
-    gpi_c=$linux_src/drivers/dma/qcom/gpi.c
-    { [[ -f $gpi_c ]] && ! grep -oPqz '(?s)static __always_inline void.*?gpi_update_reg' "$gpi_c"; } && configs_to_disable+=(CONFIG_QCOM_GPI_DMA)
     # https://github.com/ClangBuiltLinux/continuous-integration2/issues/246
     grep -q "config WERROR" "$linux_src"/init/Kconfig && configs_to_disable+=(CONFIG_WERROR)
     gen_allconfig
@@ -812,7 +797,7 @@ EOF
     log "arm64 allmodconfig$log_comment $(results "$?")"
     rm -f "$config_file"
 
-    if grep -q "config LTO_CLANG_THIN" "$linux_src"/arch/Kconfig && [[ $llvm_ver_code -ge 110000 ]]; then
+    if grep -q "config LTO_CLANG_THIN" "$linux_src"/arch/Kconfig; then
         configs_to_disable=(CONFIG_GCOV_KERNEL CONFIG_KASAN)
         grep -q "config WERROR" "$linux_src"/init/Kconfig && configs_to_disable+=(CONFIG_WERROR)
         gen_allconfig
@@ -834,8 +819,6 @@ EOF
     # Alpine Linux
     klog=arm64-alpine
     setup_config alpine/aarch64.config
-    # https://lore.kernel.org/r/20210413200057.ankb4e26ytgal7ev@archlinux-ax161/
-    scripts_config -e PERF_EVENTS
     kmake "${kmake_args[@]}" olddefconfig all
     krnl_rc=$?
     log "arm64 alpine config$log_comment $(results "$krnl_rc")"
@@ -1008,6 +991,7 @@ function build_mips_kernels() {
     kmake "${kmake_args[@]}" distclean 32r2el_defconfig all
     log "mips 32r2el_defconfig $(results "$?")"
 
+    # https://github.com/llvm/llvm-project/issues/48039
     if [[ $llvm_ver_code -ge 120000 ]]; then
         klog=mips-32r6
         kmake "${kmake_args[@]}" ${mips_be_ld:+LD=$mips_be_ld} distclean 32r6_defconfig all
@@ -1046,36 +1030,32 @@ function build_powerpc_kernels() {
     echo
 
     # Upstream
-    # https://llvm.org/pr46186
-    if ! grep -q 'case 4: __put_user_asm_goto(x, ptr, label, "stw"); break;' "$linux_src"/arch/powerpc/include/asm/uaccess.h || [[ $llvm_ver_code -ge 110000 ]]; then
-        klog=powerpc-ppc44x_defconfig
-        kmake "${kmake_args[@]}" distclean ppc44x_defconfig all uImage
+    klog=powerpc-ppc44x_defconfig
+    kmake "${kmake_args[@]}" distclean ppc44x_defconfig all uImage
+    krnl_rc=$?
+    log "powerpc ppc44x_defconfig $(results "$krnl_rc")"
+    qemu_boot_kernel ppc32
+    log "powerpc ppc44x_defconfig qemu boot $(qemu=1 results "$?")"
+
+    # https://github.com/ClangBuiltLinux/linux/issues/563
+    if grep -q " __restrict " "$linux_src"/arch/powerpc/lib/xor_vmx.c; then
+        klog=powerpc-pmac32_defconfig
+        kmake "${kmake_args[@]}" distclean pmac32_defconfig
+        scripts_config -e SERIAL_PMACZILOG -e SERIAL_PMACZILOG_CONSOLE
+        kmake "${kmake_args[@]}" olddefconfig all
         krnl_rc=$?
-        log "powerpc ppc44x_defconfig $(results "$krnl_rc")"
-        qemu_boot_kernel ppc32
-        log "powerpc ppc44x_defconfig qemu boot $(qemu=1 results "$?")"
-
-        if grep -q " __restrict " "$linux_src"/arch/powerpc/lib/xor_vmx.c; then
-            klog=powerpc-pmac32_defconfig
-            kmake "${kmake_args[@]}" distclean pmac32_defconfig
-            scripts_config -e SERIAL_PMACZILOG -e SERIAL_PMACZILOG_CONSOLE
-            kmake "${kmake_args[@]}" olddefconfig all
-            krnl_rc=$?
-            log "powerpc pmac32_defconfig $(results "$krnl_rc")"
-            qemu_boot_kernel ppc32_mac
-            log "powerpc pmac32_defconfig qemu boot $(qemu=1 results "$?")"
-        fi
-
-        klog=powerpc-allnoconfig
-        kmake "${kmake_args[@]}" distclean allnoconfig all
-        log "powerpc allnoconfig $(results "$?")"
-
-        klog=powerpc-tinyconfig
-        kmake "${kmake_args[@]}" distclean tinyconfig all
-        log "powerpc tinyconfig $(results "$?")"
-    else
-        log "powerpc 32-bit configs skipped (https://llvm.org/pr46186)"
+        log "powerpc pmac32_defconfig $(results "$krnl_rc")"
+        qemu_boot_kernel ppc32_mac
+        log "powerpc pmac32_defconfig qemu boot $(qemu=1 results "$?")"
     fi
+
+    klog=powerpc-allnoconfig
+    kmake "${kmake_args[@]}" distclean allnoconfig all
+    log "powerpc allnoconfig $(results "$?")"
+
+    klog=powerpc-tinyconfig
+    kmake "${kmake_args[@]}" distclean tinyconfig all
+    log "powerpc tinyconfig $(results "$?")"
 
     klog=powerpc64-pseries_defconfig
     pseries_targets=(pseries_defconfig)
@@ -1117,8 +1097,6 @@ function build_powerpc_kernels() {
     log "powerpc powernv_defconfig qemu boot $(qemu=1 results "$?")"
 
     ppc64le_args=()
-    # https://github.com/ClangBuiltLinux/linux/issues/666
-    [[ $llvm_ver_code -lt 110000 ]] && ppc64le_args+=(OBJDUMP="${CROSS_COMPILE}"objdump)
     # https://github.com/ClangBuiltLinux/linux/issues/811
     # shellcheck disable=SC2016
     grep -Fq 'LDFLAGS_vmlinux-$(CONFIG_RELOCATABLE) += -z notext' "$linux_src"/arch/powerpc/Makefile || ppc64le_args+=(LD="${CROSS_COMPILE}"ld)
@@ -1262,13 +1240,9 @@ function build_riscv_kernels() {
 function build_s390x_kernels() {
     local CROSS_COMPILE ctod kmake_args log_comment
     CROSS_COMPILE=s390x-linux-gnu-
-    # For some reason, -Waddress-of-packed-member does not get disabled...
-    # Disable it so that real issues/errors can be found
-    # TODO: Investigate and file a bug or fix
     kmake_args=(
         ARCH=s390
         CROSS_COMPILE="$CROSS_COMPILE"
-        KCFLAGS=-Wno-address-of-packed-member
         LD="${CROSS_COMPILE}"ld
         OBJCOPY="${CROSS_COMPILE}"objcopy
         OBJDUMP="${CROSS_COMPILE}"objdump
@@ -1383,8 +1357,7 @@ function build_x86_kernels() {
     log "i386 defconfig qemu boot $(qemu=1 results "$?")"
 
     if grep -q "select ARCH_SUPPORTS_LTO_CLANG_THIN" "$linux_src"/arch/x86/Kconfig &&
-        ! grep -Pq "select ARCH_SUPPORTS_LTO_CLANG_THIN\tif X86_64" "$linux_src"/arch/x86/Kconfig &&
-        [[ $llvm_ver_code -ge 110000 ]]; then
+        ! grep -Pq "select ARCH_SUPPORTS_LTO_CLANG_THIN\tif X86_64" "$linux_src"/arch/x86/Kconfig; then
         klog=i386-defconfig-lto
         kmake "${kmake_args[@]}" distclean i386_defconfig
         scripts_config -d LTO_NONE -e LTO_CLANG_THIN
@@ -1469,7 +1442,7 @@ function build_x86_64_kernels() {
         CROSS_COMPILE=x86_64-linux-gnu-
     fi
 
-    if [[ $lnx_ver_code -ge 510000 && $llvm_ver_code -ge 110000 ]]; then
+    if [[ $lnx_ver_code -ge 510000 ]]; then
         export LLVM_IAS=1
         if [[ ! -f $linux_src/scripts/Makefile.clang && -n $CROSS_COMPILE ]]; then
             kmake_args+=(CROSS_COMPILE="$CROSS_COMPILE")
@@ -1491,7 +1464,7 @@ function build_x86_64_kernels() {
     qemu_boot_kernel x86_64
     log "x86_64 qemu boot $(qemu=1 results "$?")"
 
-    if grep -q "config LTO_CLANG_THIN" "$linux_src"/arch/Kconfig && [[ $llvm_ver_code -ge 110000 ]]; then
+    if grep -q "config LTO_CLANG_THIN" "$linux_src"/arch/Kconfig; then
         klog=x86_64-defconfig-lto
         kmake "${kmake_args[@]}" distclean defconfig
         scripts_config -d LTO_NONE -e LTO_CLANG_THIN
