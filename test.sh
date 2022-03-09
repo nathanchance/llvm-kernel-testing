@@ -94,12 +94,12 @@ function dwnld_update_boot_utils() {
 # Get what CONFIG_LOCALVERSION_AUTO spits out without actually enabling it in every config
 # Designed to avoid running make due to overhead
 function get_config_localversion_auto() { (
-    [[ -d $linux_src/.git ]] || return 0
     cd "$linux_src" || exit $?
+    git rev-parse --is-inside-work-tree &>/dev/null || return 0
 
     mkdir -p include/config
-    touch include/config/auto.conf
-    CONFIG_LOCALVERSION_AUTO=y ./scripts/setlocalversion
+    echo "CONFIG_LOCALVERSION_AUTO=y" >include/config/auto.conf
+    scripts/setlocalversion
     rm -rf include/config
 ); }
 
