@@ -765,7 +765,7 @@ function build_arm64_kernels() {
         krnl_rc=$?
         log "arm64 defconfig + CONFIG_LTO_CLANG_THIN=y $(results "$krnl_rc")"
         qemu_boot_kernel arm64
-        log "arm64 defconfig + CONFIG_LTO_CLANG_THIN=y $(qemu=1 results "$?")"
+        log "arm64 defconfig + CONFIG_LTO_CLANG_THIN=y qemu boot $(qemu=1 results "$?")"
     fi
 
     if grep -q "config CFI_CLANG" "$linux_src"/arch/Kconfig && [[ $llvm_ver_code -ge 120000 ]]; then
@@ -783,7 +783,7 @@ EOF
         krnl_rc=$?
         log "arm64 defconfig + CONFIG_CFI_CLANG=y + CONFIG_SHADOW_CALL_STACK=y $(results "$krnl_rc")"
         qemu_boot_kernel arm64
-        log "arm64 defconfig + CONFIG_CFI_CLANG=y + CONFIG_SHADOW_CALL_STACK=y $(qemu=1 results "$?")"
+        log "arm64 defconfig + CONFIG_CFI_CLANG=y + CONFIG_SHADOW_CALL_STACK=y qemu boot $(qemu=1 results "$?")"
         rm "$tmp_config"
     fi
 
