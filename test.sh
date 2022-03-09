@@ -45,6 +45,7 @@ function parse_parameters() {
             -a | --arches) shift && IFS=, read -r -a arches <<<"$1" ;;
             --binutils-prefix) shift && binutils_prefix=$(readlink -f "$1") ;;
             --boot-utils) shift && boot_utils=$(readlink -f "$1") ;;
+            --ccache) use_ccache=true ;;
             -d | --debug) set -x ;;
             --defconfigs) defconfigs_only=true ;;
             -j | --jobs) shift && jobs=$1 ;;
@@ -68,7 +69,7 @@ function parse_parameters() {
     [[ -z $defconfigs_only ]] && defconfigs_only=false
     [[ -z $bld_log_dir ]] && bld_log_dir=$root/logs/$(date +%Y%m%d-%H%M)
     [[ -z $linux_src ]] && die "\$linux_src is empty"
-    [[ -z $use_ccache ]] && use_ccache=true
+    [[ -z $use_ccache ]] && use_ccache=false
 
     # We purposefully do not use [[ -z ... ]] here so that a user can
     # override this with LOCALVERSION=
