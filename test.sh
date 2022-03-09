@@ -631,7 +631,9 @@ function build_arm32_kernels() {
     qemu_boot_kernel arm32_v7
     log "arm32 multi_v7_defconfig qemu boot $(qemu=1 results "$?")"
 
-    if grep -q "select HAVE_FUTEX_CMPXCHG if FUTEX" "$linux_src"/arch/arm/Kconfig; then
+    # https://github.com/ClangBuiltLinux/linux/issues/325
+    if grep -q "select HAVE_FUTEX_CMPXCHG if FUTEX" "$linux_src"/arch/arm/Kconfig ||
+        ! grep -q "select HAVE_FUTEX_CMPXCHG" "$linux_src"/arch/arm/Kconfig; then
         klog=arm32-multi_v7_defconfig-thumb2
         kmake "${kmake_args[@]}" distclean multi_v7_defconfig
         scripts_config -e THUMB2_KERNEL
