@@ -959,40 +959,46 @@ function build_mips_kernels() {
     print_binutils_info
     echo
 
+    # https://git.kernel.org/mips/c/c47c7ab9b53635860c6b48736efdd22822d726d7
+    if ! grep -q "CONFIG_BLK_DEV_INITRD=y" "$linux_src"/arch/mips/config/malta_defconfig; then
+        initrd_comment=" + CONFIG_BLK_DEV_INITRD=y"
+        enable_initrd=true
+    fi
+
     # Upstream
     klog=mipsel-malta
     kmake "${kmake_args[@]}" distclean malta_defconfig
-    scripts_config -e BLK_DEV_INITRD
+    ${enable_initrd:=false} && scripts_config -e BLK_DEV_INITRD
     kmake "${kmake_args[@]}" olddefconfig all
     krnl_rc=$?
-    log "mips malta_defconfig + CONFIG_BLK_DEV_INITRD=y $(results "$krnl_rc")"
+    log "mips malta_defconfig$initrd_comment $(results "$krnl_rc")"
     qemu_boot_kernel mipsel
-    log "mips malta_defconfig + CONFIG_BLK_DEV_INITRD=y qemu boot $(qemu=1 results "$?")"
+    log "mips malta_defconfig$initrd_comment qemu boot $(qemu=1 results "$?")"
 
     klog=mipsel-malta-kaslr
     kmake "${kmake_args[@]}" distclean malta_defconfig
+    ${enable_initrd} && scripts_config -e BLK_DEV_INITRD
     scripts_config \
-        -e BLK_DEV_INITRD \
         -e RELOCATABLE \
         --set-val RELOCATION_TABLE_SIZE 0x00200000 \
         -e RANDOMIZE_BASE
     kmake "${kmake_args[@]}" olddefconfig all
     krnl_rc=$?
-    log "mips malta_defconfig + CONFIG_BLK_DEV_INITRD=y + CONFIG_RANDOMIZE_BASE=y $(results "$krnl_rc")"
+    log "mips malta_defconfig$initrd_comment + CONFIG_RANDOMIZE_BASE=y $(results "$krnl_rc")"
     qemu_boot_kernel mipsel
-    log "mips malta_defconfig + CONFIG_BLK_DEV_INITRD=y + CONFIG_RANDOMIZE_BASE=y qemu boot $(qemu=1 results "$?")"
+    log "mips malta_defconfig$initrd_comment + CONFIG_RANDOMIZE_BASE=y qemu boot $(qemu=1 results "$?")"
 
     # https://github.com/ClangBuiltLinux/linux/issues/1025
     klog=mips-malta
     [[ -f $linux_src/arch/mips/vdso/Kconfig && $llvm_ver_code -lt 130000 ]] && mips_be_ld=${CROSS_COMPILE}ld
     kmake "${kmake_args[@]}" ${mips_be_ld:+LD=$mips_be_ld} distclean malta_defconfig
-    scripts_config -e BLK_DEV_INITRD
+    ${enable_initrd} && scripts_config -e BLK_DEV_INITRD
     swap_endianness l2b
     kmake "${kmake_args[@]}" ${mips_be_ld:+LD=$mips_be_ld} olddefconfig all
     krnl_rc=$?
-    log "mips malta_defconfig + CONFIG_BLK_DEV_INITRD=y + CONFIG_CPU_BIG_ENDIAN=y $(results "$krnl_rc")"
+    log "mips malta_defconfig$initrd_comment + CONFIG_CPU_BIG_ENDIAN=y $(results "$krnl_rc")"
     qemu_boot_kernel mips
-    log "mips malta_defconfig + CONFIG_BLK_DEV_INITRD=y + CONFIG_CPU_BIG_ENDIAN=y qemu boot $(qemu=1 results "$?")"
+    log "mips malta_defconfig$initrd_comment + CONFIG_CPU_BIG_ENDIAN=y qemu boot $(qemu=1 results "$?")"
 
     klog=mips-32r1
     kmake "${kmake_args[@]}" ${mips_be_ld:+LD=$mips_be_ld} distclean 32r1_defconfig all
