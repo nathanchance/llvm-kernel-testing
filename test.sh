@@ -56,6 +56,7 @@ function parse_parameters() {
             --no-ccache) use_ccache=false ;;
             -o | --out-dir) shift && O=$1 ;;
             -q | --qemu-prefix) shift && qemu_prefix=$(readlink -f "$1") ;;
+            -s | --save-objects) save_objects=true ;;
             -t | --tc-prefix) shift && tc_prefix=$(readlink -f "$1") ;;
             --test-cfi-kernel) test_cfi_kernel=true ;;
             *=*) export "${1:?}" ;;
@@ -69,6 +70,7 @@ function parse_parameters() {
     [[ -z $defconfigs_only ]] && defconfigs_only=false
     [[ -z $bld_log_dir ]] && bld_log_dir=$root/logs/$(date +%Y%m%d-%H%M)
     [[ -z $linux_src ]] && die "\$linux_src is empty"
+    [[ -z $save_objects ]] && save_objects=false
     [[ -z $use_ccache ]] && use_ccache=false
 
     # We purposefully do not use [[ -z ... ]] here so that a user can
@@ -1642,6 +1644,7 @@ function build_cfi_kernels() {
                     continue
                 fi
                 build_"$arch"_cfi_kernels || exit $?
+                $save_objects || rm -fr "$out"
                 ;;
             *) ;;
         esac
@@ -1720,6 +1723,7 @@ function build_kernels() {
             continue
         fi
         build_"$arch"_kernels
+        $save_objects || rm -fr "$out"
     done
     ${test_cfi_kernel:=false} && build_cfi_kernels
 }
