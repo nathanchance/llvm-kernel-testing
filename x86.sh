@@ -33,6 +33,13 @@ function build_x86_kernels() {
         log "x86 kernels skipped due to missing bb73d07148c4 with LLVM > 12.0.0"
 
         return 0
+    elif ! grep -q CLANG_FLAGS "$linux_src"/arch/x86/boot/compressed/Makefile; then
+        header "Skipping x86_64 kernels"
+        echo "x86 kernels do not cross compile without https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f"
+
+        log "x86 kernels skipped due to missing d5cbd80e302d on a non-x86_64 host"
+
+        return 0
     fi
 
     header "Building x86 kernels"

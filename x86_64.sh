@@ -13,15 +13,25 @@ function x86_64_shellcheck() {
 # Build x86_64 kernels
 function build_x86_64_kernels() {
     local log_comment kmake_args
-    header "Building x86_64 kernels"
 
     kmake_args=(ARCH=x86_64)
 
     if [[ $(uname -m) = "x86_64" ]]; then
         unset CROSS_COMPILE
     else
+        if ! grep -q CLANG_FLAGS "$linux_src"/arch/x86/boot/compressed/Makefile; then
+            header "Skipping x86_64 kernels"
+            echo "x86 kernels do not cross compile without https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f"
+
+            log "x86_64 kernels skipped due to missing d5cbd80e302d on a non-x86_64 host"
+
+            return 0
+        fi
+
         CROSS_COMPILE=x86_64-linux-gnu-
     fi
+
+    header "Building x86_64 kernels"
 
     if [[ $lnx_ver_code -ge 510000 ]]; then
         export LLVM_IAS=1
