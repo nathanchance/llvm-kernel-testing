@@ -75,11 +75,6 @@ function build_x86_64_kernels() {
     if [[ $lnx_ver_code -lt 508000 ]]; then
         log_comment=" + CONFIG_SENSORS_APPLESMC=n (https://github.com/ClangBuiltLinux/linux/issues/678)"
         scripts_config -d CONFIG_SENSORS_APPLESMC
-    # https://github.com/ClangBuiltLinux/linux/issues/1116
-    elif [[ -f $linux_src/drivers/media/platform/ti-vpe/cal-camerarx.c && $llvm_ver_code -lt 110000 ]]; then
-        ctod=CONFIG_VIDEO_TI_CAL
-        log_comment=" + ${ctod}=n (https://github.com/ClangBuiltLinux/linux/issues/1116)"
-        scripts_config -d $ctod
     elif grep -q "config WERROR" "$linux_src"/init/Kconfig; then
         ctod=CONFIG_WERROR
         log_comment=" + ${ctod}=n"

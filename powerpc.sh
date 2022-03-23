@@ -45,6 +45,8 @@ function build_powerpc_kernels() {
         log "powerpc pmac32_defconfig $(results "$krnl_rc")"
         qemu_boot_kernel ppc32_mac
         log "powerpc pmac32_defconfig qemu boot $(qemu=1 results "$?")"
+    else
+        log "powerpc pmac32_defconfig skipped due to missing 297565aa22cf"
     fi
 
     klog=powerpc-allnoconfig

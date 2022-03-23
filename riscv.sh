@@ -19,9 +19,8 @@ function build_riscv_kernels() {
         CROSS_COMPILE="$CROSS_COMPILE"
     )
 
-    # riscv did not build properly for Linux prior to 5.7 and there is an
-    # inordinate amount of spam about '-save-restore' before LLVM 11: https://llvm.org/pr44853
-    if [[ $lnx_ver_code -lt 507000 || $llvm_ver_code -lt 110000 ]]; then
+    # riscv did not build properly for Linux prior to 5.7
+    if [[ $lnx_ver_code -lt 507000 ]]; then
         header "Skipping riscv kernels"
         echo "Reasons:"
         if [[ $lnx_ver_code -lt 507000 ]]; then
@@ -33,12 +32,8 @@ function build_riscv_kernels() {
             echo '  * https://git.kernel.org/linus/abc71bf0a70311ab294f97a7f16e8de03718c05a'
             echo
             echo "Provide a kernel tree with Linux 5.7 or newer to build RISC-V kernels."
-        fi
-        if [[ $llvm_ver_code -lt 110000 ]]; then
-            echo
-            echo "RISC-V needs a patch from LLVM 11 to build without a massive amount of warnings."
-            echo
-            echo "https://github.com/llvm/llvm-project/commit/07f7c00208b393296f8f27d6cd3cec2b11d86fd8"
+
+            log "riscv kernels skipped due to missing 52e7c52d2ded, fdff9911f266, and/or abc71bf0a703"
         fi
         return 0
     fi

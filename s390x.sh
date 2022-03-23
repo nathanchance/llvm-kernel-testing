@@ -30,6 +30,9 @@ function build_s390x_kernels() {
         header "Skipping s390x kernels"
         echo "Reason: s390 kernels did not build properly until Linux 5.6"
         echo "        https://lore.kernel.org/lkml/your-ad-here.call-01580230449-ext-6884@work.hours/"
+
+        log "s390x kernels skipped due to missing fixes from 5.6 (https://lore.kernel.org/r/your-ad-here.call-01580230449-ext-6884@work.hours/)"
+
         return 0
     fi
 

@@ -19,12 +19,19 @@ function build_x86_kernels() {
         header "Skipping x86 kernels"
         echo "Reason: x86 kernels did not build properly until Linux 5.9"
         echo "        https://github.com/ClangBuiltLinux/linux/issues/194"
+
+        log "x86 kernels skipped due to missing 158807de5822"
+
         return 0
     elif [[ $llvm_ver_code -gt 120000 ]] &&
         ! grep -q "R_386_PLT32:" "$linux_src"/arch/x86/tools/relocs.c; then
         header "Skipping x86 kernels"
+
         echo "Reason: x86 kernels do not build properly with LLVM 12.0.0+ without R_386_PLT32 handling"
         echo "        https://github.com/ClangBuiltLinux/linux/issues/1210"
+
+        log "x86 kernels skipped due to missing bb73d07148c4 with LLVM > 12.0.0"
+
         return 0
     fi
 
