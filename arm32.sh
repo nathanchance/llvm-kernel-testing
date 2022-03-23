@@ -133,4 +133,3 @@ function build_arm32_kernels() {
     qemu_boot_kernel arm32_v7
     log "armv7hl opensuse config qemu boot $(qemu=1 results "$?")"
 }
-

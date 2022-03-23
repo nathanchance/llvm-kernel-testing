@@ -40,4 +40,3 @@ function qemu_boot_kernel() {
         "$boot_utils"/boot-qemu.sh -a "$1" -k "$out"
     fi
 }
-
