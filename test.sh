@@ -58,8 +58,12 @@ function parse_parameters() {
     : "${LOCALVERSION=-cbl}"
     export LOCALVERSION
 
-    bld_log=$bld_log_dir/results.log
-    mkdir -p "${bld_log%/*}" "$src"
+    mkdir -p "$bld_log_dir" "$src"
+
+    failed_log=$bld_log_dir/failed.log
+    info_log=$bld_log_dir/info.log
+    skipped_log=$bld_log_dir/skipped.log
+    success_log=$bld_log_dir/success.log
 }
 
 # Build kernels with said toolchains
@@ -70,12 +74,11 @@ function build_kernels() {
     export_path_if_exists "$qemu_prefix/bin"
 
     set_tool_vars
+
     header "Build information"
-    print_tc_lnx_env_info
-    {
-        print_tc_lnx_env_info
-        echo
-    } >"$bld_log"
+    print_tc_lnx_env_info >"$info_log"
+    cat "$info_log"
+
     create_lnx_ver_code
     create_llvm_ver_code
 
@@ -84,6 +87,7 @@ function build_kernels() {
         if ! check_clang_target "$arch"; then
             header "Skipping $arch kernels"
             echo "Reason: clang was not configured with this target"
+            log "$arch kernels skipped due to missing clang target"
             continue
         fi
         # shellcheck disable=SC1090
@@ -99,16 +103,24 @@ function report_results() {
     log "$total_runtime"
 
     # Remove last blank line and full path from errors/warnings because I am OCD :^)
-    sed -i -e '${/^$/d}' -e "s;$linux_src/;;g" "$bld_log"
+    sed -i -e '${/^$/d}' -e "s;$linux_src/;;g" "$failed_log" "$info_log" "$skipped_log" "$success_log"
+
     header "Toolchain and kernel information"
-    head -n5 "$bld_log"
-    header "List of successes"
-    grep "success" "$bld_log"
-    fails=$(tail -n +5 "$bld_log" | grep "failed")
-    if [[ -n $fails ]]; then
-        header "List of failures"
-        echo "$fails"
+    head -n6 "$info_log"
+
+    header "List of successful tests"
+    cat "$success_log"
+
+    if [[ -f $failed_log ]]; then
+        header "List of failed tests"
+        cat "$failed_log"
     fi
+
+    if [[ -f $skipped_log ]]; then
+        header "List of skipped tests"
+        cat "$skipped_log"
+    fi
+
     echo
     echo "$total_runtime"
 }

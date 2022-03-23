@@ -3,14 +3,17 @@
 # Bogus function for shellcheck, it is not called anywhere
 function utils_sh_shellcheck() {
     die "This function should never be called."
-    bld_log=
     bld_log_dir=
-    linux_src=
+    failed_log=
+    info_log=
     klog=
     krnl_rc=
+    linux_src=
     out=
     raw_qemu_ver=
+    skipped_log=
     src=
+    success_log=
     use_ccache=
 
     echo "$llvm_ver_code $lnx_ver_code"
@@ -30,7 +33,16 @@ function header() {
 
 # Logs message to current log
 function log() {
-    printf "%b\n\n" "$1" >>"$bld_log"
+    local log
+
+    case "$1" in
+        *failed*) log=$failed_log ;;
+        *skipped*) log=$skipped_log ;;
+        *success*) log=$success_log ;;
+        *) log=$info_log ;;
+    esac
+
+    printf "%b\n\n" "$1" >>"$log"
 }
 
 # Print formatted time with Python 3
