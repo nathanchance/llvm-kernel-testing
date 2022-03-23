@@ -176,11 +176,9 @@ function results() {
 
 # Print LLVM/clang version as a 5-6 digit number (e.g. clang 11.0.0 will be 110000)
 function create_llvm_ver_code() {
-    local major minor patchlevel
-    major=$(echo __clang_major__ | clang -E -x c - | tail -n 1)
-    minor=$(echo __clang_minor__ | clang -E -x c - | tail -n 1)
-    patchlevel=$(echo __clang_patchlevel__ | clang -E -x c - | tail -n 1)
-    llvm_ver_code=$(printf "%d%02d%02d" "$major" "$minor" "$patchlevel")
+    llvm_ver=$(echo "__clang_major__ __clang_minor__ __clang_patchlevel__" | clang -E -x c - | tail -n 1)
+    read -ra llvm_ver <<<"$llvm_ver"
+    llvm_ver_code=$(printf "%d%02d%02d" "${llvm_ver[@]}")
 }
 
 # Print Linux version as a 6 digit number (e.g. Linux 5.6.2 will be 506002)
