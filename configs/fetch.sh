@@ -2,7 +2,7 @@
 # Update configs from their latest source
 
 # Move to the configs folder
-cd "$(dirname "$(readlink -f "${0}")")" || exit ${?}
+cd "$(dirname "$(realpath "$0")")" || exit ${?}
 
 function parse_parameters() {
     DISTROS=()

@@ -4,7 +4,7 @@
 trap 'exit' INT
 
 # Get the absolute location of this repo
-root=$(dirname "$(readlink -f "$0")")
+root=$(dirname "$(realpath "$0")")
 [[ -z $root || ! -d $root ]] && exit
 
 # Utility functions
@@ -24,21 +24,21 @@ function parse_parameters() {
     while (($#)); do
         case $1 in
             -a | --arches) shift && IFS=, read -r -a arches <<<"$1" ;;
-            --binutils-prefix) shift && binutils_prefix=$(readlink -f "$1") ;;
-            --boot-utils) shift && boot_utils=$(readlink -f "$1") ;;
+            --binutils-prefix) shift && binutils_prefix=$(realpath -s "$1") ;;
+            --boot-utils) shift && boot_utils=$(realpath "$1") ;;
             --ccache) use_ccache=true ;;
             -d | --debug) set -x ;;
             --defconfigs) defconfigs_only=true ;;
             -j | --jobs) shift && jobs=$1 ;;
             -j*) jobs=${1/-j/} ;;
-            -l | --linux-src) shift && linux_src=$(readlink -f "$1") ;;
-            --llvm-prefix) shift && llvm_prefix=$(readlink -f "$1") ;;
+            -l | --linux-src) shift && linux_src=$(realpath "$1") ;;
+            --llvm-prefix) shift && llvm_prefix=$(realpath -s "$1") ;;
             --log-dir) shift && bld_log_dir=$1 ;;
             --no-ccache) use_ccache=false ;;
-            -o | --out-dir) shift && O=$1 ;;
-            -q | --qemu-prefix) shift && qemu_prefix=$(readlink -f "$1") ;;
+            -o | --out-dir) shift && O=$(realpath -m -s "$1") ;;
+            -q | --qemu-prefix) shift && qemu_prefix=$(realpath -s "$1") ;;
             -s | --save-objects) save_objects=true ;;
-            -t | --tc-prefix) shift && tc_prefix=$(readlink -f "$1") ;;
+            -t | --tc-prefix) shift && tc_prefix=$(realpath -s "$1") ;;
             *=*) export "${1:?}" ;;
             "") ;;
             *) die "Invalid parameter '$1'" ;;
@@ -82,7 +82,7 @@ function build_kernels() {
     create_llvm_ver_code
 
     for arch in "${arches[@]}"; do
-        out=$(cd "$linux_src" && readlink -f -m "${O:-.build}")/$arch
+        out=${O:-"$linux_src"/.build}/$arch
         if ! check_clang_target "$arch"; then
             header "Skipping $arch kernels"
             echo "Reason: clang was not configured with this target"
