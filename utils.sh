@@ -100,6 +100,7 @@ function print_tc_lnx_env_info() {
 
     print_binutils_info
 
+    echo "Source location: $linux_src"
     echo "Linux $(make -C "$linux_src" -s kernelversion)$(get_config_localversion_auto)"
     echo "PATH: $PATH"
 }

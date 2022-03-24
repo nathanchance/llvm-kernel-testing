@@ -106,7 +106,7 @@ function report_results() {
     sed -i -e '${/^$/d}' -e "s;$linux_src/;;g" "$failed_log" "$info_log" "$skipped_log" "$success_log"
 
     header "Toolchain and kernel information"
-    head -n6 "$info_log"
+    head -n7 "$info_log"
 
     header "List of successful tests"
     sed '/^$/d' "$success_log"
