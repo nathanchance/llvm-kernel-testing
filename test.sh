@@ -99,14 +99,11 @@ function build_kernels() {
 
 # Show the results from the build log and show total script runtime
 function report_results() {
-    total_runtime="Total script runtime: $(print_time "$start_time" "$(date +%s)")"
-    log "$total_runtime"
-
     # Remove last blank line and full path from errors/warnings because I am OCD :^)
     sed -i -e '${/^$/d}' -e "s;$linux_src/;;g" "$failed_log" "$info_log" "$skipped_log" "$success_log"
 
     header "Toolchain and kernel information"
-    head -n7 "$info_log"
+    cat "$info_log"
 
     header "List of successful tests"
     sed '/^$/d' "$success_log"
@@ -122,6 +119,8 @@ function report_results() {
     fi
 
     echo
+    total_runtime="Total script runtime: $(print_time "$start_time" "$(date +%s)")"
+    log "$total_runtime"
     echo "$total_runtime"
 }
 
