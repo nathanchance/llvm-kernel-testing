@@ -68,10 +68,9 @@ function parse_parameters() {
 
 # Build kernels with said toolchains
 function build_kernels() {
-    export_path_if_exists "$binutils_prefix/bin"
-    export_path_if_exists "$llvm_prefix/bin"
-    export_path_if_exists "$tc_prefix/bin"
-    export_path_if_exists "$qemu_prefix/bin"
+    for prefix in "$binutils_prefix" "$llvm_prefix" "$tc_prefix" "$qemu_prefix"; do
+        [[ -n $prefix ]] && export_path_if_exists "$prefix/bin"
+    done
 
     set_tool_vars
 
@@ -99,10 +98,14 @@ function build_kernels() {
 
 # Show the results from the build log and show total script runtime
 function report_results() {
-    # Remove last blank line and full path from errors/warnings because I am OCD :^)
-    sed -i -e '${/^$/d}' -e "s;$linux_src/;;g" "$failed_log" "$info_log" "$skipped_log" "$success_log"
+    log "Total script runtime: $(print_time "$start_time" "$(date +%s)")"
 
-    header "Toolchain and kernel information"
+    # Remove last blank line and full path from errors/warnings because I am OCD :^)
+    for log_file in "$failed_log" "$info_log" "$skipped_log" "$success_log"; do
+        [[ -f $log_file ]] && sed -i -e '${/^$/d}' -e "s;$linux_src/;;g" "$log_file"
+    done
+
+    header "Toolchain, kernel, and runtime information"
     cat "$info_log"
 
     header "List of successful tests"
@@ -117,11 +120,6 @@ function report_results() {
         header "List of skipped tests"
         sed '/^$/d' "$skipped_log"
     fi
-
-    echo
-    total_runtime="Total script runtime: $(print_time "$start_time" "$(date +%s)")"
-    log "$total_runtime"
-    echo "$total_runtime"
 }
 
 parse_parameters "$@"
