@@ -109,16 +109,16 @@ function report_results() {
     head -n6 "$info_log"
 
     header "List of successful tests"
-    cat "$success_log"
+    sed '/^$/d' "$success_log"
 
     if [[ -f $failed_log ]]; then
         header "List of failed tests"
-        cat "$failed_log"
+        sed '/^$/d' "$failed_log"
     fi
 
     if [[ -f $skipped_log ]]; then
         header "List of skipped tests"
-        cat "$skipped_log"
+        sed '/^$/d' "$skipped_log"
     fi
 
     echo
