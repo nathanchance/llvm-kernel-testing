@@ -96,11 +96,11 @@ function print_binutils_info() {
 # Print clang, binutils, and kernel versions being tested into the build log
 function print_tc_lnx_env_info() {
     clang --version | head -n1
-    clang --version | tail -n1
+    echo "clang location: $(dirname "$(command -v clang)")"
 
     print_binutils_info
 
-    echo "Source location: $linux_src"
+    echo "Linux source location: $linux_src"
     echo "Linux $(make -C "$linux_src" -s kernelversion)$(get_config_localversion_auto)"
     echo "PATH: $PATH"
 }
