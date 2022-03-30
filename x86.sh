@@ -98,13 +98,6 @@ function build_x86_kernels() {
     kmake "${kmake_args[@]}" olddefconfig all
     log "i386 debian config$log_comment $(results "$?")"
 
-    # Fedora
-    klog=i686-fedora
-    setup_config fedora/i686.config
-    x86_fortify_configs
-    kmake "${kmake_args[@]}" olddefconfig all
-    log "i686 fedora config$log_comment $(results "$?")"
-
     # OpenSUSE
     klog=i386-opensuse
     setup_config opensuse/i386.config
