@@ -23,7 +23,7 @@ function fetch_alpine_config() {
 # Arch Linux
 function fetch_archlinux_config() {
     case ${1} in
-        armv5 | armv7 | aarch64) URL=https://github.com/archlinuxarm/PKGBUILDs/raw/master/core/linux-${1}/config ;;
+        armv7 | aarch64) URL=https://github.com/archlinuxarm/PKGBUILDs/raw/master/core/linux-${1}/config ;;
         x86_64) URL=https://github.com/archlinux/svntogit-packages/raw/packages/linux/trunk/config ;;
         *) return ;;
     esac

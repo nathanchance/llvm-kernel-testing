@@ -96,11 +96,6 @@ function build_arm32_kernels() {
     log "armv7 alpine config qemu boot $(qemu=1 results "$?")"
 
     # Arch Linux ARM
-    klog=arm32-v5-archlinux
-    setup_config archlinux/armv5.config
-    kmake "${kmake_args[@]}" olddefconfig all
-    log "armv5 archlinux config$log_comment $(results "$?")"
-
     klog=arm32-v7-archlinux
     setup_config archlinux/armv7.config
     kmake "${kmake_args[@]}" olddefconfig all
