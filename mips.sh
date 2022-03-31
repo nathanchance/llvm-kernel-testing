@@ -27,7 +27,7 @@ function build_mips_kernels() {
     echo
 
     # https://git.kernel.org/mips/c/c47c7ab9b53635860c6b48736efdd22822d726d7
-    if ! grep -q "CONFIG_BLK_DEV_INITRD=y" "$linux_src"/arch/mips/config/malta_defconfig; then
+    if ! grep -q "CONFIG_BLK_DEV_INITRD=y" "$linux_src"/arch/mips/configs/malta_defconfig; then
         initrd_comment=" + CONFIG_BLK_DEV_INITRD=y"
         enable_initrd=true
     fi
