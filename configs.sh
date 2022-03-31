@@ -123,7 +123,7 @@ function setup_config() {
     fi
 
     # CONFIG_CRYPTO_ARCH_HAVE_LIB_BLAKE2S and CONFIG_CRYPTO_LIB_BLAKE2S_GENERIC as modules is invalid after https://git.kernel.org/linus/6048fdcc5f269c7f31d774c295ce59081b36e6f9
-    if grep -oPqz '(?s)config CRYPTO_ARCH_HAVE_LIB_BLAKE2S.*?bool' "$linux_src"/lib/crypto/Kconfig; then
+    if grep -oPqz '(?s)config CRYPTO_ARCH_HAVE_LIB_BLAKE2S.*?bool' "$linux_src"/lib/crypto/Kconfig 2>/dev/null; then
         for config in CRYPTO_ARCH_HAVE_LIB_BLAKE2S CRYPTO_LIB_BLAKE2S_GENERIC; do
             # These are not user selectable symbols; unset them and let Kconfig set them as necessary
             [[ "$(scripts_config -s $config)" = "m" ]] && scripts_config_args+=(-u "$config")
@@ -134,6 +134,14 @@ function setup_config() {
     if [[ "$(scripts_config -k -s CS89x0_PLATFORM)" = "m" ]] &&
         grep -q 'bool "CS89x0 platform driver support"' "$linux_src"/drivers/net/ethernet/cirrus/Kconfig; then
         scripts_config_args+=(-e CS89x0 -e CS89x0_PLATFORM)
+    fi
+
+    # CONFIG_DRM_GEM_{CMA,SHMEM}_HELPER as modules is invalid before https://git.kernel.org/linus/4b2b5e142ff499a2bef2b8db0272bbda1088a3fe
+    if grep -oPqz '(?s)config DRM_GEM_CMA_HELPER.*?bool' "$linux_src"/drivers/gpu/drm/Kconfig; then
+        for config in CONFIG_DRM_GEM_{CMA,SHMEM}_HELPER; do
+            # These are not user selectable symbols; unset them and let Kconfig set them as necessary
+            [[ "$(scripts_config -s $config)" = "m" ]] && scripts_config_args+=(-u "$config")
+        done
     fi
 
     # CONFIG_FB_SIMPLE as a module is invalid before https://git.kernel.org/linus/ec7cc3f74b4236860ce612656aa5be7936d1c594
@@ -322,6 +330,12 @@ function setup_config() {
         scripts_config_args+=(-e TI_CPTS)
     fi
 
+    # CONFIG_UNICODE as a module is invalid before https://git.kernel.org/linus/5298d4bfe80f6ae6ae2777bcd1357b0022d98573
+    if [[ "$(scripts_config -s UNICODE)" = "m" ]] &&
+        grep -q 'bool "UTF-8 normalization and casefolding support"' "$linux_src"/fs/unicode/Kconfig; then
+        scripts_config_args+=(-e UNICODE)
+    fi
+
     # CONFIG_VIRTIO_IOMMU as a module is invalid before https://git.kernel.org/linus/fa4afd78ea12cf31113f8b146b696c500d6a9dc3
     if [[ "$(scripts_config -s VIRTIO_IOMMU)" = "m" ]] &&
         grep -q 'bool "Virtio IOMMU driver"' "$linux_src"/drivers/iommu/Kconfig; then
@@ -332,7 +346,7 @@ function setup_config() {
     for zoran_config in DC30 ZR36060 BUZ DC10 LML33 LML33R10 AVS6EYES; do
         zoran_config=VIDEO_ZORAN_"$zoran_config"
         if [[ "$(scripts_config -s $zoran_config)" = "m" ]] &&
-            grep -oPqz "(?s)config $zoran_config.*?bool" "$linux_src"/drivers/staging/media/zoran/Kconfig; then
+            grep -oPqz "(?s)config $zoran_config.*?bool" "$linux_src"/drivers/staging/media/zoran/Kconfig 2>/dev/null; then
             scripts_config_args+=(-e "$zoran_config")
         fi
     done
