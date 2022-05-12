@@ -35,10 +35,10 @@ function fetch_debian_config() { (
     TMP_DIR=$(mktemp -d -p "${PWD}")
     cd "${TMP_DIR}" || exit ${?}
 
-    PACK_VER_SIGNED=5.17.0-trunk
-    KER_VER_SIGNED=5.17.1-1~exp1
-    PACK_VER_UNSIGNED=5.17.0-trunk
-    KER_VER_UNSIGNED=5.17.1-1~exp1
+    PACK_VER_SIGNED=5.17.0-1
+    KER_VER_SIGNED=5.17.3-1
+    PACK_VER_UNSIGNED=$PACK_VER_SIGNED
+    KER_VER_UNSIGNED=$KER_VER_SIGNED
     case ${1} in
         amd64 | arm64) URL=linux-signed-${1}/linux-image-${PACK_VER_SIGNED}-${1}_${KER_VER_SIGNED}_${1}.deb ;;
         armmp) URL=linux/linux-image-${PACK_VER_UNSIGNED}-${1}_${KER_VER_UNSIGNED}_armhf.deb ;;
