@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Bogus function for shellcheck, it is not called anywhere
-function riscv_shellcheck() {
+function s390x_shellcheck() {
     die "This function should never be called."
     defconfigs_only=
     linux_src=
@@ -10,16 +10,15 @@ function riscv_shellcheck() {
 }
 
 # Build s390x kernels
-# Non-working LLVM tools outline:
-#   * ld.lld
-#   * llvm-objcopy
-#   * llvm-objdump
 function build_s390x_kernels() {
     local CROSS_COMPILE kmake_args log_comment
     CROSS_COMPILE=s390x-linux-gnu-
+    # Non-working LLVM tools outline:
+    #   * ld.lld: https://github.com/ClangBuiltLinux/linux/issues/1524
+    #   * llvm-objcopy: https://github.com/ClangBuiltLinux/linux/issues/1530
+    #   * llvm-objdump: https://github.com/ClangBuiltLinux/linux/issues/859
     kmake_args=(
         ARCH=s390
-        CROSS_COMPILE="$CROSS_COMPILE"
         LD="${CROSS_COMPILE}"ld
         OBJCOPY="${CROSS_COMPILE}"objcopy
         OBJDUMP="${CROSS_COMPILE}"objdump
@@ -34,6 +33,12 @@ function build_s390x_kernels() {
         log "s390x kernels skipped due to missing fixes from 5.6 (https://lore.kernel.org/r/your-ad-here.call-01580230449-ext-6884@work.hours/)"
 
         return 0
+    fi
+
+    if grep -q "ifndef CONFIG_AS_IS_LLVM" "$linux_src"/arch/s390/Makefile; then
+        kmake_args+=(LLVM_IAS=1)
+    else
+        kmake_args+=(CROSS_COMPILE="$CROSS_COMPILE")
     fi
 
     header "Building s390x kernels"
