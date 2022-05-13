@@ -351,6 +351,12 @@ function setup_config() {
         fi
     done
 
+    # CONFIG_ZPOOL as a module is invalid after https://git.kernel.org/akpm/mm/c/ba34176c517039ac4dce053341a854f92e67f1e0
+    if [[ "$(scripts_config -s ZPOOL)" = "m" ]] &&
+        ! grep -q "Compressed memory storage API.  This allows using either zbud or" "$linux_src"/mm/Kconfig; then
+        scripts_config_args+=(-e ZPOOL)
+    fi
+
     [[ -n "${scripts_config_args[*]}" ]] && scripts_config -k "${scripts_config_args[@]}"
     log_comment=""
     for disabled_config in "${disabled_configs[@]}"; do
