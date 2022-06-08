@@ -156,6 +156,12 @@ function setup_config() {
         scripts_config_args+=(-e GPIO_MXC)
     fi
 
+    # CONFIG_GPIO_PL061 as a module is invalid before https://git.kernel.org/linus/616844408de7f21546c3c2a71ea7f8d364f45e0d
+    if [[ "$(scripts_config -s GPIO_PL061)" = "m" ]] &&
+        grep -q 'bool "PrimeCell PL061 GPIO support"' "$linux_src"/drivers/gpio/Kconfig; then
+        scripts_config_args+=(-e GPIO_PL061)
+    fi
+
     # CONFIG_I8K as a module is invalid after https://git.kernel.org/linus/9a78ed9a6ed2c3666ac6a4157635f635be62eed2
     if [[ "$(scripts_config -s I8K)" = "m" ]] &&
         grep -q "config I8K" "$linux_src"/drivers/hwmon/Kconfig; then
@@ -232,12 +238,6 @@ function setup_config() {
     if [[ "$(scripts_config -s MCTP)" = "m" ]] &&
         grep -q 'bool "MCTP core protocol support"' "$linux_src"/net/mctp/Kconfig; then
         scripts_config_args+=(-e MCTP)
-    fi
-
-    # CONFIG_GPIO_PL061 as a module is invalid before https://git.kernel.org/linus/616844408de7f21546c3c2a71ea7f8d364f45e0d
-    if [[ "$(scripts_config -s GPIO_PL061)" = "m" ]] &&
-        grep -q 'bool "PrimeCell PL061 GPIO support"' "$linux_src"/drivers/gpio/Kconfig; then
-        scripts_config_args+=(-e GPIO_PL061)
     fi
 
     # CONFIG_QCOM_RPMPD as a module is invalid before https://git.kernel.org/linus/f29808b2fb85a7ff2d4830aa1cb736c8c9b986f4
