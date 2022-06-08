@@ -252,6 +252,12 @@ function setup_config() {
         scripts_config_args+=(-e QCOM_RPMHPD)
     fi
 
+    # CONFIG_RADIO_ADAPTERS as a module is invalid before https://git.kernel.org/linus/215d49a41709610b9e82a49b27269cfaff1ef0b6
+    if [[ "$(scripts_config -s RADIO_ADAPTERS)" = "m" ]] &&
+        grep -q 'bool "Radio Adapters"' "$linux_src"/drivers/media/radio/Kconfig; then
+        scripts_config_args+=(-e RADIO_ADAPTERS)
+    fi
+
     # CONFIG_RATIONAL as a module is invalid before https://git.kernel.org/linus/bcda5fd34417c89f653cc0912cc0608b36ea032c
     if [[ "$(scripts_config -s RATIONAL)" = "m" ]] &&
         grep -oPqz '(?s)config RATIONAL.*?bool' "$linux_src"/lib/math/Kconfig; then
