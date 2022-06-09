@@ -156,6 +156,12 @@ function setup_config() {
         scripts_config_args+=(-e GPIO_MXC)
     fi
 
+    # CONFIG_GPIO_TPS68470 as a module is invalid before https://git.kernel.org/linus/a1ce76e89907a69713f729ff21db1efa00f3bb47
+    if [[ "$(scripts_config -s GPIO_TPS68470)" = "m" ]] &&
+        grep -q 'bool "TPS68470 GPIO"' "$linux_src"/drivers/gpio/Kconfig; then
+        scripts_config_args+=(-e GPIO_TPS68470)
+    fi
+
     # CONFIG_GPIO_PL061 as a module is invalid before https://git.kernel.org/linus/616844408de7f21546c3c2a71ea7f8d364f45e0d
     if [[ "$(scripts_config -s GPIO_PL061)" = "m" ]] &&
         grep -q 'bool "PrimeCell PL061 GPIO support"' "$linux_src"/drivers/gpio/Kconfig; then
@@ -215,6 +221,12 @@ function setup_config() {
     if [[ "$(scripts_config -s PCI_MESON)" = "m" ]] &&
         grep -q 'bool "MESON PCIe controller"' "$linux_src"/drivers/pci/controller/dwc/Kconfig; then
         scripts_config_args+=(-e PCI_MESON)
+    fi
+
+    # CONFIG_PINCTRL_MSM as a module is invalid before https://git.kernel.org/linus/38e86f5c2645f3c16f698fa7e66b4eb23da5369c
+    if [[ "$(scripts_config -s PINCTRL_MSM)" = "m" ]] &&
+        grep -q 'bool "Qualcomm core pin controller driver"' "$linux_src"/drivers/pinctrl/qcom/Kconfig; then
+        scripts_config_args+=(-e PINCTRL_MSM)
     fi
 
     # CONFIG_POWER_RESET_SC27XX as a module is invalid before https://git.kernel.org/linus/f78c55e3b4806974f7d590b2aab8683232b7bd25
@@ -292,6 +304,12 @@ function setup_config() {
     if [[ "$(scripts_config -s SERIAL_LANTIQ)" = "m" ]] &&
         grep -q 'bool "Lantiq serial driver"' "$linux_src"/drivers/tty/serial/Kconfig; then
         scripts_config_args+=(-e SERIAL_LANTIQ)
+    fi
+
+    # CONFIG_SND_SOC_SOF_DEBUG_PROBES as a module is invalid before https://git.kernel.org/linus/3dc0d709177828a22dfc9d0072e3ac937ef90d06
+    if [[ "$(scripts_config -s SND_SOC_SOF_DEBUG_PROBES)" = "m" ]] &&
+        grep -q 'bool "SOF enable data probing"' "$linux_src"/sound/soc/sof/Kconfig; then
+        scripts_config_args+=(-e SND_SOC_SOF_DEBUG_PROBES)
     fi
 
     # CONFIG_SND_SOC_SPRD_MCDT as a module is invalid before https://git.kernel.org/linus/fd357ec595d36676c239d8d16706a270a961ac32
