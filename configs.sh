@@ -225,7 +225,7 @@ function setup_config() {
 
     # CONFIG_PINCTRL_MSM as a module is invalid before https://git.kernel.org/linus/38e86f5c2645f3c16f698fa7e66b4eb23da5369c
     if [[ "$(scripts_config -s PINCTRL_MSM)" = "m" ]] &&
-        grep -q 'bool "Qualcomm core pin controller driver"' "$linux_src"/drivers/pinctrl/qcom/Kconfig; then
+        grep -oPqz '(?s)config PINCTRL_MSM.*?bool' "$linux_src"/drivers/pinctrl/qcom/Kconfig; then
         scripts_config_args+=(-e PINCTRL_MSM)
     fi
 
