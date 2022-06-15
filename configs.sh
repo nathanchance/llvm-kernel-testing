@@ -130,6 +130,18 @@ function setup_config() {
         done
     fi
 
+    # CONFIG_CRYPTO_BLAKE2S_ARM as a module is invalid after https://git.kernel.org/herbert/cryptodev-2.6/c/2d16803c562ecc644803d42ba98a8e0aef9c014e
+    if [[ "$(scripts_config -s CRYPTO_BLAKE2S_ARM)" = "m" ]] &&
+        grep -q 'bool "BLAKE2s digest algorithm (ARM)"' "$linux_src"/arch/arm/crypto/Kconfig; then
+        scripts_config_args+=(-e CRYPTO_BLAKE2S_ARM)
+    fi
+
+    # CONFIG_CRYPTO_BLAKE2S_X86 as a module is invalid after https://git.kernel.org/herbert/cryptodev-2.6/c/2d16803c562ecc644803d42ba98a8e0aef9c014e
+    if [[ "$(scripts_config -s CRYPTO_BLAKE2S_X86)" = "m" ]] &&
+        grep -q 'bool "BLAKE2s digest algorithm (x86 accelerated version)"' "$linux_src"/crypto/Kconfig; then
+        scripts_config_args+=(-e CRYPTO_BLAKE2S_X86)
+    fi
+
     # CONFIG_CS89x0_PLATFORM as a module is invalid before https://git.kernel.org/linus/47fd22f2b84765a2f7e3f150282497b902624547
     if [[ "$(scripts_config -k -s CS89x0_PLATFORM)" = "m" ]] &&
         grep -q 'bool "CS89x0 platform driver support"' "$linux_src"/drivers/net/ethernet/cirrus/Kconfig; then
