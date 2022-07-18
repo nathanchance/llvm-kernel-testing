@@ -324,6 +324,12 @@ function setup_config() {
         scripts_config_args+=(-e SND_SOC_SOF_DEBUG_PROBES)
     fi
 
+    # CONFIG_SND_SOC_SOF_HDA_PROBES as a module is invalid before https://git.kernel.org/linus/e18610eaa66a1849aaa00ca43d605fb1a6fed800
+    if [[ "$(scripts_config -s SND_SOC_SOF_HDA_PROBES)" = "m" ]] &&
+        grep -oPqz '(?s)config SND_SOC_SOF_HDA_PROBES.*?bool' "$linux_src"/sound/soc/sof/intel/Kconfig; then
+        scripts_config_args+=(-e SND_SOC_SOF_HDA_PROBES)
+    fi
+
     # CONFIG_SND_SOC_SPRD_MCDT as a module is invalid before https://git.kernel.org/linus/fd357ec595d36676c239d8d16706a270a961ac32
     if [[ "$(scripts_config -s SND_SOC_SPRD_MCDT)" = "m" ]] &&
         grep -q 'bool "Spreadtrum multi-channel data transfer support"' "$linux_src"/sound/soc/sprd/Kconfig; then
