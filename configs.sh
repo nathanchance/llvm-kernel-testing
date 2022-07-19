@@ -235,6 +235,12 @@ function setup_config() {
         scripts_config_args+=(-e PCI_MESON)
     fi
 
+    # CONFIG_PINCTRL_AMD as a module is invalid after https://git.kernel.org/next/linux-next/c/41ef3c1a6bb0fd4a3f81170dd17de3adbff80783
+    if [[ "$(scripts_config -s PINCTRL_AMD)" = "m" ]] &&
+        grep -q 'bool "AMD GPIO pin control"' "$linux_src"/drivers/pinctrl/Kconfig; then
+        scripts_config_args+=(-e PINCTRL_AMD)
+    fi
+
     # CONFIG_PINCTRL_MSM as a module is invalid before https://git.kernel.org/linus/38e86f5c2645f3c16f698fa7e66b4eb23da5369c
     if [[ "$(scripts_config -s PINCTRL_MSM)" = "m" ]] &&
         grep -oPqz '(?s)config PINCTRL_MSM.*?bool' "$linux_src"/drivers/pinctrl/qcom/Kconfig; then
