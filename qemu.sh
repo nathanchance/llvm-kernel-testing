@@ -37,6 +37,6 @@ function qemu_boot_kernel() {
         create_qemu_ver_code
         [[ $1 = "ppc32" && $qemu_ver_code -gt 50001 && $qemu_ver_code -lt 60200 ]] && return 32
         [[ $1 = "s390x" && $qemu_ver_code -lt 60000 ]] && return 33
-        "$boot_utils"/boot-qemu.sh -a "$1" -k "$out"
+        "$boot_utils"/boot-qemu.py -a "$1" -k "$out"
     fi
 }
