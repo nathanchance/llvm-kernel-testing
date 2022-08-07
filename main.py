@@ -38,7 +38,7 @@ class ArchitectureFactory:
         if arch == "mips":
             return MIPS(cfg)
         if arch == "powerpc":
-            return POWERPC()
+            return POWERPC(cfg)
         if arch == "riscv":
             return RISCV()
         if arch == "s390":
