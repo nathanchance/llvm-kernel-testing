@@ -162,7 +162,7 @@ def format_logs(cfg):
             # if building in tree.
             with open(file) as f:
                 old_log = f.read()
-                new_log = old_log.replace(f"{str_to_remove}", "")
+                new_log = old_log.replace(str_to_remove, "")
             with open(file, "w") as f:
                 f.write(new_log)
 
