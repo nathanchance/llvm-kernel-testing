@@ -42,7 +42,7 @@ class ArchitectureFactory:
         if arch == "riscv":
             return RISCV(cfg)
         if arch == "s390":
-            return S390()
+            return S390(cfg)
         if arch == "x86_64":
             return X86_64()
 
