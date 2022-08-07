@@ -22,12 +22,13 @@ from x86_64 import X86_64
 import lib
 
 base_folder = Path(__file__).resolve().parent
+supported_targets = ['defconfigs', 'otherconfigs']
 supported_architectures = ['arm', 'arm64', 'hexagon', 'i386', 'mips', 'powerpc', 'riscv', 's390', 'x86_64']
 
 class ArchitectureFactory:
-    def get(self, arch):
+    def get(self, arch, cfg):
         if arch == "arm":
-            return ARM()
+            return ARM(cfg)
         if arch == "arm64":
             return ARM64()
         if arch == "hexagon":
@@ -71,7 +72,7 @@ def build_kernels(cfg):
     """
     arch_factory = ArchitectureFactory()
     for arch_name in cfg["architectures"]:
-        arch = arch_factory.get(arch_name)
+        arch = arch_factory.get(arch_name, cfg)
 
         if not arch.clang_supports_target():
             lib.header(f"Skipping {arch_name} kernels")
@@ -185,10 +186,11 @@ def initial_config_and_setup(args):
         "architectures": args.architectures,
         "commits_present": check_for_commits(linux_folder),
         "configs_present": check_for_configs(linux_folder),
-        "defconfigs_only": args.defconfigs_only,
+        "defconfigs_only": args.targets_to_build.count("defconfigs") == len(args.targets_to_build) and args.targets_to_build,
         "linux_folder": linux_folder,
         "log_folder": log_folder,
         "logs": {},
+        "targets_to_build": args.targets_to_build,
         "save_objects": args.save_objects,
     }
 
@@ -240,11 +242,11 @@ def parse_arguments():
     parser.add_argument("-b", "--build-folder", type=str, help="Path to build folder (default: 'build' folder in Linux kernel source folder).")
     parser.add_argument("--boot-utils", type=str, help="Path to boot-utils.")
     parser.add_argument("--binutils-prefix", type=str, help="Path to binutils installation.")
-    parser.add_argument("--defconfigs-only", action="store_true", help="Only build defconfigs (useful for quick or boot testing).")
     parser.add_argument("-l", "--linux-folder", required=True, type=str, help="Path to Linux source folder (required).")
     parser.add_argument("--llvm-prefix", type=str, help="Path to LLVM installation.")
     parser.add_argument("--log-folder", default=base_folder.joinpath("logs", datetime.now().strftime("%Y%m%d-%H%M")), type=str, help="Folder to store log files in (default: %(default)s).")
     parser.add_argument("--save-objects", action="store_true", help="Save object files (default: remove build folder).")
+    parser.add_argument("-t", "--targets-to-build", choices=supported_targets, default=supported_targets, metavar="TARGETS", nargs="+", help="Testing targets to build (default: %(default)s).")
     parser.add_argument("--tc-prefix", type=str, help="Path to toolchain installation.")
     parser.add_argument("--use-ccache", action="store_true", help="Use ccache for building.")
     parser.add_argument("--qemu-prefix", type=str, help="Path to QEMU installation.")
