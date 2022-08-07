@@ -44,7 +44,7 @@ class ArchitectureFactory:
         if arch == "s390":
             return S390(cfg)
         if arch == "x86_64":
-            return X86_64()
+            return X86_64(cfg)
 
 def add_to_path(folder):
     """
@@ -186,7 +186,6 @@ def initial_config_and_setup(args):
         "architectures": args.architectures,
         "commits_present": check_for_commits(linux_folder),
         "configs_present": check_for_configs(linux_folder),
-        "defconfigs_only": args.targets_to_build.count("defconfigs") == len(args.targets_to_build) and args.targets_to_build,
         "linux_folder": linux_folder,
         "log_folder": log_folder,
         "logs": {},
