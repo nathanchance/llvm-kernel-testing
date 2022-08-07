@@ -4,7 +4,8 @@ from collections import OrderedDict
 from datetime import timedelta
 from os import sched_getaffinity
 from pathlib import Path
-from shutil import rmtree, which
+from re import search
+from shutil import copyfile, rmtree, which
 from subprocess import DEVNULL, PIPE, Popen, run, STDOUT
 from sys import stdout
 from tempfile import mkstemp
@@ -32,6 +33,8 @@ def boot_qemu(cfg, arch, log_str, build_folder, kernel_available):
             result_str = "failed"
     else:
         result_str = "skipped"
+    if not "config" in log_str:
+        log_str += " config"
     log(cfg, f"{log_str} qemu boot {result_str}")
 
 def capture_cmd(cmd, cwd=None, input=None):
@@ -77,6 +80,21 @@ def clang_supports_target(target):
     clang_cmd = ["clang", f"--target={target}", "-c", "-x", "c", "-", "-o", "/dev/null"]
     clang = run(clang_cmd, input="", stderr=DEVNULL, stdout=DEVNULL, text=True)
     return clang.returncode == 0
+
+def config_val(linux_folder, build_folder, cfg_sym):
+    """
+    Returns the output of 'scripts/config -s' to allow decisions based on
+    current configuration value.
+
+    Parameters:
+        linux_folder (Path): A Path object pointing to the Linux kernel source location.
+        build_folder (Path): A Path objet pointing to the build folder containing '.config'.
+        cfg_sym (str): Configuration symbol to check.
+
+    Returns:
+        The configuration value without trailing whitespace for easy comparisons.
+    """
+    return scripts_config(linux_folder, build_folder, ["-s", cfg_sym], capture_output=True).strip()
 
 def create_version_code(version):
     """
@@ -255,6 +273,49 @@ def header(hdr_str, end='\n'):
         print("=", end="")
     print("\n\033[0m", end=end)
 
+def is_enabled(linux_folder, build_folder, cfg_sym):
+    """
+    Checks if a configuration value is enabled.
+
+    Parameters:
+        linux_folder (Path): A Path object pointing to the Linux kernel source location.
+        build_folder (Path): A Path objet pointing to the build folder containing '.config'.
+        cfg_sym (str): Configuration symbol to check.
+
+    Returns:
+        True if symbol is 'y', False if not.
+    """
+    return config_val(linux_folder, build_folder, cfg_sym) == "y" 
+
+def is_modular(linux_folder, build_folder, cfg_sym):
+    """
+    Checks if a configuration value is enabled.
+
+    Parameters:
+        linux_folder (Path): A Path object pointing to the Linux kernel source location.
+        build_folder (Path): A Path objet pointing to the build folder containing '.config'.
+        cfg_sym (str): Configuration symbol to check.
+
+    Returns:
+        True if symbol is 'm', False if not.
+    """
+    return config_val(linux_folder, build_folder, cfg_sym) == "m" 
+
+def is_set(linux_folder, build_folder, cfg_sym):
+    """
+    Checks if a configuration value is set.
+
+    Parameters:
+        linux_folder (Path): A Path object pointing to the Linux kernel source location.
+        build_folder (Path): A Path objet pointing to the build folder containing '.config'.
+        cfg_sym (str): Configuration symbol to check.
+
+    Returns:
+        True if symbol is 'n', '""', or 'undef', False if not.
+    """
+    val = config_val(linux_folder, build_folder, cfg_sym)
+    return not (val == "" or val == "undef" or val == "n")
+
 def kmake(kmake_cfg):
     """
     Runs a make command in the Linux kernel folder.
@@ -359,6 +420,8 @@ def log_result(cfg, log_str, success, time):
         time (str): Amount of time that command took to completed.
     """
     result_str = "successful" if success else "failed"
+    if not "config" in log_str:
+        log_str += " config"
     log(cfg, f"{log_str} {result_str} in {time}")
 
 def modify_config(linux_folder, build_folder, mod_type):
@@ -405,6 +468,26 @@ def pretty_print_cmd(cmd):
             cmd_pretty += f" {element}"
     print(f"\n$ {cmd_pretty.strip()}")
 
+def process_cfg_item(linux_folder, build_folder, cfg_item):
+    """
+    Changes a configuration symbol from 'm' to 'y' if pattern is found in file.
+
+    Parameters:
+        linux_folder (Path): A Path object pointing to the Linux kernel source location.
+        build_folder (Path): A Path objet pointing to the build folder containing '.config'.
+    """
+    cfg_sym = cfg_item[0]
+    pattern = cfg_item[1]
+    file = cfg_item[2]
+    sc_action = cfg_item[3]
+    if is_modular(linux_folder, build_folder, cfg_sym):
+        src_file = linux_folder.joinpath(file)
+        if src_file.exists():
+            with open(src_file) as f:
+                if search(pattern, f.read()):
+                    return [sc_action, cfg_sym]
+    return []
+
 def red(red_str):
     """
     Prints string in bold red.
@@ -414,7 +497,7 @@ def red(red_str):
     """
     print(f"\n\033[01;31m{red_str}\033[0m")
 
-def scripts_config(linux_folder, build_folder, args):
+def scripts_config(linux_folder, build_folder, args, capture_output=False):
     """
     Runs 'scripts/config' from Linux source folder against configuration in
     build folder. '.config' must already exist!
@@ -428,5 +511,91 @@ def scripts_config(linux_folder, build_folder, args):
     config = build_folder.joinpath(".config").as_posix()
 
     cmd = [scripts_config, "--file", config] + args
+    if capture_output:
+        return capture_cmd(cmd)
     pretty_print_cmd(cmd)
     run(cmd, check=True)
+
+def setup_config(sc_cfg):
+    """
+    Sets up a distribution configuration in the build folder.
+
+    Parameters:
+        sc_cfg (dict): A dictionary with 'linux_folder', 'linux_version_code',
+                       'build_folder', and 'config_file' as keys.
+    """
+    linux_folder = sc_cfg["linux_folder"]
+    linux_version_code = sc_cfg["linux_version_code"]
+    build_folder = sc_cfg["build_folder"]
+    config_file = sc_cfg["config_file"]
+
+    log_cfgs = []
+    sc_args = []
+
+    # Clean up build folder
+    rmtree(build_folder, ignore_errors=True)
+    build_folder.mkdir(parents=True)
+
+    # Copy '.config'
+    copyfile(config_file, build_folder.joinpath(".config"))
+
+    # CONFIG_DEBUG_INFO_BTF has two conditions:
+    #
+    #   * pahole needs to be available
+    #
+    #   * The kernel needs https://git.kernel.org/linus/90ceddcb495008ac8ba7a3dce297841efcd7d584,
+    #     which is first available in 5.7: https://github.com/ClangBuiltLinux/linux/issues/871
+    #
+    # If either of those conditions are false, we need to disable this config so
+    # that the build does not error.
+    debug_info_btf = "DEBUG_INFO_BTF"
+    debug_info_btf_y = is_enabled(linux_folder, build_folder, debug_info_btf)
+    pahole_available = which("pahole")
+    if debug_info_btf_y and not (pahole_available and linux_version_code >= 507000):
+        log_cfgs += [debug_info_btf]
+        sc_args += ["-d", debug_info_btf]
+
+    bpf_preload = "BPF_PRELOAD"
+    if is_enabled(linux_folder, build_folder, bpf_preload):
+        log_cfgs += [bpf_preload]
+        sc_args += ["-d", bpf_preload]
+
+    # Distribution fun
+    if "debian" in config_file.as_posix():
+        # We are building upstream kernels, which do not have Debian's
+        # signing keys in their source.
+        system_trusted_keys = "SYSTEM_TRUSTED_KEYS"
+        if is_set(linux_folder, build_folder, system_trusted_keys):
+            log_cfgs += [system_trusted_keys]
+            sc_args += ["-d", system_trusted_keys]
+
+        # The Android drivers are not modular in upstream.
+        for android_cfg in ["ANDROID_BINDER_IPC", "ASHMEM"]:
+            if is_modular(linux_folder, build_folder, android_cfg):
+                sc_args += ["-e", android_cfg]
+
+    if "archlinux" in config_file.as_posix():
+        extra_firmware = "EXTRA_FIRMWARE"
+        if is_set(linux_folder, build_folder, extra_firmware):
+            log_cfgs += [extra_firmware]
+            sc_args += ["-u", extra_firmware]
+
+    cfg_items = []
+    # CONFIG_CRYPTO_BLAKE2S_{ARM,X86} as modules is invalid after https://git.kernel.org/linus/2d16803c562ecc644803d42ba98a8e0aef9c014e
+    cfg_items += [("CRYPTO_BLAKE2S_ARM", 'bool "BLAKE2s digest algorithm \(ARM\)"', "arch/arm/crypto/Kconfig", "-e")]
+    cfg_items += [("CRYPTO_BLAKE2S_X86", 'bool "BLAKE2s digest algorithm \(x86 accelerated version\)"', "crypto/Kconfig", "-e")]
+    # CONFIG_PINCTRL_AMD as a module is invalid after https://git.kernel.org/linus/41ef3c1a6bb0fd4a3f81170dd17de3adbff80783
+    cfg_items += [("PINCTRL_AMD", 'bool "AMD GPIO pin control"', "drivers/pinctrl/Kconfig", "-e")]
+    # CONFIG_ZPOOL as a module is invalid after https://git.kernel.org/linus/b3fbd58fcbb10725a1314688e03b1af6827c42f9
+    cfg_items += [("ZPOOL", "config ZPOOL\n\tbool", "mm/Kconfig", "-e")]
+    for cfg_item in cfg_items:
+        sc_args += process_cfg_item(linux_folder, build_folder, cfg_item)
+
+    if sc_args:
+        scripts_config(linux_folder, build_folder, sc_args)
+
+    log_str = ""
+    for log_cfg in log_cfgs:
+        log_str += f" + CONFIG_{log_cfg}=n"
+
+    return log_str

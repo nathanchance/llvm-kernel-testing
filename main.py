@@ -22,7 +22,7 @@ from x86_64 import X86_64
 import lib
 
 base_folder = Path(__file__).resolve().parent
-supported_targets = ['def', 'other']
+supported_targets = ['def', 'other', 'distro']
 supported_architectures = ['arm', 'arm64', 'hexagon', 'i386', 'mips', 'powerpc', 'riscv', 's390', 'x86_64']
 
 class ArchitectureFactory:
@@ -185,6 +185,7 @@ def initial_config_and_setup(args):
     cfg = {
         "architectures": args.architectures,
         "commits_present": check_for_commits(linux_folder),
+        "configs_folder": base_folder.joinpath("configs"),
         "configs_present": check_for_configs(linux_folder),
         "linux_folder": linux_folder,
         "log_folder": log_folder,

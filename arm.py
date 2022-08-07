@@ -86,10 +86,40 @@ def build_otherconfigs(self, cfg):
             Path(config_path).unlink()
             del self.make_variables["KCONFIG_ALLCONFIG"]
 
+def build_distroconfigs(self, cfg):
+    cfg_files = [("alpine", "armv7")]
+    cfg_files += [("archlinux", "armv7")]
+    cfg_files += [("debian", "armmp")]
+    cfg_files += [("fedora", "armv7hl")]
+    cfg_files += [("opensuse", "armv7hl")]
+    for cfg_file in cfg_files:
+        distro = cfg_file[0]
+        cfg_basename = cfg_file[1] + ".config"
+        log_str = f"arm {distro}"
+        sc_cfg = {
+            "linux_folder": self.linux_folder,
+            "linux_version_code": self.linux_version_code,
+            "build_folder": self.build_folder,
+            "config_file": self.configs_folder.joinpath(distro, cfg_basename),
+        }
+        kmake_cfg = {
+            "linux_folder": sc_cfg["linux_folder"],
+            "build_folder": sc_cfg["build_folder"],
+            "log_file": lib.log_file_from_str(self.log_folder, log_str),
+            "targets": ["olddefconfig", "all"],
+            "variables": self.make_variables,
+        }
+        log_str += lib.setup_config(sc_cfg)
+        rc, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, log_str, rc == 0, time)
+        if distro != "fedora":
+            boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0) 
+
 class ARM:
     def __init__(self, cfg):
         self.build_folder = cfg["build_folder"].joinpath(self.__class__.__name__.lower())
         self.commits_present = cfg["commits_present"]
+        self.configs_folder = cfg["configs_folder"]
         self.configs_present = cfg["configs_present"]
         self.linux_folder = cfg["linux_folder"]
         self.linux_version_code = cfg["linux_version_code"]
@@ -125,6 +155,8 @@ class ARM:
             build_defconfigs(self, cfg)
         if "other" in self.targets_to_build:
             build_otherconfigs(self, cfg)
+        if "distro" in self.targets_to_build:
+            build_distroconfigs(self, cfg)
 
         if not self.save_objects:
             rmtree(self.build_folder)

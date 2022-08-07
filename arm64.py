@@ -129,6 +129,37 @@ def build_otherconfigs(self, cfg):
         rc, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, log_str, rc == 0, time)
 
+def build_distroconfigs(self, cfg):
+    cfg_files = [("alpine", "aarch64")]
+    cfg_files += [("archlinux", "aarch64")]
+    cfg_files += [("debian", "arm64")]
+    cfg_files += [("fedora", "aarch64")]
+    cfg_files += [("opensuse", "arm64")]
+    for cfg_file in cfg_files:
+        distro = cfg_file[0]
+        cfg_basename = cfg_file[1] + ".config"
+        log_str = f"arm64 {distro}"
+        sc_cfg = {
+            "linux_folder": self.linux_folder,
+            "linux_version_code": self.linux_version_code,
+            "build_folder": self.build_folder,
+            "config_file": self.configs_folder.joinpath(distro, cfg_basename),
+        }
+        kmake_cfg = {
+            "linux_folder": sc_cfg["linux_folder"],
+            "build_folder": sc_cfg["build_folder"],
+            "log_file": lib.log_file_from_str(self.log_folder, log_str),
+            "targets": ["olddefconfig", "all"],
+            "variables": self.make_variables,
+        }
+        log_str += lib.setup_config(sc_cfg)
+        if distro == "fedora" and self.linux_version_code < 507000:
+            log_str += " + CONFIG_STM=n (https://github.com/ClangBuiltLinux/linux/issues/515)"
+            lib.scripts_config(kmake_cfg["linux_folder"], kmake_cfg["build_folder"], ["-d", "STM"])
+        rc, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, log_str, rc == 0, time)
+        boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
+
 def has_d8e85e144bbe1(linux_folder):
     with open(linux_folder.joinpath("arch", "arm64", "Kconfig")) as f:
         return search('prompt "Endianness"', f.read())
@@ -137,6 +168,7 @@ class ARM64:
     def __init__(self, cfg):
         self.build_folder = cfg["build_folder"].joinpath(self.__class__.__name__.lower())
         self.commits_present = cfg["commits_present"]
+        self.configs_folder = cfg["configs_folder"]
         self.configs_present = cfg["configs_present"]
         self.linux_folder = cfg["linux_folder"]
         self.linux_version_code = cfg["linux_version_code"]
@@ -147,8 +179,6 @@ class ARM64:
         self.targets_to_build = cfg["targets_to_build"]
 
     def build(self, cfg):
-        lib.header("Building arm64 kernels", end='')
-
         self.make_variables["ARCH"] = "arm64"
 
         if machine() == "aarch64":
@@ -157,22 +187,28 @@ class ARM64:
             cross_compile = "aarch64-linux-gnu-"
 
         if self.linux_version_code >= 510000:
+            lib.header("Building arm64 kernels", end='')
+
             self.make_variables["LLVM_IAS"] = "1"
             if not "6f5b41a2f5a63" in self.commits_present and cross_compile:
                 self.make_variables["CROSS_COMPILE"] = cross_compile
         else:
+            lib.header("Building arm64 kernels")
+
             if cross_compile:
                 self.make_variables["CROSS_COMPILE"] = cross_compile
             if not lib.check_binutils(cfg, "arm64", cross_compile):
                 return
             binutils_version, binutils_location = lib.get_binary_info(f"{cross_compile}as")
             print(f"binutils version: {binutils_version}")
-            print(f"binutils location: {binutils_location}\n")
+            print(f"binutils location: {binutils_location}")
 
         if "def" in self.targets_to_build:
             build_defconfigs(self, cfg)
         if "other" in self.targets_to_build:
             build_otherconfigs(self, cfg)
+        if "distro" in self.targets_to_build:
+            build_distroconfigs(self, cfg)
 
         if not self.save_objects:
             rmtree(self.build_folder)

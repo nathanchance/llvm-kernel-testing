@@ -49,6 +49,36 @@ def build_otherconfigs(self, cfg):
             Path(config_path).unlink()
             del self.make_variables["KCONFIG_ALLCONFIG"]
 
+def build_distroconfigs(self, cfg):
+    for distro in ["debian", "fedora", "opensuse"]:
+        log_str = f"s390 {distro}"
+        sc_cfg = {
+            "linux_folder": self.linux_folder,
+            "linux_version_code": self.linux_version_code,
+            "build_folder": self.build_folder,
+            "config_file": self.configs_folder.joinpath(distro, "s390x.config"),
+        }
+        kmake_cfg = {
+            "linux_folder": sc_cfg["linux_folder"],
+            "build_folder": sc_cfg["build_folder"],
+            "log_file": lib.log_file_from_str(self.log_folder, log_str),
+            "targets": ["olddefconfig", "all"],
+            "variables": self.make_variables,
+        }
+        log_str += lib.setup_config(sc_cfg)
+        if distro == "fedora" and not has_efe5e0fea4b24(kmake_cfg["linux_folder"]):
+            log_str += " + CONFIG_MARCH_Z196=y (https://github.com/ClangBuiltLinux/linux/issues/1264)"
+            sc_args = ["-d", "MARCH_ZEC12", "-e", "MARCH_Z196"]
+            lib.scripts_config(kmake_cfg["linux_folder"], kmake_cfg["build_folder"], sc_args)
+        rc, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, log_str, rc == 0, time)
+        boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
+
+# https://git.kernel.org/linus/efe5e0fea4b24872736c62a0bcfc3f99bebd2005
+def has_efe5e0fea4b24(linux_folder):
+    with open(linux_folder.joinpath("arch", "s390", "include", "asm", "bitops.h")) as f:
+        return not search('"(o|n|x)i\t%0,%b1\\\\n"', f.read())
+
 def has_integrated_as_support(linux_folder):
     with open(linux_folder.joinpath("arch", "s390", "Makefile")) as f:
         return search("ifndef CONFIG_AS_IS_LLVM", f.read())
@@ -59,6 +89,7 @@ class S390:
     def __init__(self, cfg):
         self.build_folder = cfg["build_folder"].joinpath(self.__class__.__name__.lower())
         self.commits_present = cfg["commits_present"]
+        self.configs_folder = cfg["configs_folder"]
         self.configs_present = cfg["configs_present"]
         self.linux_folder = cfg["linux_folder"]
         self.llvm_version_code = ["llvm_version_code"]
@@ -99,6 +130,8 @@ class S390:
             build_defconfigs(self, cfg)
         if "other" in self.targets_to_build:
             build_otherconfigs(self, cfg)
+        if "distro" in self.targets_to_build:
+            build_distroconfigs(self, cfg)
 
         if not self.save_objects:
             rmtree(self.build_folder)

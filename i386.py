@@ -71,6 +71,32 @@ def build_otherconfigs(self, cfg):
             Path(config_path).unlink()
             del self.make_variables["KCONFIG_ALLCONFIG"]
 
+def build_distroconfigs(self, cfg):
+    for distro in ["debian", "opensuse"]:
+        log_str = f"i386 {distro}"
+        sc_cfg = {
+            "linux_folder": self.linux_folder,
+            "linux_version_code": self.linux_version_code,
+            "build_folder": self.build_folder,
+            "config_file": self.configs_folder.joinpath(distro, "i386.config"),
+        }
+        kmake_cfg = {
+            "linux_folder": sc_cfg["linux_folder"],
+            "build_folder": sc_cfg["build_folder"],
+            "log_file": lib.log_file_from_str(self.log_folder, log_str),
+            "targets": ["olddefconfig", "all"],
+            "variables": self.make_variables,
+        }
+        log_str += lib.setup_config(sc_cfg)
+        if disable_nf_configs(self.llvm_version_code, self.linux_folder):
+            log_str += " + CONFIG_NETFILTER_SYNPROXY=n (https://github.com/ClangBuiltLinux/linux/issues/1442)"
+            sc_args = ["-d", "IP_NF_TARGET_SYNPROXY"]
+            sc_args += ["-d", "IP6_NF_TARGET_SYNPROXY"]
+            sc_args += ["-d", "NFT_SYNPROXY"]
+            lib.scripts_config(kmake_cfg["linux_folder"], kmake_cfg["build_folder"], sc_args)
+        rc, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, log_str, rc == 0, time)
+
 # https://github.com/ClangBuiltLinux/linux/issues/1442
 def disable_nf_configs(llvm_version_code, linux_folder):
     return llvm_version_code < 1500000 and fortify_broken(linux_folder)
@@ -104,6 +130,7 @@ class I386:
     def __init__(self, cfg):
         self.build_folder = cfg["build_folder"].joinpath(self.__class__.__name__.lower())
         self.commits_present = cfg["commits_present"]
+        self.configs_folder = cfg["configs_folder"]
         self.configs_present = cfg["configs_present"]
         self.linux_folder = cfg["linux_folder"]
         self.linux_version_code = cfg["linux_version_code"]
@@ -151,6 +178,8 @@ class I386:
             build_defconfigs(self, cfg)
         if "other" in self.targets_to_build:
             build_otherconfigs(self, cfg)
+        if "distro" in self.targets_to_build:
+            build_distroconfigs(self, cfg)
 
         if not self.save_objects:
             rmtree(self.build_folder)
