@@ -150,9 +150,9 @@ class MIPS:
         if has_e91946d6d93ef(self.linux_folder) and self.llvm_version_code < 1300000:
             self.ld_bfd = {"LD": f"{self.cross_compile}ld"}
 
-        if "defconfigs" in self.targets_to_build:
+        if "def" in self.targets_to_build:
             build_defconfigs(self, cfg)
-        if "otherconfigs" in self.targets_to_build:
+        if "other" in self.targets_to_build:
             build_otherconfigs(self, cfg)
 
         if not self.save_objects:

@@ -77,9 +77,9 @@ class HEXAGON:
 
         lib.header("Building hexagon kernels", end='')
 
-        if "defconfigs" in self.targets_to_build:
+        if "def" in self.targets_to_build:
             build_defconfigs(self, cfg)
-        if "otherconfigs" in self.targets_to_build:
+        if "other" in self.targets_to_build:
             build_otherconfigs(self, cfg)
 
         if not self.save_objects:

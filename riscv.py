@@ -109,9 +109,9 @@ class RISCV:
             if self.linux_version_code <= 510999:
                 self.make_variables["LD"] = cross_compile + "ld"
 
-        if "defconfigs" in self.targets_to_build:
+        if "def" in self.targets_to_build:
             build_defconfigs(self, cfg)
-        if "otherconfigs" in self.targets_to_build:
+        if "other" in self.targets_to_build:
             build_otherconfigs(self, cfg)
 
         if not self.save_objects:

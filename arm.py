@@ -121,9 +121,9 @@ class ARM:
             print(f"binutils version: {binutils_version}")
             print(f"binutils location: {binutils_location}\n")
 
-        if "defconfigs" in self.targets_to_build:
+        if "def" in self.targets_to_build:
             build_defconfigs(self, cfg)
-        if "otherconfigs" in self.targets_to_build:
+        if "other" in self.targets_to_build:
             build_otherconfigs(self, cfg)
 
         if not self.save_objects:

@@ -22,7 +22,7 @@ from x86_64 import X86_64
 import lib
 
 base_folder = Path(__file__).resolve().parent
-supported_targets = ['defconfigs', 'otherconfigs']
+supported_targets = ['def', 'other']
 supported_architectures = ['arm', 'arm64', 'hexagon', 'i386', 'mips', 'powerpc', 'riscv', 's390', 'x86_64']
 
 class ArchitectureFactory:
