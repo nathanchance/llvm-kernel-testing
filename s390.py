@@ -57,7 +57,7 @@ def has_integrated_as_support(linux_folder):
 
 class S390:
     def __init__(self, cfg):
-        self.build_folder = cfg["build_folder"].joinpath("s390")
+        self.build_folder = cfg["build_folder"].joinpath(self.__class__.__name__.lower())
         self.commits_present = cfg["commits_present"]
         self.configs_present = cfg["configs_present"]
         self.linux_folder = cfg["linux_folder"]

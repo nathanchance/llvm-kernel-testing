@@ -106,7 +106,7 @@ def has_e91946d6d93ef(linux_folder):
 
 class MIPS:
     def __init__(self, cfg):
-        self.build_folder = cfg["build_folder"].joinpath("mips")
+        self.build_folder = cfg["build_folder"].joinpath(self.__class__.__name__.lower())
         self.linux_folder = cfg["linux_folder"]
         self.linux_version_code = cfg["linux_version_code"]
         self.llvm_version_code = cfg["llvm_version_code"]

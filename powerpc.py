@@ -143,7 +143,7 @@ def has_dwc(linux_folder):
 
 class POWERPC:
     def __init__(self, cfg):
-        self.build_folder = cfg["build_folder"].joinpath("powerpc")
+        self.build_folder = cfg["build_folder"].joinpath(self.__class__.__name__.lower())
         self.configs_present = cfg["configs_present"]
         self.linux_folder = cfg["linux_folder"]
         self.linux_version_code = cfg["linux_version_code"]

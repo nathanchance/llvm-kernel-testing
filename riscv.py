@@ -61,7 +61,7 @@ def has_efi(linux_folder):
 
 class RISCV:
     def __init__(self, cfg):
-        self.build_folder = cfg["build_folder"].joinpath("riscv")
+        self.build_folder = cfg["build_folder"].joinpath(self.__class__.__name__.lower())
         self.commits_present = cfg["commits_present"]
         self.configs_present = cfg["configs_present"]
         self.linux_folder = cfg["linux_folder"]

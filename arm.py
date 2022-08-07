@@ -88,7 +88,7 @@ def build_otherconfigs(self, cfg):
 
 class ARM:
     def __init__(self, cfg):
-        self.build_folder = cfg["build_folder"].joinpath("arm")
+        self.build_folder = cfg["build_folder"].joinpath(self.__class__.__name__.lower())
         self.commits_present = cfg["commits_present"]
         self.configs_present = cfg["configs_present"]
         self.linux_folder = cfg["linux_folder"]
