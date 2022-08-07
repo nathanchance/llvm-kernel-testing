@@ -40,7 +40,7 @@ class ArchitectureFactory:
         if arch == "powerpc":
             return POWERPC(cfg)
         if arch == "riscv":
-            return RISCV()
+            return RISCV(cfg)
         if arch == "s390":
             return S390()
         if arch == "x86_64":

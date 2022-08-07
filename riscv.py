@@ -10,6 +10,47 @@ import lib
 def boot_qemu(cfg, log_str, build_folder, kernel_available):
     lib.boot_qemu(cfg, "riscv", log_str, build_folder, kernel_available)
 
+def build_defconfigs(self, cfg):
+    log_str = "riscv defconfig"
+    kmake_cfg = {
+        "linux_folder": self.linux_folder,
+        "build_folder": self.build_folder,
+        "log_file": lib.log_file_from_str(self.log_folder, log_str),
+        "targets": ["distclean", log_str.split(" ")[1]],
+        "variables": self.make_variables,
+    }
+    if self.llvm_version_code < 1300000 and has_efi(self.linux_folder):
+        lib.kmake(kmake_cfg)
+        lib.scripts_config(kmake_cfg["linux_folder"], kmake_cfg["build_folder"], ["-d", "EFI"])
+        kmake_cfg["targets"] = ["olddefconfig", "all"]
+    else:
+        kmake_cfg["targets"] += ["all"]
+    rc, time = lib.kmake(kmake_cfg)
+    lib.log_result(cfg, log_str, rc == 0, time)
+    boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
+
+def build_otherconfigs(self, cfg):
+    if self.linux_version_code > 508000 and has_ec3a5cb61146c(self.linux_folder):
+        log_str = "riscv allmodconfig"
+        configs = []
+        if "CONFIG_WERROR" in self.configs_present:
+            configs += ["CONFIG_WERROR"]
+        config_path, config_str = lib.gen_allconfig(self.build_folder, configs)
+        if config_path:
+            self.make_variables["KCONFIG_ALLCONFIG"] = config_path
+        kmake_cfg = {
+            "linux_folder": self.linux_folder,
+            "build_folder": self.build_folder,
+            "log_file": lib.log_file_from_str(self.log_folder, log_str),
+            "targets": ["distclean", log_str.split(" ")[1], "all"],
+            "variables": self.make_variables,
+        }
+        rc, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time)
+        if config_path:
+            Path(config_path).unlink()
+            del self.make_variables["KCONFIG_ALLCONFIG"]
+
 def has_ec3a5cb61146c(linux_folder):
     with open(linux_folder.joinpath("arch", "riscv", "Makefile")) as f:
         return search(escape("KBUILD_CFLAGS += -mno-relax"), f.read())
@@ -19,19 +60,20 @@ def has_efi(linux_folder):
         return search("config EFI", f.text())
 
 class RISCV:
-    def build(self, cfg):
-        build_folder = cfg["build_folder"].joinpath("riscv")
-        commits_present = cfg["commits_present"]
-        configs_present = cfg["configs_present"]
-        defconfigs_only = cfg["defconfigs_only"]
-        linux_folder = cfg["linux_folder"]
-        linux_version_code = cfg["linux_version_code"]
-        llvm_version_code = cfg["llvm_version_code"]
-        log_folder = cfg["log_folder"]
-        make_variables = deepcopy(cfg["make_variables"])
-        save_objects = cfg["save_objects"]
+    def __init__(self, cfg):
+        self.build_folder = cfg["build_folder"].joinpath("riscv")
+        self.commits_present = cfg["commits_present"]
+        self.configs_present = cfg["configs_present"]
+        self.linux_folder = cfg["linux_folder"]
+        self.linux_version_code = cfg["linux_version_code"]
+        self.llvm_version_code = cfg["llvm_version_code"]
+        self.log_folder = cfg["log_folder"]
+        self.make_variables = deepcopy(cfg["make_variables"])
+        self.save_objects = cfg["save_objects"]
+        self.targets_to_build = cfg["targets_to_build"]
 
-        if linux_version_code < 507000:
+    def build(self, cfg):
+        if self.linux_version_code < 507000:
             lib.header("Skipping riscv kernels")
             print("Reason: RISC-V needs the following fixes from Linux 5.7 to build properly:\n")
             print("        * https://git.kernel.org/linus/52e7c52d2ded5908e6a4f8a7248e5fa6e0d6809a")
@@ -43,76 +85,37 @@ class RISCV:
 
         cross_compile = "riscv64-linux-gnu-"
 
-        make_variables["ARCH"] = "riscv"
-        if llvm_version_code >= 1300000:
+        self.make_variables["ARCH"] = "riscv"
+        if self.llvm_version_code >= 1300000:
             lib.header("Building riscv kernels", end='')
 
-            make_variables["LLVM_IAS"] = "1"
-            if not "6f5b41a2f5a63" in commits_present:
-                make_variables["CROSS_COMPILE"] = cross_compile
+            self.make_variables["LLVM_IAS"] = "1"
+            if not "6f5b41a2f5a63" in self.commits_present:
+                self.make_variables["CROSS_COMPILE"] = cross_compile
         else:
             lib.header("Building riscv kernels")
 
-            make_variables["CROSS_COMPILE"] = cross_compile
+            self.make_variables["CROSS_COMPILE"] = cross_compile
             if not lib.check_binutils(cfg, "riscv", cross_compile):
                 return
             binutils_version, binutils_location = lib.get_binary_info(gnu_as)
             print(f"binutils version: {binutils_version}")
             print(f"binutils location: {binutils_location}")
 
-        if llvm_version_code < 1300000 or not has_ec3a5cb61146c(linux_folder):
-            make_variables["LD"] = cross_compile + "ld"
+        if self.llvm_version_code < 1300000 or not has_ec3a5cb61146c(self.linux_folder):
+            self.make_variables["LD"] = cross_compile + "ld"
         else:
             # linux-5.10.y has a build problem with ld.lld
-            if linux_version_code <= 510999:
-                make_variables["LD"] = cross_compile + "ld"
+            if self.linux_version_code <= 510999:
+                self.make_variables["LD"] = cross_compile + "ld"
 
-        log_str = "riscv defconfig"
-        kmake_cfg = {
-            "linux_folder": linux_folder,
-            "build_folder": build_folder,
-            "log_file": lib.log_file_from_str(log_folder, log_str),
-            "variables": make_variables,
-            "targets": ["distclean", log_str.split(" ")[1]],
-        }
-        if llvm_version_code < 1300000 and has_efi(linux_folder):
-            lib.kmake(kmake_cfg)
-            lib.scripts_config(linux_folder, build_folder, ["-d", "EFI"])
-            kmake_cfg["targets"] = ["olddefconfig", "all"]
-        else:
-            kmake_cfg["targets"] += ["all"]
-        rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time)
-        boot_qemu(cfg, log_str, build_folder, rc == 0)
+        if "defconfigs" in self.targets_to_build:
+            build_defconfigs(self, cfg)
+        if "otherconfigs" in self.targets_to_build:
+            build_otherconfigs(self, cfg)
 
-        if defconfigs_only:
-            if not save_objects:
-                rmtree(build_folder)
-            return
-
-        if linux_version_code > 508000 and has_ec3a5cb61146c(linux_folder):
-            log_str = "riscv allmodconfig"
-            configs = []
-            if "CONFIG_WERROR" in configs_present:
-                configs += ["CONFIG_WERROR"]
-            config_path, config_str = lib.gen_allconfig(build_folder, configs)
-            if config_path:
-                make_variables["KCONFIG_ALLCONFIG"] = config_path
-            kmake_cfg = {
-                "linux_folder": linux_folder,
-                "build_folder": build_folder,
-                "log_file": lib.log_file_from_str(log_folder, log_str),
-                "targets": ["distclean", log_str.split(" ")[1], "all"],
-                "variables": make_variables,
-            }
-            rc, time = lib.kmake(kmake_cfg)
-            lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time)
-            if config_path:
-                Path(config_path).unlink()
-                del make_variables["KCONFIG_ALLCONFIG"]
-
-        if not save_objects:
-            rmtree(build_folder)
+        if not self.save_objects:
+            rmtree(self.build_folder)
 
     def clang_supports_target(self):
         return lib.clang_supports_target("riscv64-linux-gnu")
