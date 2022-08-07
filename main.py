@@ -32,7 +32,7 @@ class ArchitectureFactory:
         if arch == "arm64":
             return ARM64(cfg)
         if arch == "hexagon":
-            return HEXAGON()
+            return HEXAGON(cfg)
         if arch == "i386":
             return I386()
         if arch == "mips":
