@@ -36,7 +36,7 @@ class ArchitectureFactory:
         if arch == "i386":
             return I386(cfg)
         if arch == "mips":
-            return MIPS()
+            return MIPS(cfg)
         if arch == "powerpc":
             return POWERPC()
         if arch == "riscv":
