@@ -409,7 +409,7 @@ def log_file_from_str(log_folder, log_str):
     """
     return log_folder.joinpath(f"{log_str.replace(' ', '-')}.log")
 
-def log_result(cfg, log_str, success, time):
+def log_result(cfg, log_str, success, time, build_log):
     """
     Log result of kernel build based on result.
 
@@ -418,11 +418,18 @@ def log_result(cfg, log_str, success, time):
         log_str (str): Specific log string for kernel.
         success (bool): Whether or not the kernel build was successful.
         time (str): Amount of time that command took to completed.
+        build_log (Path): A Path object pointing to the build log.
     """
     result_str = "successful" if success else "failed"
     if not "config" in log_str:
         log_str += " config"
-    log(cfg, f"{log_str} {result_str} in {time}")
+    msg = f"{log_str} {result_str} in {time}"
+    if not success:
+        with open(build_log) as f:
+            for line in f:
+                if search("error:|warning:|undefined", line):
+                    msg += f"\n{line.strip()}"
+    log(cfg, msg)
 
 def modify_config(linux_folder, build_folder, mod_type):
     """

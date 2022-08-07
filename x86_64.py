@@ -21,7 +21,7 @@ def build_defconfigs(self, cfg):
         "variables": self.make_variables,
     }
     rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, log_str, rc == 0, time)
+    lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
     boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
 
     if "CONFIG_LTO_CLANG_THIN" in self.configs_present:
@@ -37,7 +37,7 @@ def build_defconfigs(self, cfg):
         lib.modify_config(kmake_cfg["linux_folder"], kmake_cfg["build_folder"], "thinlto")
         kmake_cfg["targets"] = ["olddefconfig", "all"]
         rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time)
+        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
         boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
 
 def build_otherconfigs(self, cfg):
@@ -58,7 +58,7 @@ def build_otherconfigs(self, cfg):
         "variables": self.make_variables,
     }
     rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time)
+    lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time, kmake_cfg["log_file"])
     if config_path:
         Path(config_path).unlink()
         del self.make_variables["KCONFIG_ALLCONFIG"]
@@ -79,7 +79,7 @@ def build_otherconfigs(self, cfg):
             "variables": self.make_variables,
         }
         rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time)
+        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
         if config_path:
             Path(config_path).unlink()
             del self.make_variables["KCONFIG_ALLCONFIG"]
@@ -118,7 +118,7 @@ def build_distroconfigs(self, cfg):
                 log_str += " (https://github.com/ClangBuiltLinux/linux/issues/515)"
                 lib.scripts_config(kmake_cfg["linux_folder"], kmake_cfg["build_folder"], sc_args)
         rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time)
+        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
         boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
 
 # https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f

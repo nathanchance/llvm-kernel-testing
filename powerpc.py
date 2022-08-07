@@ -20,7 +20,7 @@ def build_defconfigs(self, cfg):
         "variables": self.make_variables,
     }
     rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, log_str, rc == 0, time)
+    lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
     boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0, "ppc32")
 
     log_str = "powerpc pmac32_defconfig"
@@ -37,7 +37,7 @@ def build_defconfigs(self, cfg):
         lib.scripts_config(kmake_cfg["linux_folder"], kmake_cfg["build_folder"], sc_args)
         kmake_cfg["targets"] = ["olddefconfig", "all"]
         rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time)
+        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
         boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0, "ppc32_mac")
     else:
         lib.log(cfg, f"{log_str} skipped due to missing 297565aa22cf")
@@ -64,7 +64,7 @@ def build_defconfigs(self, cfg):
         pseries_targets += ["all"]
     kmake_cfg["targets"] = pseries_targets
     rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, log_str, rc == 0, time)
+    lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
     boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0, "ppc64")
 
     log_str = "powerpc powernv_defconfig"
@@ -76,7 +76,7 @@ def build_defconfigs(self, cfg):
         "variables": {**self.make_variables, **self.ppc64le_vars},
     }
     rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, log_str, rc == 0, time)
+    lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
     boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
 
     log_str = "powerpc ppc64le_defconfig"
@@ -88,7 +88,7 @@ def build_defconfigs(self, cfg):
         "variables": {**self.make_variables, **self.ppc64le_vars},
     }
     rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, log_str, rc == 0, time)
+    lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
 
 def build_otherconfigs(self, cfg):
     # TODO: allmodconfig should eventually be a part of this.
@@ -113,7 +113,7 @@ def build_otherconfigs(self, cfg):
             "variables": self.make_variables,
         }
         rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time)
+        lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time, kmake_cfg["log_file"])
         if config_path:
             Path(config_path).unlink()
             del self.make_variables["KCONFIG_ALLCONFIG"]
@@ -140,9 +140,9 @@ def build_distroconfigs(self, cfg):
             "targets": ["olddefconfig", "all"],
             "variables": {**self.make_variables, **self.ppc64le_vars},
         }
-        log_str += lib.setup_config(sc_cfg)
+        log_str += " config" + lib.setup_config(sc_cfg)
         rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time)
+        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
         boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
 
 # https://github.com/ClangBuiltLinux/linux/issues/811

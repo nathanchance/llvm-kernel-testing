@@ -23,7 +23,7 @@ def build_defconfigs(self, cfg):
         lib.scripts_config(kmake_cfg["linux_folder"], kmake_cfg["build_folder"], self.sc_args)
     kmake_cfg["targets"] = ["olddefconfig", "all"]
     rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, f"{log_str}{self.config_str}", rc == 0, time)
+    lib.log_result(cfg, f"{log_str}{self.config_str}", rc == 0, time, kmake_cfg["log_file"])
     boot_qemu(cfg, f"{log_str}{self.config_str}", kmake_cfg["build_folder"], rc == 0)
 
     log_str = "mips malta_defconfig + CONFIG_RANDOMIZE_BASE=y"
@@ -42,7 +42,7 @@ def build_defconfigs(self, cfg):
     lib.scripts_config(kmake_cfg["linux_folder"], kmake_cfg["build_folder"], kaslr_sc_args)
     kmake_cfg["targets"] = ["olddefconfig", "all"]
     rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, f"{log_str}{self.config_str}", rc == 0, time)
+    lib.log_result(cfg, f"{log_str}{self.config_str}", rc == 0, time, kmake_cfg["log_file"])
     boot_qemu(cfg, f"{log_str}{self.config_str}", kmake_cfg["build_folder"], rc == 0)
 
     log_str = "mips malta_defconfig + CONFIG_CPU_BIG_ENDIAN=y"
@@ -59,7 +59,7 @@ def build_defconfigs(self, cfg):
         lib.scripts_config(kmake_cfg["linux_folder"], kmake_cfg["build_folder"], self.sc_args)
     kmake_cfg["targets"] = ["olddefconfig", "all"]
     rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, f"{log_str}{self.config_str}", rc == 0, time)
+    lib.log_result(cfg, f"{log_str}{self.config_str}", rc == 0, time, kmake_cfg["log_file"])
     boot_qemu(cfg, f"{log_str}{self.config_str}", kmake_cfg["build_folder"], rc == 0, "mips")
 
     generic_cfgs = ["32r1", "32r1el", "32r2", "32r2el"]
@@ -81,7 +81,7 @@ def build_defconfigs(self, cfg):
             "variables": {**self.make_variables, **generic_make_variables},
         }
         rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time)
+        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
 
 def build_otherconfigs(self, cfg):
     for cfg_target in ["allnoconfig", "tinyconfig"]:
@@ -94,7 +94,7 @@ def build_otherconfigs(self, cfg):
             "variables": self.make_variables,
         }
         rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time)
+        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
 
 # https://git.kernel.org/mips/c/c47c7ab9b53635860c6b48736efdd22822d726d7
 def has_c47c7ab9b5363(linux_folder):

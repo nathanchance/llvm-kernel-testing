@@ -17,7 +17,7 @@ def build_defconfigs(self, cfg):
         "variables": self.make_variables,
     }
     rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, log_str, rc == 0, time)
+    lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
 
 def build_otherconfigs(self, cfg):
     if has_ffb92ce826fd8(self.linux_folder):
@@ -36,7 +36,7 @@ def build_otherconfigs(self, cfg):
             "variables": self.make_variables,
         }
         rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time)
+        lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time, kmake_cfg["log_file"])
         if config_path:
             Path(config_path).unlink()
             del self.make_variables["KCONFIG_ALLCONFIG"]

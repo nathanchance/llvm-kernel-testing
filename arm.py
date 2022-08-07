@@ -39,7 +39,7 @@ def build_defconfigs(self, cfg):
             "variables": self.make_variables,
         }
         rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time)
+        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
         boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0, defconfig[1])
 
     if thumb2_ok(self.linux_folder):
@@ -55,7 +55,7 @@ def build_defconfigs(self, cfg):
         lib.scripts_config(kmake_cfg["linux_folder"], kmake_cfg["build_folder"], ["-e", "THUMB2_KERNEL"])
         kmake_cfg["targets"] = ["olddefconfig", "all"]
         rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time)
+        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
         boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0, defconfig[1])
 
 def build_otherconfigs(self, cfg):
@@ -81,7 +81,7 @@ def build_otherconfigs(self, cfg):
             "variables": self.make_variables,
         }
         rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time)
+        lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time, kmake_cfg["log_file"])
         if config_path:
             Path(config_path).unlink()
             del self.make_variables["KCONFIG_ALLCONFIG"]
@@ -109,11 +109,11 @@ def build_distroconfigs(self, cfg):
             "targets": ["olddefconfig", "all"],
             "variables": self.make_variables,
         }
-        log_str += lib.setup_config(sc_cfg)
+        log_str += " config" + lib.setup_config(sc_cfg)
         rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time)
+        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
         if distro != "fedora":
-            boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0) 
+            boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
 
 class ARM:
     def __init__(self, cfg):

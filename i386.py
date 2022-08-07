@@ -21,7 +21,7 @@ def build_defconfigs(self, cfg):
         "variables": self.make_variables,
     }
     rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, log_str, rc == 0, time)
+    lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
     boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
 
     if has_583bfd484bcc(self.linux_folder):
@@ -37,7 +37,7 @@ def build_defconfigs(self, cfg):
         lib.modify_config(kmake_cfg["linux_folder"], kmake_cfg["build_folder"], "thinlto")
         kmake_cfg["targets"] = ["olddefconfig", "all"]
         rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time)
+        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
         boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
 
 def build_otherconfigs(self, cfg):
@@ -66,7 +66,7 @@ def build_otherconfigs(self, cfg):
             "variables": self.make_variables,
         }
         rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time)
+        lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time, kmake_cfg["log_file"])
         if config_path:
             Path(config_path).unlink()
             del self.make_variables["KCONFIG_ALLCONFIG"]
@@ -87,7 +87,7 @@ def build_distroconfigs(self, cfg):
             "targets": ["olddefconfig", "all"],
             "variables": self.make_variables,
         }
-        log_str += lib.setup_config(sc_cfg)
+        log_str += " config" + lib.setup_config(sc_cfg)
         if disable_nf_configs(self.llvm_version_code, self.linux_folder):
             log_str += " + CONFIG_NETFILTER_SYNPROXY=n (https://github.com/ClangBuiltLinux/linux/issues/1442)"
             sc_args = ["-d", "IP_NF_TARGET_SYNPROXY"]
@@ -95,7 +95,7 @@ def build_distroconfigs(self, cfg):
             sc_args += ["-d", "NFT_SYNPROXY"]
             lib.scripts_config(kmake_cfg["linux_folder"], kmake_cfg["build_folder"], sc_args)
         rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time)
+        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
 
 # https://github.com/ClangBuiltLinux/linux/issues/1442
 def disable_nf_configs(llvm_version_code, linux_folder):
