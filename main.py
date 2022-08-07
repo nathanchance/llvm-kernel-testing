@@ -34,7 +34,7 @@ class ArchitectureFactory:
         if arch == "hexagon":
             return HEXAGON(cfg)
         if arch == "i386":
-            return I386()
+            return I386(cfg)
         if arch == "mips":
             return MIPS()
         if arch == "powerpc":
