@@ -60,7 +60,8 @@ def add_to_path(folder):
         bin_folder = folder.joinpath("bin")
         if not bin_folder.exists():
             die(f"Supplied folder ('{folder}') does not have a 'bin' folder in it?")
-        environ['PATH'] = f"{bin_folder}:" + environ['PATH']
+        if not bin_folder.as_posix() in environ['PATH']:
+            environ['PATH'] = f"{bin_folder}:" + environ['PATH']
 
 def build_kernels(cfg):
     """
