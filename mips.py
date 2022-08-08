@@ -126,7 +126,7 @@ class MIPS:
         lib.header("Building mips kernels")
 
         for cross_compile in ["mips64-linux-gnu-", "mipsel-linux-gnu-"]:
-            gnu_as = cross_compile + "as"
+            gnu_as = f"{cross_compile}as"
             if which(gnu_as):
                 break
         self.cross_compile = cross_compile

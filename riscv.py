@@ -55,7 +55,7 @@ def build_distroconfigs(self, cfg):
     if self.linux_version_code > 508000 and has_ec3a5cb61146c(self.linux_folder):
         for cfg_file in [("opensuse", "riscv64")]:
             distro = cfg_file[0]
-            cfg_basename = cfg_file[1] + ".config"
+            cfg_basename = f"{cfg_file[1]}.config"
             log_str = f"riscv {distro}"
             sc_cfg = {
                 "linux_folder": self.linux_folder,
@@ -128,11 +128,11 @@ class RISCV:
             print(f"binutils location: {binutils_location}")
 
         if self.llvm_version_code < 1300000 or not has_ec3a5cb61146c(self.linux_folder):
-            self.make_variables["LD"] = cross_compile + "ld"
+            self.make_variables["LD"] = f"{cross_compile}ld"
         else:
             # linux-5.10.y has a build problem with ld.lld
             if self.linux_version_code <= 510999:
-                self.make_variables["LD"] = cross_compile + "ld"
+                self.make_variables["LD"] = f"{cross_compile}ld"
 
         if "def" in self.targets_to_build:
             build_defconfigs(self, cfg)

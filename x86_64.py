@@ -92,7 +92,7 @@ def build_distroconfigs(self, cfg):
     cfg_files += [("opensuse", "x86_64")]
     for cfg_file in cfg_files:
         distro = cfg_file[0]
-        cfg_basename = cfg_file[1] + ".config"
+        cfg_basename = f"{cfg_file[1]}.config"
         log_str = f"x86_64 {distro}"
         sc_cfg = {
             "linux_folder": self.linux_folder,

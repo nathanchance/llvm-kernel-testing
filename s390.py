@@ -111,7 +111,7 @@ class S390:
         self.make_variables["ARCH"] = "s390"
 
         for variable in ["LD", "OBJCOPY", "OBJDUMP"]:
-            self.make_variables[variable] = cross_compile + variable.lower()
+            self.make_variables[variable] = f"{cross_compile}{variable.lower()}"
 
         if has_integrated_as_support(self.linux_folder):
             self.make_variables["LLVM_IAS"] = "1"

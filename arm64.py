@@ -137,7 +137,7 @@ def build_distroconfigs(self, cfg):
     cfg_files += [("opensuse", "arm64")]
     for cfg_file in cfg_files:
         distro = cfg_file[0]
-        cfg_basename = cfg_file[1] + ".config"
+        cfg_basename = f"{cfg_file[1]}.config"
         log_str = f"arm64 {distro}"
         sc_cfg = {
             "linux_folder": self.linux_folder,

@@ -48,7 +48,7 @@ def build_defconfigs(self, cfg):
         "build_folder": self.build_folder,
         "log_file": lib.log_file_from_str(self.log_folder, log_str),
         # https://github.com/ClangBuiltLinux/linux/issues/602
-        "variables": {**self.make_variables, "LD": self.cross_compile + "ld"},
+        "variables": {**self.make_variables, "LD": f"{self.cross_compile}ld"},
     }
     pseries_targets = ["distclean", log_str.split(" ")[1]]
     if not has_51696f39cbee5(kmake_cfg["linux_folder"]) and self.llvm_version_code >= 1200000:
@@ -121,7 +121,7 @@ def build_otherconfigs(self, cfg):
 def build_distroconfigs(self, cfg):
     for cfg_file in [("debian", "powerpc64le"), ("fedora", "ppc64le"), ("opensuse", "ppc64le")]:
         distro = cfg_file[0]
-        cfg_basename = cfg_file[1] + ".config"
+        cfg_basename = f"{cfg_file[1]}.config"
         log_str = f"powerpc {distro}"
         if distro == "opensuse":
             if has_231b232df8f67(self.linux_folder) and self.llvm_version_code <= 1200000:
@@ -186,7 +186,7 @@ class POWERPC:
     def build(self, cfg):
         self.make_variables["ARCH"] = "powerpc"
         for cross_compile in ["powerpc64-linux-gnu-", "powerpc-linux-gnu-"]:
-            gnu_as = cross_compile + "as"
+            gnu_as = f"{cross_compile}as"
             if which(gnu_as):
                 break
         self.cross_compile = cross_compile
@@ -201,7 +201,7 @@ class POWERPC:
         print(f"binutils location: {binutils_location}")
 
         if not has_0355785313e21(self.linux_folder):
-            self.ppc64le_vars["LD"] = self.cross_compile + "ld"
+            self.ppc64le_vars["LD"] = f"{self.cross_compile}ld"
         if self.linux_version_code >= 518000 and self.llvm_version_code >= 1400000:
             self.ppc64le_vars["LLVM_IAS"] = "1"
 
