@@ -126,18 +126,18 @@ def check_for_configs(linux_folder):
 
     return configs_present
 
-def clone_update_boot_utils(boot_utils):
+def clone_update_boot_utils(boot_utils_folder):
     """
     Clones and updates boot-utils if necessary.
 
     Parameters:
-        boot_utils (Path): A Path object pointing to boot-utils repository.
+        boot_utils_folder (Path): A Path object pointing to boot-utils repository.
     """
-    boot_utils.parent.mkdir(exist_ok=True, parents=True)
-    if not boot_utils.exists():
-        git_clone = ["git", "clone", "https://github.com/ClangBuiltLinux/boot-utils", boot_utils]
+    if not boot_utils_folder.exists():
+        boot_utils_folder.parent.mkdir(exist_ok=True, parents=True)
+        git_clone = ["git", "clone", "https://github.com/ClangBuiltLinux/boot-utils", boot_utils_folder]
         run(git_clone, check=True)
-    git_pull = ["git", "-C", boot_utils, "pull", "--no-edit"]
+    git_pull = ["git", "-C", boot_utils_folder, "pull", "--no-edit"]
     run(git_pull, check=True)
 
 def format_logs(cfg):
@@ -211,12 +211,11 @@ def initial_config_and_setup(args):
     cfg["linux_version_code"] = lib.create_linux_version_code(linux_folder)
     cfg["llvm_version_code"] = lib.create_llvm_version_code()
 
-    boot_utils = args.boot_utils
-    if not boot_utils:
+    boot_utils_folder = Path(args.boot_utils_folder)
+    if boot_utils_folder.is_relative_to(base_folder):
         lib.header("Updating boot-utils")
-        boot_utils = base_folder.joinpath("src", "boot-utils")
-        clone_update_boot_utils(boot_utils)
-    cfg["boot_utils"] = Path(boot_utils)
+        clone_update_boot_utils(boot_utils_folder)
+    cfg["boot_utils_folder"] = boot_utils_folder
 
     make_variables = {}
     if args.use_ccache and which("ccache"):
@@ -241,16 +240,16 @@ def parse_arguments():
 
     parser.add_argument("-a", "--architectures", choices=supported_architectures, default=supported_architectures, metavar="ARCH", nargs="+", help="Architectures to build for (default: %(default)s).")
     parser.add_argument("-b", "--build-folder", type=str, help="Path to build folder (default: 'build' folder in Linux kernel source folder).")
-    parser.add_argument("--boot-utils", type=str, help="Path to boot-utils.")
-    parser.add_argument("--binutils-prefix", type=str, help="Path to binutils installation.")
+    parser.add_argument("--binutils-prefix", type=str, help="Path to binutils installation (parent of 'bin' folder, default: Use binutils from PATH).")
+    parser.add_argument("--boot-utils-folder", default=base_folder.joinpath("src", "boot-utils"), type=str, help="Path to boot-utils folder (default: %(default)s).")
     parser.add_argument("-l", "--linux-folder", required=True, type=str, help="Path to Linux source folder (required).")
-    parser.add_argument("--llvm-prefix", type=str, help="Path to LLVM installation.")
+    parser.add_argument("--llvm-prefix", type=str, help="Path to LLVM installation (parent of 'bin' folder, default: Use LLVM from PATH).")
     parser.add_argument("--log-folder", default=base_folder.joinpath("logs", datetime.now().strftime("%Y%m%d-%H%M")), type=str, help="Folder to store log files in (default: %(default)s).")
-    parser.add_argument("--save-objects", action="store_true", help="Save object files (default: remove build folder).")
+    parser.add_argument("--save-objects", action="store_true", help="Save object files (default: Remove build folder).")
     parser.add_argument("-t", "--targets-to-build", choices=supported_targets, default=supported_targets, metavar="TARGETS", nargs="+", help="Testing targets to build (default: %(default)s).")
-    parser.add_argument("--tc-prefix", type=str, help="Path to toolchain installation.")
-    parser.add_argument("--use-ccache", action="store_true", help="Use ccache for building.")
-    parser.add_argument("--qemu-prefix", type=str, help="Path to QEMU installation.")
+    parser.add_argument("--tc-prefix", type=str, help="Path to toolchain installation (parent of 'bin' folder, default: Use toolchain from PATH).")
+    parser.add_argument("--use-ccache", action="store_true", help="Use ccache for building (default: Do not use ccache).")
+    parser.add_argument("--qemu-prefix", type=str, help="Path to QEMU installation (parent of 'bin' folder, default: Use QEMU from PATH).")
 
     return parser.parse_args()
 

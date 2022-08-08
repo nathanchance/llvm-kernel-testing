@@ -23,7 +23,7 @@ def boot_qemu(cfg, arch, log_str, build_folder, kernel_available):
         kernel_available (bool): Whether or not kernel was successfully built.
     """
     if kernel_available:
-        boot_qemu_py = cfg["boot_utils"].joinpath("boot-qemu.py").as_posix()
+        boot_qemu_py = cfg["boot_utils_folder"].joinpath("boot-qemu.py").as_posix()
         cmd = [boot_qemu_py, "-a", arch, "-k", build_folder.as_posix()]
         pretty_print_cmd(cmd)
         result = run(cmd)
