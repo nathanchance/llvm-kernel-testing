@@ -449,7 +449,7 @@ def log_file_from_str(log_folder, log_str):
     Returns:
         A Path object pointing to the log.
     """
-    return log_folder.joinpath(f"{log_str.replace(' ', '-')}.log")
+    return log_folder.joinpath(f"{log_str.replace(' ', '-').replace('-config','')}.log")
 
 
 def log_result(cfg, log_str, success, time, build_log):

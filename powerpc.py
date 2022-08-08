@@ -134,7 +134,7 @@ def build_distroconfigs(self, cfg):
     for cfg_file in [("debian", "powerpc64le"), ("fedora", "ppc64le"), ("opensuse", "ppc64le")]:
         distro = cfg_file[0]
         cfg_basename = f"{cfg_file[1]}.config"
-        log_str = f"powerpc {distro}"
+        log_str = f"powerpc {distro} config"
         if distro == "opensuse":
             if has_231b232df8f67(self.linux_folder) and self.llvm_version_code <= 1200000:
                 lib.log(
@@ -158,7 +158,7 @@ def build_distroconfigs(self, cfg):
                 **self.ppc64le_vars
             },
         }
-        log_str += " config" + lib.setup_config(sc_cfg)
+        log_str += lib.setup_config(sc_cfg)
         rc, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
         boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)

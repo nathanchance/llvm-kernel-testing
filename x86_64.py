@@ -100,7 +100,7 @@ def build_distroconfigs(self, cfg):
     for cfg_file in cfg_files:
         distro = cfg_file[0]
         cfg_basename = f"{cfg_file[1]}.config"
-        log_str = f"x86_64 {distro}"
+        log_str = f"x86_64 {distro} config"
         sc_cfg = {
             "linux_folder": self.linux_folder,
             "linux_version_code": self.linux_version_code,
@@ -114,7 +114,7 @@ def build_distroconfigs(self, cfg):
             "targets": ["olddefconfig", "all"],
             "variables": self.make_variables,
         }
-        log_str += " config" + lib.setup_config(sc_cfg)
+        log_str += lib.setup_config(sc_cfg)
         if self.linux_version_code < 507000:
             sc_args = []
             for cfg_sym in ["STM", "TEST_MEMCAT_P"]:

@@ -77,7 +77,7 @@ def build_otherconfigs(self, cfg):
 
 def build_distroconfigs(self, cfg):
     for distro in ["debian", "opensuse"]:
-        log_str = f"i386 {distro}"
+        log_str = f"i386 {distro} config"
         sc_cfg = {
             "linux_folder": self.linux_folder,
             "linux_version_code": self.linux_version_code,
@@ -91,7 +91,7 @@ def build_distroconfigs(self, cfg):
             "targets": ["olddefconfig", "all"],
             "variables": self.make_variables,
         }
-        log_str += " config" + lib.setup_config(sc_cfg)
+        log_str += lib.setup_config(sc_cfg)
         if disable_nf_configs(self.llvm_version_code, self.linux_folder):
             log_str += " + CONFIG_NETFILTER_SYNPROXY=n (https://github.com/ClangBuiltLinux/linux/issues/1442)"
             sc_args = ["-d", "IP_NF_TARGET_SYNPROXY"]

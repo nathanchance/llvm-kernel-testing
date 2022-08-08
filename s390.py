@@ -55,7 +55,7 @@ def build_otherconfigs(self, cfg):
 
 def build_distroconfigs(self, cfg):
     for distro in ["debian", "fedora", "opensuse"]:
-        log_str = f"s390 {distro}"
+        log_str = f"s390 {distro} config"
         sc_cfg = {
             "linux_folder": self.linux_folder,
             "linux_version_code": self.linux_version_code,
@@ -69,7 +69,7 @@ def build_distroconfigs(self, cfg):
             "targets": ["olddefconfig", "all"],
             "variables": self.make_variables,
         }
-        log_str += " config" + lib.setup_config(sc_cfg)
+        log_str += lib.setup_config(sc_cfg)
         if distro == "fedora" and not has_efe5e0fea4b24(kmake_cfg["linux_folder"]):
             log_str += " + CONFIG_MARCH_Z196=y (https://github.com/ClangBuiltLinux/linux/issues/1264)"
             sc_args = ["-d", "MARCH_ZEC12", "-e", "MARCH_Z196"]
