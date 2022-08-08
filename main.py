@@ -51,7 +51,8 @@ def add_to_path(folder):
     Adds <folder> + "/bin" to PATH if it exists.
 
     Parameters:
-        folder (str): A string containing the folder whose bin folder should be added to PATH.
+        folder (str): A string containing the folder whose bin folder should be
+                      added to PATH.
     """
     if folder:
         folder = Path(folder)

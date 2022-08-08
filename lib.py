@@ -19,7 +19,8 @@ def boot_qemu(cfg, arch, log_str, build_folder, kernel_available):
         cfg (dict): Global configuration dictionary.
         arch (str): Architecture to boot (according to 'boot-qemu.py').
         log_str (str): String to use to use in log file to describe boot.
-        build_folder (Path): A Path object pointing to the location of the build folder.
+        build_folder (Path): A Path object pointing to the location of the
+                             build folder.
         kernel_available (bool): Whether or not kernel was successfully built.
     """
     if kernel_available:
@@ -42,7 +43,8 @@ def can_be_modular(kconfig_file, cfg_sym):
     Returns true if Kconfig symbol can be modular, returns False if not.
 
     Parameters:
-        kconfig_file (Path): A Path object pointing to the Kconfig file the symbol is defined in.
+        kconfig_file (Path): A Path object pointing to the Kconfig file the
+                             symbol is defined in.
         cfg_sym (str): The Kconfig symbol to check.
     """
     if kconfig_file.exists():
@@ -55,7 +57,7 @@ def capture_cmd(cmd, cwd=None, input=None):
     Capture the output of a command for further processing.
 
     Parameters:
-        cmd (list): A list suitable for passing to subprocess.run()
+        cmd (list): A list suitable for passing to subprocess.run().
         cwd (Path, optional): A directory to run the command in.
         input (str, optional): A string to feed to the command via stdin.
 
@@ -100,12 +102,15 @@ def config_val(linux_folder, build_folder, cfg_sym):
     current configuration value.
 
     Parameters:
-        linux_folder (Path): A Path object pointing to the Linux kernel source location.
-        build_folder (Path): A Path objet pointing to the build folder containing '.config'.
+        linux_folder (Path): A Path object pointing to the Linux kernel source
+                             location.
+        build_folder (Path): A Path object pointing to the build folder
+                             containing '.config'.
         cfg_sym (str): Configuration symbol to check.
 
     Returns:
-        The configuration value without trailing whitespace for easy comparisons.
+        The configuration value without trailing whitespace for easy
+        comparisons.
     """
     return scripts_config(linux_folder, build_folder, ["-k", "-s", cfg_sym], capture_output=True).strip()
 
@@ -286,27 +291,13 @@ def header(hdr_str, end='\n'):
         print("=", end="")
     print("\n\033[0m", end=end)
 
-def is_enabled(linux_folder, build_folder, cfg_sym):
-    """
-    Checks if a configuration value is enabled.
-
-    Parameters:
-        linux_folder (Path): A Path object pointing to the Linux kernel source location.
-        build_folder (Path): A Path objet pointing to the build folder containing '.config'.
-        cfg_sym (str): Configuration symbol to check.
-
-    Returns:
-        True if symbol is 'y', False if not.
-    """
-    return config_val(linux_folder, build_folder, cfg_sym) == "y"
-
 def is_modular(linux_folder, build_folder, cfg_sym):
     """
-    Checks if a configuration value is enabled.
+    Checks if a configuration value is enabled as a module.
 
     Parameters:
         linux_folder (Path): A Path object pointing to the Linux kernel source location.
-        build_folder (Path): A Path objet pointing to the build folder containing '.config'.
+        build_folder (Path): A Path object pointing to the build folder containing '.config'.
         cfg_sym (str): Configuration symbol to check.
 
     Returns:
@@ -316,28 +307,44 @@ def is_modular(linux_folder, build_folder, cfg_sym):
 
 def is_set(linux_folder, build_folder, cfg_sym):
     """
-    Checks if a configuration value is set.
+    Checks if a configuration value is set (either enabled as 'y'/'n' or has a
+    non-empty value as a string).
 
     Parameters:
-        linux_folder (Path): A Path object pointing to the Linux kernel source location.
-        build_folder (Path): A Path objet pointing to the build folder containing '.config'.
+        linux_folder (Path): A Path object pointing to the Linux kernel source
+                             location.
+        build_folder (Path): A Path object pointing to the build folder
+                             containing '.config'.
         cfg_sym (str): Configuration symbol to check.
 
     Returns:
-        True if symbol is 'n', '""', or 'undef', False if not.
+        True if symbol is not 'n' or empty, False if not.
     """
     val = config_val(linux_folder, build_folder, cfg_sym)
-    return not (val == "" or val == "undef" or val == "n")
+    return not (val == "" or val == "n" or val == "undef")
 
 def kmake(kmake_cfg):
     """
     Runs a make command in the Linux kernel folder.
 
+    Dictionary keys and meaning:
+        * linux_folder (Path): A Path object pointing to the Linux kernel
+                               source location.
+        * build_folder (Path): A Path object pointing to the folder the build
+                               will be done in.
+        * log_file (Path): A Path object pointing to the file that the build
+                           output will be written into.
+        * variables (dict): A dictionary of make variables to be merged with
+                            the main dictionary (e.g., to turn the integrated
+                            assembler on, use ld.bfd, specify architecture).
+        * targets (list): A list of targets to run (e.g. ["defconfig", "all"]).
+
     Parameters:
         kmake_cfg (dict): A dictionary of variables needed for the build.
 
     Returns:
-        A tuple containing the result of the command and how long it took to run
+        A tuple containing the result of the command and how long it took to
+        run for logging purposes.
     """
     linux_folder = kmake_cfg["linux_folder"]
     build_folder = kmake_cfg["build_folder"]
@@ -449,8 +456,10 @@ def modify_config(linux_folder, build_folder, mod_type):
     Modifies the .config file in build_folder in a specific way.
 
     Parameters:
-        linux_folder (Path): A Path object pointing to the Linux kernel source location.
-        build_folder (Path): A Path objet pointing to the build folder containing '.config'.
+        linux_folder (Path): A Path object pointing to the Linux kernel source
+                             location.
+        build_folder (Path): A Path object pointing to the build folder
+                             containing '.config'.
         mod_type (str): The way to modify the config.
     """
     if mod_type == "big endian":
@@ -530,9 +539,15 @@ def scripts_config(linux_folder, build_folder, args, capture_output=False):
     build folder. '.config' must already exist!
 
     Parameters:
-        linux_folder (Path): A Path object pointing to the Linux kernel source location.
-        build_folder (Path): A Path objet pointing to the build folder containing '.config'.
+        linux_folder (Path): A Path object pointing to the Linux kernel source
+                             location.
+        build_folder (Path): A Path object pointing to the build folder
+                             containing '.config'.
         args (list): A list of arguments for 'scripts/configs'.
+        capture_output (bool, optional): Whether or not to capture the output
+                                         of 'scripts/config'. Useful for
+                                         getting the value of configuration
+                                         symbols.
     """
     scripts_config = linux_folder.joinpath("scripts", "config").as_posix()
     config = build_folder.joinpath(".config").as_posix()
@@ -576,14 +591,14 @@ def setup_config(sc_cfg):
     # If either of those conditions are false, we need to disable this config so
     # that the build does not error.
     debug_info_btf = "DEBUG_INFO_BTF"
-    debug_info_btf_y = is_enabled(linux_folder, build_folder, debug_info_btf)
+    debug_info_btf_y = is_set(linux_folder, build_folder, debug_info_btf)
     pahole_available = which("pahole")
     if debug_info_btf_y and not (pahole_available and linux_version_code >= 507000):
         log_cfgs += [debug_info_btf]
         sc_args += ["-d", debug_info_btf]
 
     bpf_preload = "BPF_PRELOAD"
-    if is_enabled(linux_folder, build_folder, bpf_preload):
+    if is_set(linux_folder, build_folder, bpf_preload):
         log_cfgs += [bpf_preload]
         sc_args += ["-d", bpf_preload]
 
@@ -602,11 +617,16 @@ def setup_config(sc_cfg):
                 sc_args += ["-e", android_cfg]
 
     if "archlinux" in config_file.as_posix():
+        # These files will not exist in our kernel tree.
         extra_firmware = "EXTRA_FIRMWARE"
         if is_set(linux_folder, build_folder, extra_firmware):
             log_cfgs += [extra_firmware]
             sc_args += ["-u", extra_firmware]
 
+    # Make sure that certain configuration options do not get disabled across
+    # kernel versions. This would not be necessary if we had an individual
+    # config for each kernel version that we support but that is a lot more
+    # effort.
     cfg_items = []
 
     # CONFIG_BCM7120_L2_IRQ as a module is invalid before https://git.kernel.org/linus/3ac268d5ed2233d4a2db541d8fd744ccc13f46b0
