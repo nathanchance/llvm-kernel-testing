@@ -37,6 +37,19 @@ def boot_qemu(cfg, arch, log_str, build_folder, kernel_available):
         log_str += " config"
     log(cfg, f"{log_str} qemu boot {result_str}")
 
+def can_be_modular(kconfig_file, cfg_sym):
+    """
+    Returns true if Kconfig symbol can be modular, returns False if not.
+
+    Parameters:
+        kconfig_file (Path): A Path object pointing to the Kconfig file the symbol is defined in.
+        cfg_sym (str): The Kconfig symbol to check.
+    """
+    if kconfig_file.exists():
+        with open(kconfig_file) as f:
+            return search(f"config {cfg_sym}\n\ttristate", f.read())
+    return False
+
 def capture_cmd(cmd, cwd=None, input=None):
     """
     Capture the output of a command for further processing.
@@ -94,7 +107,7 @@ def config_val(linux_folder, build_folder, cfg_sym):
     Returns:
         The configuration value without trailing whitespace for easy comparisons.
     """
-    return scripts_config(linux_folder, build_folder, ["-s", cfg_sym], capture_output=True).strip()
+    return scripts_config(linux_folder, build_folder, ["-k", "-s", cfg_sym], capture_output=True).strip()
 
 def create_version_code(version):
     """
@@ -285,7 +298,7 @@ def is_enabled(linux_folder, build_folder, cfg_sym):
     Returns:
         True if symbol is 'y', False if not.
     """
-    return config_val(linux_folder, build_folder, cfg_sym) == "y" 
+    return config_val(linux_folder, build_folder, cfg_sym) == "y"
 
 def is_modular(linux_folder, build_folder, cfg_sym):
     """
@@ -299,7 +312,7 @@ def is_modular(linux_folder, build_folder, cfg_sym):
     Returns:
         True if symbol is 'm', False if not.
     """
-    return config_val(linux_folder, build_folder, cfg_sym) == "m" 
+    return config_val(linux_folder, build_folder, cfg_sym) == "m"
 
 def is_set(linux_folder, build_folder, cfg_sym):
     """
@@ -480,19 +493,26 @@ def process_cfg_item(linux_folder, build_folder, cfg_item):
     Changes a configuration symbol from 'm' to 'y' if pattern is found in file.
 
     Parameters:
-        linux_folder (Path): A Path object pointing to the Linux kernel source location.
-        build_folder (Path): A Path objet pointing to the build folder containing '.config'.
+        linux_folder (Path): A Path object pointing to the Linux kernel source
+                             location.
+        build_folder (Path): A Path object pointing to the build folder
+                             containing '.config'.
+        cfg_item (tuple): A tuple containing the symbol, the file it is defined
+                          in, and (optional) 'scripts/config' arguments to
+                          perform if the symbol cannot be modular.
     """
     cfg_sym = cfg_item[0]
-    pattern = cfg_item[1]
-    file = cfg_item[2]
-    sc_action = cfg_item[3]
-    if is_modular(linux_folder, build_folder, cfg_sym):
-        src_file = linux_folder.joinpath(file)
-        if src_file.exists():
-            with open(src_file) as f:
-                if search(pattern, f.read()):
-                    return [sc_action, cfg_sym]
+    file = cfg_item[1]
+    if len(cfg_item) == 3:
+        sc_action = cfg_item[2]
+    else:
+        sc_action = ["-e"]
+
+    sym_is_m = is_modular(linux_folder, build_folder, cfg_sym)
+    sym_cannot_be_m = not can_be_modular(linux_folder.joinpath(file), cfg_sym)
+
+    if sym_is_m and sym_cannot_be_m:
+        return sc_action + [cfg_sym]
     return []
 
 def red(red_str):
@@ -588,18 +608,123 @@ def setup_config(sc_cfg):
             sc_args += ["-u", extra_firmware]
 
     cfg_items = []
+
+    # CONFIG_BCM7120_L2_IRQ as a module is invalid before https://git.kernel.org/linus/3ac268d5ed2233d4a2db541d8fd744ccc13f46b0
+    cfg_items += [("BCM7120_L2_IRQ", "drivers/irqchip/Kconfig")]
+
+    # CONFIG_CHELSIO_IPSEC_INLINE as a module is invalid before https://git.kernel.org/linus/1b77be463929e6d3cefbc929f710305714a89723
+    cfg_items += [("CHELSIO_IPSEC_INLINE", "drivers/crypto/chelsio/Kconfig")]
+
+    # CONFIG_CORESIGHT (and all of its drivers) as a module is invalid before https://git.kernel.org/linus/8e264c52e1dab8a7c1e036222ef376c8920c3423
+    coresight_suffixes = ["", "_LINKS_AND_SINKS", "_LINK_AND_SINK_TMC", "_CATU", "_SINK_TPIU", "_SINK_ETBV10", "_SOURCE_ETM4X", "_STM"]
+    for coresight_sym in [f"CORESIGHT{s}" for s in coresight_suffixes]:
+        cfg_items += [(coresight_sym, "drivers/hwtracing/coresight/Kconfig")]
+
+    # CONFIG_CS89x0_PLATFORM as a module is invalid before https://git.kernel.org/linus/47fd22f2b84765a2f7e3f150282497b902624547
+    cfg_items += [("CS89x0_PLATFORM", "drivers/net/ethernet/cirrus/Kconfig", ["-e", "CS89x0", "-e"])]
+
     # CONFIG_CRYPTO_BLAKE2S_{ARM,X86} as modules is invalid after https://git.kernel.org/linus/2d16803c562ecc644803d42ba98a8e0aef9c014e
-    cfg_items += [("CRYPTO_BLAKE2S_ARM", 'bool "BLAKE2s digest algorithm \(ARM\)"', "arch/arm/crypto/Kconfig", "-e")]
-    cfg_items += [("CRYPTO_BLAKE2S_X86", 'bool "BLAKE2s digest algorithm \(x86 accelerated version\)"', "crypto/Kconfig", "-e")]
+    cfg_items += [("CRYPTO_BLAKE2S_ARM", "arch/arm/crypto/Kconfig")]
+    cfg_items += [("CRYPTO_BLAKE2S_X86", "crypto/Kconfig")]
+
+    # CONFIG_DRM_GEM_{CMA,SHMEM}_HELPER as modules is invalid before https://git.kernel.org/linus/4b2b5e142ff499a2bef2b8db0272bbda1088a3fe
+    for drm_helper in ["CMA", "SHMEM"]:
+        # These are not user selectable symbols so unset them and let Kconfig set them as necessary.
+        cfg_items += [(f"DRM_GEM_{drm_helper}_HELPER", "drivers/gpu/drm/Kconfig", ["-u"])]
+
+    # CONFIG_GPIO_MXC as a module is invalid before https://git.kernel.org/linus/12d16b397ce0a999d13762c4c0cae2fb82eb60ee
+    # CONFIG_GPIO_PL061 as a module is invalid before https://git.kernel.org/linus/616844408de7f21546c3c2a71ea7f8d364f45e0d
+    # CONFIG_GPIO_TPS68470 as a module is invalid before https://git.kernel.org/linus/a1ce76e89907a69713f729ff21db1efa00f3bb47
+    gpio_suffixes = ["MXC", "PL061", "TPS68470"]
+    for gpio_sym in [f"GPIO_{s}" for s in gpio_suffixes]:
+        cfg_items += [(gpio_sym, "drivers/gpio/Kconfig")]
+
+    # CONFIG_IMX_DSP as a module is invalid before https://git.kernel.org/linus/f52cdcce9197fef9d4a68792dd3b840ad2b77117
+    cfg_items += [("IMX_DSP", "drivers/firmware/imx/Kconfig")]
+
+    # CONFIG_PCI_DRA7XX{,_HOST,_EP} as modules is invalid before https://git.kernel.org/linus/3b868d150efd3c586762cee4410cfc75f46d2a07
+    # CONFIG_PCI_EXYNOS as a module is invalid before https://git.kernel.org/linus/778f7c194b1dac351d345ce723f8747026092949
+    # CONFIG_PCI_MESON as a module is invalid before https://git.kernel.org/linus/a98d2187efd9e6d554efb50e3ed3a2983d340fe5
+    pci_suffixes = ["DRA7XX", "DRA7XX_EP", "DRA7XX_HOST", "EXYNOS", "MESON"]
+    for pci_sym in [f"PCI_{s}" for s in pci_suffixes]:
+        cfg_items += [(pci_sym, "drivers/pci/controller/dwc/Kconfig")]
+
     # CONFIG_PINCTRL_AMD as a module is invalid after https://git.kernel.org/linus/41ef3c1a6bb0fd4a3f81170dd17de3adbff80783
-    cfg_items += [("PINCTRL_AMD", 'bool "AMD GPIO pin control"', "drivers/pinctrl/Kconfig", "-e")]
+    cfg_items += [("PINCTRL_AMD", "drivers/pinctrl/Kconfig")]
+
+    # CONFIG_POWER_RESET_SC27XX as a module is invalid before https://git.kernel.org/linus/f78c55e3b4806974f7d590b2aab8683232b7bd25
+    cfg_items += [("POWER_RESET_SC27XX", "drivers/power/reset/Kconfig")]
+
+    # CONFIG_PROC_THERMAL_MMIO_RAPL as a module is invalid before https://git.kernel.org/linus/a5923b6c3137b9d4fc2ea1c997f6e4d51ac5d774
+    cfg_items += [("PROC_THERMAL_MMIO_RAPL", "drivers/thermal/intel/int340x_thermal/Kconfig")]
+
+    # CONFIG_QCOM_RPMPD as a module is invalid before https://git.kernel.org/linus/f29808b2fb85a7ff2d4830aa1cb736c8c9b986f4
+    # CONFIG_QCOM_RPMHPD as a module is invalid before https://git.kernel.org/linus/d4889ec1fc6ac6321cc1e8b35bb656f970926a09
+    for rpm_sym in [f"QCOM_RPM{s}PD" for s in ["", "H"]]:
+        cfg_items += [(rpm_sym, "drivers/soc/qcom/Kconfig")]
+
+    # CONFIG_RADIO_ADAPTERS as a module is invalid before https://git.kernel.org/linus/215d49a41709610b9e82a49b27269cfaff1ef0b6
+    cfg_items += [("RADIO_ADAPTERS", "drivers/media/radio/Kconfig")]
+
+    # CONFIG_RATIONAL as a module is invalid before https://git.kernel.org/linus/bcda5fd34417c89f653cc0912cc0608b36ea032c
+    cfg_items += [("RATIONAL", "lib/math/Kconfig")]
+
+    # CONFIG_RESET_MESON as a module is invalid before https://git.kernel.org/linus/3bfe8933f9d187f93f0d0910b741a59070f58c4c
+    reset_suffixes = ["IMX7", "MESON"]
+    for reset_sym in [f"RESET_{s}" for s in reset_suffixes]:
+        cfg_items += [(reset_sym, "drivers/reset/Kconfig")]
+
+    # CONFIG_RTW88_8822BE as a module is invalid before https://git.kernel.org/linus/416e87fcc780cae8d72cb9370fa0f46007faa69a
+    # CONFIG_RTW88_8822CE as a module is invalid before https://git.kernel.org/linus/ba0fbe236fb8a7b992e82d6eafb03a600f5eba43
+    for rtw_sym in [f"RTW88_8822{s}E" for s in ["B", "C"]]:
+        cfg_items += [(rtw_sym, "drivers/net/wireless/realtek/rtw88/Kconfig")]
+
+    # CONFIG_SERIAL_LANTIQ as a module is invalid before https://git.kernel.org/linus/ad406341bdd7d22ba9497931c2df5dde6bb9440e
+    cfg_items += [("SERIAL_LANTIQ", "drivers/tty/serial/Kconfig")]
+
+    # CONFIG_SND_SOC_SOF_DEBUG_PROBES as a module is invalid before https://git.kernel.org/linus/3dc0d709177828a22dfc9d0072e3ac937ef90d06
+    cfg_items += [("SND_SOC_SOF_DEBUG_PROBES", "sound/soc/sof/Kconfig")]
+
+    # CONFIG_SND_SOC_SOF_HDA_PROBES as a module is invalid before https://git.kernel.org/linus/e18610eaa66a1849aaa00ca43d605fb1a6fed800
+    cfg_items += [("SND_SOC_SOF_HDA_PROBES", "sound/soc/sof/intel/Kconfig")]
+
+    # CONFIG_SYSCTL_KUNIT_TEST as a module is invalid before https://git.kernel.org/linus/c475c77d5b56398303e726969e81208196b3aab3
+    cfg_items += [("SYSCTL_KUNIT_TEST", "lib/Kconfig.debug")]
+
+    # CONFIG_TEGRA124_EMC as a module is invalid before https://git.kernel.org/linus/281462e593483350d8072a118c6e072c550a80fa
+    # CONFIG_TEGRA20_EMC as a module is invalid before https://git.kernel.org/linus/0260979b018faaf90ff5a7bb04ac3f38e9dee6e3
+    # CONFIG_TEGRA30_EMC as a module is invalid before https://git.kernel.org/linus/0c56eda86f8cad705d7d14e81e0e4efaeeaf4613
+    for tegra_ver in ["124", "20", "30"]:
+        cfg_items += [(f"TEGRA{tegra_ver}_EMC", "drivers/memory/tegra/Kconfig")]
+
+    # CONFIG_TEGRA20_APB_DMA as a module is invalid before https://git.kernel.org/linus/703b70f4dc3d22b4ab587e0ca424b974a4489db4
+    cfg_items += [("TEGRA20_APB_DMA", "drivers/dma/Kconfig")]
+
+    # CONFIG_TI_CPTS as a module is invalid before https://git.kernel.org/linus/92db978f0d686468e527d49268e7c7e8d97d334b
+    cfg_items += [("TI_CPTS", "drivers/net/ethernet/ti/Kconfig")]
+
+    # CONFIG_UNICODE as a module is invalid before https://git.kernel.org/linus/5298d4bfe80f6ae6ae2777bcd1357b0022d98573
+    cfg_items += [("UNICODE", "fs/unicode/Kconfig")]
+
+    # CONFIG_VIRTIO_IOMMU as a module is invalid before https://git.kernel.org/linus/fa4afd78ea12cf31113f8b146b696c500d6a9dc3
+    cfg_items += [("VIRTIO_IOMMU", "drivers/iommu/Kconfig")]
+
     # CONFIG_ZPOOL as a module is invalid after https://git.kernel.org/linus/b3fbd58fcbb10725a1314688e03b1af6827c42f9
-    cfg_items += [("ZPOOL", "config ZPOOL\n\tbool", "mm/Kconfig", "-e")]
+    cfg_items += [("ZPOOL", "mm/Kconfig")]
+
     for cfg_item in cfg_items:
         sc_args += process_cfg_item(linux_folder, build_folder, cfg_item)
 
+    # CONFIG_MFD_ARIZONA as a module is invalid before https://git.kernel.org/linus/33d550701b915938bd35ca323ee479e52029adf2
+    # Done manually because 'tristate'/'bool' is not right after 'config MFD_ARIZONA'...
+    with open(linux_folder.joinpath("drivers", "mfd", "Makefile")) as f:
+        has_33d550701b915 = search("arizona-objs", f.read())
+    mfd_arizona_is_m = is_modular(linux_folder, build_folder, "MFD_ARIZONA")
+    if mfd_arizona_is_m and not has_33d550701b915:
+        sc_args += ["-e", "MFD_ARIZONA"]
+
     if sc_args:
-        scripts_config(linux_folder, build_folder, sc_args)
+        scripts_config(linux_folder, build_folder, ["-k"] + sc_args)
 
     log_str = ""
     for log_cfg in log_cfgs:
