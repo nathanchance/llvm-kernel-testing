@@ -154,25 +154,24 @@ class I386:
             lib.log(cfg, "x86 kernels skipped due to missing bb73d07148c4 with LLVM > 12.0.0")
             return
 
+        lib.header("Building i386 kernels", end='')
+
         self.make_variables["ARCH"] = "i386"
         self.make_variables["LLVM_IAS"] = "1"
-        if machine() == "i386" or machine() == "x86_64":
-            lib.header("Building i386 kernels", end='')
-        else:
+        if not (machine() == "i386" or machine() == "x86_64"):
             if not has_d5cbd80e302df(self.linux_folder):
                 lib.header("Skipping i386 kernels")
                 print("i386 kernels do not cross compile without https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f.")
                 lib.log(cfg, "i386 kernels skipped due to missing d5cbd80e302d on a non-x86_64 host")
                 return
-            lib.header("Building i386 kernels")
             cross_compile = "x86_64-linux-gnu-"
             if not "6f5b41a2f5a63" in self.commits_present:
                 self.make_variables["CROSS_COMPILE"] = cross_compile
             if not lib.check_binutils(cfg, "i386", cross_compile):
                 return
             binutils_version, binutils_location = lib.get_binary_info(f"{cross_compile}as")
-            print(f"binutils version: {binutils_version}")
-            print(f"binutils location: {binutils_location}\n")
+            print(f"\nbinutils version: {binutils_version}")
+            print(f"binutils location: {binutils_location}")
 
         if "def" in self.targets_to_build:
             build_defconfigs(self, cfg)

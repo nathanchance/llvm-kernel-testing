@@ -152,9 +152,9 @@ class X86_64:
 
         self.make_variables["ARCH"] = "x86_64"
 
-        if self.linux_version_code >= 510000:
-            lib.header("Building x86_64 kernels", end='')
+        lib.header("Building x86_64 kernels", end='')
 
+        if self.linux_version_code >= 510000:
             self.make_variables["LLVM_IAS"] = "1"
             if not "6f5b41a2f5a63" in self.commits_present and cross_compile:
                 self.make_variables["CROSS_COMPILE"] = cross_compile
@@ -166,7 +166,7 @@ class X86_64:
             if not lib.check_binutils(cfg, "x86_64", cross_compile):
                 return
             binutils_version, binutils_location = lib.get_binary_info(f"{cross_compile}as")
-            print(f"binutils version: {binutils_version}")
+            print(f"\nbinutils version: {binutils_version}")
             print(f"binutils location: {binutils_location}")
 
         if "def" in self.targets_to_build:

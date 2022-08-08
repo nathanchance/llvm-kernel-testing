@@ -148,8 +148,8 @@ class ARM:
             if not lib.check_binutils(cfg, "arm", cross_compile):
                 return
             binutils_version, binutils_location = lib.get_binary_info(gnu_as)
-            print(f"binutils version: {binutils_version}")
-            print(f"binutils location: {binutils_location}\n")
+            print(f"\nbinutils version: {binutils_version}")
+            print(f"binutils location: {binutils_location}")
 
         if "def" in self.targets_to_build:
             build_defconfigs(self, cfg)

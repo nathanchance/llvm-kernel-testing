@@ -76,7 +76,7 @@ def build_otherconfigs(self, cfg):
     log_str = "arm64 allmodconfig"
     configs = []
     if not has_d8e85e144bbe1(self.linux_folder):
-            config += ["CONFIG_CPU_BIG_ENDIAN"]
+        configs += ["CONFIG_CPU_BIG_ENDIAN"]
     if "CONFIG_WERROR" in self.configs_present:
         configs += ["CONFIG_WERROR"]
     config_path, config_str = lib.gen_allconfig(self.build_folder, configs)
@@ -186,21 +186,19 @@ class ARM64:
         else:
             cross_compile = "aarch64-linux-gnu-"
 
-        if self.linux_version_code >= 510000:
-            lib.header("Building arm64 kernels", end='')
+        lib.header("Building arm64 kernels", end='')
 
+        if self.linux_version_code >= 510000:
             self.make_variables["LLVM_IAS"] = "1"
             if not "6f5b41a2f5a63" in self.commits_present and cross_compile:
                 self.make_variables["CROSS_COMPILE"] = cross_compile
         else:
-            lib.header("Building arm64 kernels")
-
             if cross_compile:
                 self.make_variables["CROSS_COMPILE"] = cross_compile
             if not lib.check_binutils(cfg, "arm64", cross_compile):
                 return
             binutils_version, binutils_location = lib.get_binary_info(f"{cross_compile}as")
-            print(f"binutils version: {binutils_version}")
+            print(f"\nbinutils version: {binutils_version}")
             print(f"binutils location: {binutils_location}")
 
         if "def" in self.targets_to_build:
