@@ -7,8 +7,10 @@ from shutil import rmtree
 
 import lib
 
+
 def boot_qemu(cfg, log_str, build_folder, kernel_available):
     lib.boot_qemu(cfg, "riscv", log_str, build_folder, kernel_available)
+
 
 def build_defconfigs(self, cfg):
     log_str = "riscv defconfig"
@@ -28,6 +30,7 @@ def build_defconfigs(self, cfg):
     rc, time = lib.kmake(kmake_cfg)
     lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
     boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
+
 
 def build_otherconfigs(self, cfg):
     if self.linux_version_code > 508000 and has_ec3a5cb61146c(self.linux_folder):
@@ -50,6 +53,7 @@ def build_otherconfigs(self, cfg):
         if config_path:
             Path(config_path).unlink()
             del self.make_variables["KCONFIG_ALLCONFIG"]
+
 
 def build_distroconfigs(self, cfg):
     if self.linux_version_code > 508000 and has_ec3a5cb61146c(self.linux_folder):
@@ -75,15 +79,19 @@ def build_distroconfigs(self, cfg):
             lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
             boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
 
+
 def has_ec3a5cb61146c(linux_folder):
     with open(linux_folder.joinpath("arch", "riscv", "Makefile")) as f:
         return search(escape("KBUILD_CFLAGS += -mno-relax"), f.read())
+
 
 def has_efi(linux_folder):
     with open(linux_folder.joinpath("arch", "riscv", "Kconfig")) as f:
         return search("config EFI", f.text())
 
+
 class RISCV:
+
     def __init__(self, cfg):
         self.build_folder = cfg["build_folder"].joinpath(self.__class__.__name__.lower())
         self.commits_present = cfg["commits_present"]
@@ -105,7 +113,10 @@ class RISCV:
             print("        * https://git.kernel.org/linus/fdff9911f266951b14b20e25557278b5b3f0d90d")
             print("        * https://git.kernel.org/linus/abc71bf0a70311ab294f97a7f16e8de03718c05a")
             print("\nProvide a kernel tree with Linux 5.7 or newer to build RISC-V kernels.")
-            lib.log(cfg, "riscv kernels skipped due to missing 52e7c52d2ded, fdff9911f266, and/or abc71bf0a703")
+            lib.log(
+                cfg,
+                "riscv kernels skipped due to missing 52e7c52d2ded, fdff9911f266, and/or abc71bf0a703"
+            )
             return
 
         cross_compile = "riscv64-linux-gnu-"

@@ -7,8 +7,10 @@ from shutil import rmtree
 
 import lib
 
+
 def boot_qemu(cfg, log_str, build_folder, kernel_available):
     lib.boot_qemu(cfg, "s390", log_str, build_folder, kernel_available)
+
 
 def build_defconfigs(self, cfg):
     log_str = "s390 defconfig"
@@ -22,6 +24,7 @@ def build_defconfigs(self, cfg):
     rc, time = lib.kmake(kmake_cfg)
     lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
     boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
+
 
 def build_otherconfigs(self, cfg):
     for other_cfg in ["allmodconfig", "allnoconfig", "tinyconfig"]:
@@ -49,6 +52,7 @@ def build_otherconfigs(self, cfg):
             Path(config_path).unlink()
             del self.make_variables["KCONFIG_ALLCONFIG"]
 
+
 def build_distroconfigs(self, cfg):
     for distro in ["debian", "fedora", "opensuse"]:
         log_str = f"s390 {distro}"
@@ -74,10 +78,12 @@ def build_distroconfigs(self, cfg):
         lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
         boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
 
+
 # https://git.kernel.org/linus/efe5e0fea4b24872736c62a0bcfc3f99bebd2005
 def has_efe5e0fea4b24(linux_folder):
     with open(linux_folder.joinpath("arch", "s390", "include", "asm", "bitops.h")) as f:
         return not search('"(o|n|x)i\t%0,%b1\\\\n"', f.read())
+
 
 def has_integrated_as_support(linux_folder):
     with open(linux_folder.joinpath("arch", "s390", "Makefile")) as f:
@@ -85,7 +91,9 @@ def has_integrated_as_support(linux_folder):
     with open(linux_folder.joinpath("arch", "s390", "kernel", "entry.S")) as f:
         return search("ifdef CONFIG_AS_IS_LLVM", f.read())
 
+
 class S390:
+
     def __init__(self, cfg):
         self.build_folder = cfg["build_folder"].joinpath(self.__class__.__name__.lower())
         self.commits_present = cfg["commits_present"]
@@ -103,8 +111,13 @@ class S390:
         if self.linux_version_code < 506000:
             lib.header("Skipping s390x kernels")
             print("Reason: s390 kernels did not build properly until Linux 5.6")
-            print("        https://lore.kernel.org/lkml/your-ad-here.call-01580230449-ext-6884@work.hours/")
-            lib.log(cfg, "s390x kernels skipped due to missing fixes from 5.6 (https://lore.kernel.org/r/your-ad-here.call-01580230449-ext-6884@work.hours/)")
+            print(
+                "        https://lore.kernel.org/lkml/your-ad-here.call-01580230449-ext-6884@work.hours/"
+            )
+            lib.log(
+                cfg,
+                "s390x kernels skipped due to missing fixes from 5.6 (https://lore.kernel.org/r/your-ad-here.call-01580230449-ext-6884@work.hours/)"
+            )
             return
 
         cross_compile = "s390x-linux-gnu-"

@@ -8,8 +8,10 @@ from shutil import rmtree
 
 import lib
 
+
 def boot_qemu(cfg, log_str, build_folder, kernel_available):
     lib.boot_qemu(cfg, "x86", log_str, build_folder, kernel_available)
+
 
 def build_defconfigs(self, cfg):
     log_str = "i386 defconfig"
@@ -39,6 +41,7 @@ def build_defconfigs(self, cfg):
         rc, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
         boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
+
 
 def build_otherconfigs(self, cfg):
     for cfg_target in ["allmodconfig", "allnoconfig", "tinyconfig"]:
@@ -71,6 +74,7 @@ def build_otherconfigs(self, cfg):
             Path(config_path).unlink()
             del self.make_variables["KCONFIG_ALLCONFIG"]
 
+
 def build_distroconfigs(self, cfg):
     for distro in ["debian", "opensuse"]:
         log_str = f"i386 {distro}"
@@ -97,9 +101,11 @@ def build_distroconfigs(self, cfg):
         rc, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
 
+
 # https://github.com/ClangBuiltLinux/linux/issues/1442
 def disable_nf_configs(llvm_version_code, linux_folder):
     return llvm_version_code < 1500000 and fortify_broken(linux_folder)
+
 
 def fortify_broken(linux_folder):
     with open(linux_folder.joinpath("security", "Kconfig")) as f:
@@ -107,6 +113,7 @@ def fortify_broken(linux_folder):
         bug_one = "https://bugs.llvm.org/show_bug.cgi?id=50322"
         bug_two = "https://github.com/llvm/llvm-project/issues/53645"
         return search(bug_one, text) or search(bug_two, text)
+
 
 # https://git.kernel.org/linus/583bfd484bcc85e9371e7205fa9e827c18ae34fb
 def has_583bfd484bcc(linux_folder):
@@ -116,17 +123,21 @@ def has_583bfd484bcc(linux_folder):
         lto_x86_64 = "select ARCH_SUPPORTS_LTO_CLANG_THIN\tif X86_64"
         return search(lto, text) and not search(lto_x86_64, text)
 
+
 # https://git.kernel.org/linus/bb73d07148c405c293e576b40af37737faf23a6a
 def has_bb73d07148c40(linux_folder):
     with open(linux_folder.joinpath("arch", "x86", "tools", "relocs.c")) as f:
         return search("R_386_PLT32:", f.read())
+
 
 # https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f
 def has_d5cbd80e302df(linux_folder):
     with open(linux_folder.joinpath("arch", "x86", "boot", "compressed", "Makefile")) as f:
         return search("CLANG_FLAGS", f.read())
 
+
 class I386:
+
     def __init__(self, cfg):
         self.build_folder = cfg["build_folder"].joinpath(self.__class__.__name__.lower())
         self.commits_present = cfg["commits_present"]
@@ -149,7 +160,9 @@ class I386:
             return
         elif self.llvm_version_code >= 1200000 and not has_bb73d07148c40(self.linux_folder):
             lib.header("Skipping i386 kernels")
-            print("Reason: x86 kernels do not build properly with LLVM 12.0.0+ without R_386_PLT32 handling.")
+            print(
+                "Reason: x86 kernels do not build properly with LLVM 12.0.0+ without R_386_PLT32 handling."
+            )
             print("        https://github.com/ClangBuiltLinux/linux/issues/1210")
             lib.log(cfg, "x86 kernels skipped due to missing bb73d07148c4 with LLVM > 12.0.0")
             return
@@ -161,8 +174,11 @@ class I386:
         if not (machine() == "i386" or machine() == "x86_64"):
             if not has_d5cbd80e302df(self.linux_folder):
                 lib.header("Skipping i386 kernels")
-                print("i386 kernels do not cross compile without https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f.")
-                lib.log(cfg, "i386 kernels skipped due to missing d5cbd80e302d on a non-x86_64 host")
+                print(
+                    "i386 kernels do not cross compile without https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f."
+                )
+                lib.log(cfg,
+                        "i386 kernels skipped due to missing d5cbd80e302d on a non-x86_64 host")
                 return
             cross_compile = "x86_64-linux-gnu-"
             if not "6f5b41a2f5a63" in self.commits_present:

@@ -6,8 +6,10 @@ from shutil import rmtree, which
 
 import lib
 
+
 def boot_qemu(cfg, log_str, build_folder, kernel_available, arch="mipsel"):
     lib.boot_qemu(cfg, arch, log_str, build_folder, kernel_available)
+
 
 def build_defconfigs(self, cfg):
     log_str = "mips malta_defconfig"
@@ -51,7 +53,10 @@ def build_defconfigs(self, cfg):
         "build_folder": self.build_folder,
         "log_file": self.log_folder.joinpath("mips-malta_defconfig-big-endian.log"),
         "targets": ["distclean", log_str.split(" ")[1]],
-        "variables": {**self.make_variables, **self.ld_bfd},
+        "variables": {
+            **self.make_variables,
+            **self.ld_bfd
+        },
     }
     lib.kmake(kmake_cfg)
     lib.modify_config(kmake_cfg["linux_folder"], kmake_cfg["build_folder"], "big endian")
@@ -78,10 +83,14 @@ def build_defconfigs(self, cfg):
             "build_folder": self.build_folder,
             "log_file": lib.log_file_from_str(self.log_folder, log_str),
             "targets": ["distclean", log_str.split(" ")[1], "all"],
-            "variables": {**self.make_variables, **generic_make_variables},
+            "variables": {
+                **self.make_variables,
+                **generic_make_variables
+            },
         }
         rc, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
+
 
 def build_otherconfigs(self, cfg):
     for cfg_target in ["allnoconfig", "tinyconfig"]:
@@ -96,15 +105,19 @@ def build_otherconfigs(self, cfg):
         rc, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
 
+
 # https://git.kernel.org/mips/c/c47c7ab9b53635860c6b48736efdd22822d726d7
 def has_c47c7ab9b5363(linux_folder):
     with open(linux_folder.joinpath("arch", "mips", "configs", "malta_defconfig")) as f:
         return search("CONFIG_BLK_DEV_INITRD=y", f.read())
 
+
 def has_e91946d6d93ef(linux_folder):
     return linux_folder.joinpath("arch", "mips", "vdso", "Kconfig").exists()
 
+
 class MIPS:
+
     def __init__(self, cfg):
         self.build_folder = cfg["build_folder"].joinpath(self.__class__.__name__.lower())
         self.linux_folder = cfg["linux_folder"]

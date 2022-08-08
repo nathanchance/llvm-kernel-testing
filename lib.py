@@ -11,6 +11,7 @@ from sys import stdout
 from tempfile import mkstemp
 from time import time
 
+
 def boot_qemu(cfg, arch, log_str, build_folder, kernel_available):
     """
     Boots a kernel in QEMU using 'boot-qemu.py'.
@@ -38,6 +39,7 @@ def boot_qemu(cfg, arch, log_str, build_folder, kernel_available):
         log_str += " config"
     log(cfg, f"{log_str} qemu boot {result_str}")
 
+
 def can_be_modular(kconfig_file, cfg_sym):
     """
     Returns true if Kconfig symbol can be modular, returns False if not.
@@ -52,6 +54,7 @@ def can_be_modular(kconfig_file, cfg_sym):
             return search(f"config {cfg_sym}\n\ttristate", f.read())
     return False
 
+
 def capture_cmd(cmd, cwd=None, input=None):
     """
     Capture the output of a command for further processing.
@@ -65,6 +68,7 @@ def capture_cmd(cmd, cwd=None, input=None):
         Output of cmd
     """
     return run(cmd, capture_output=True, check=True, cwd=cwd, input=input, text=True).stdout
+
 
 def check_binutils(cfg, arch, cross_compile):
     """
@@ -85,6 +89,7 @@ def check_binutils(cfg, arch, cross_compile):
         print(f"{msg}\n")
         return False
 
+
 def clang_supports_target(target):
     """
     Tests that clang supports a particular target triple.
@@ -95,6 +100,7 @@ def clang_supports_target(target):
     clang_cmd = ["clang", f"--target={target}", "-c", "-x", "c", "-", "-o", "/dev/null"]
     clang = run(clang_cmd, input="", stderr=DEVNULL, stdout=DEVNULL, text=True)
     return clang.returncode == 0
+
 
 def config_val(linux_folder, build_folder, cfg_sym):
     """
@@ -112,7 +118,9 @@ def config_val(linux_folder, build_folder, cfg_sym):
         The configuration value without trailing whitespace for easy
         comparisons.
     """
-    return scripts_config(linux_folder, build_folder, ["-k", "-s", cfg_sym], capture_output=True).strip()
+    return scripts_config(linux_folder, build_folder, ["-k", "-s", cfg_sym],
+                          capture_output=True).strip()
+
 
 def create_version_code(version):
     """
@@ -132,6 +140,7 @@ def create_version_code(version):
     major, minor, patch = [int(version[i]) for i in (0, 1, 2)]
     return int("{:d}{:02d}{:03d}".format(major, minor, patch))
 
+
 def create_linux_version_code(linux_folder):
     """
     Turns the version of the Linux kernel being compiled into an integer with
@@ -145,6 +154,7 @@ def create_linux_version_code(linux_folder):
     """
     version_tuple = get_kernelversion(linux_folder).split("-")[0].split(".")
     return create_version_code(version_tuple)
+
 
 def create_llvm_version_code():
     """
@@ -161,6 +171,7 @@ def create_llvm_version_code():
     version_tuple = clang_output.split("\n")[-2].split(" ")
     return create_version_code(version_tuple)
 
+
 def die(die_str):
     """
     Prints a string in bold red then exits with an error code of 1.
@@ -171,6 +182,7 @@ def die(die_str):
     """
     red(f"ERROR: {die_str}")
     exit(1)
+
 
 def gen_allconfig(build_folder, configs):
     """
@@ -206,6 +218,7 @@ def gen_allconfig(build_folder, configs):
 
     return config_path, log_str
 
+
 def get_binary_info(binary):
     """
     Gets the first line of the version string and installation location of
@@ -222,6 +235,7 @@ def get_binary_info(binary):
 
     return version, location
 
+
 def get_kernelversion(linux_folder):
     """
     Gets the version of the Linux kernel being compiled from
@@ -235,6 +249,7 @@ def get_kernelversion(linux_folder):
     """
     make_cmd = ["make", "-C", linux_folder, "-s", "kernelversion"]
     return capture_cmd(make_cmd).strip()
+
 
 def get_linux_version(linux_folder):
     """
@@ -263,6 +278,7 @@ def get_linux_version(linux_folder):
 
     return f"Linux {kernelversion}{localversion}"
 
+
 def get_time_diff(start_time, end_time):
     """
     Prints the difference between start_time and end_time.
@@ -275,6 +291,7 @@ def get_time_diff(start_time, end_time):
         A string with the length of time between the two times.
     """
     return timedelta(seconds=int(end_time - start_time))
+
 
 def header(hdr_str, end='\n'):
     """
@@ -291,6 +308,7 @@ def header(hdr_str, end='\n'):
         print("=", end="")
     print("\n\033[0m", end=end)
 
+
 def is_modular(linux_folder, build_folder, cfg_sym):
     """
     Checks if a configuration value is enabled as a module.
@@ -304,6 +322,7 @@ def is_modular(linux_folder, build_folder, cfg_sym):
         True if symbol is 'm', False if not.
     """
     return config_val(linux_folder, build_folder, cfg_sym) == "m"
+
 
 def is_set(linux_folder, build_folder, cfg_sym):
     """
@@ -322,6 +341,7 @@ def is_set(linux_folder, build_folder, cfg_sym):
     """
     val = config_val(linux_folder, build_folder, cfg_sym)
     return not (val == "" or val == "n" or val == "undef")
+
 
 def kmake(kmake_cfg):
     """
@@ -396,6 +416,7 @@ def kmake(kmake_cfg):
 
     return p.returncode, command_time
 
+
 def log(cfg, log_str):
     """
     Writes string to one of the logs, based on what it contains.
@@ -416,6 +437,7 @@ def log(cfg, log_str):
     with open(file, "a") as f:
         f.write(f"{log_str}\n\n")
 
+
 def log_file_from_str(log_folder, log_str):
     """
     Returns the full path to a log file based on log_folder and log_str.
@@ -428,6 +450,7 @@ def log_file_from_str(log_folder, log_str):
         A Path object pointing to the log.
     """
     return log_folder.joinpath(f"{log_str.replace(' ', '-')}.log")
+
 
 def log_result(cfg, log_str, success, time, build_log):
     """
@@ -450,6 +473,7 @@ def log_result(cfg, log_str, success, time, build_log):
                 if search("error:|warning:|undefined", line):
                     msg += f"\n{line.strip()}"
     log(cfg, msg)
+
 
 def modify_config(linux_folder, build_folder, mod_type):
     """
@@ -475,6 +499,7 @@ def modify_config(linux_folder, build_folder, mod_type):
         args += ["-e", "SHADOW_CALL_STACK"]
     scripts_config(linux_folder, build_folder, args)
 
+
 def pretty_print_cmd(cmd):
     """
     Prints cmd in a "pretty" manner, similar to how 'set -x' works in bash,
@@ -496,6 +521,7 @@ def pretty_print_cmd(cmd):
         else:
             cmd_pretty += f" {element}"
     print(f"\n$ {cmd_pretty.strip()}")
+
 
 def process_cfg_item(linux_folder, build_folder, cfg_item):
     """
@@ -524,6 +550,7 @@ def process_cfg_item(linux_folder, build_folder, cfg_item):
         return sc_action + [cfg_sym]
     return []
 
+
 def red(red_str):
     """
     Prints string in bold red.
@@ -532,6 +559,7 @@ def red(red_str):
         red_str (str): String to print in bold red.
     """
     print(f"\n\033[01;31m{red_str}\033[0m")
+
 
 def scripts_config(linux_folder, build_folder, args, capture_output=False):
     """
@@ -557,6 +585,7 @@ def scripts_config(linux_folder, build_folder, args, capture_output=False):
         return capture_cmd(cmd)
     pretty_print_cmd(cmd)
     run(cmd, check=True)
+
 
 def setup_config(sc_cfg):
     """
@@ -636,12 +665,16 @@ def setup_config(sc_cfg):
     cfg_items += [("CHELSIO_IPSEC_INLINE", "drivers/crypto/chelsio/Kconfig")]
 
     # CONFIG_CORESIGHT (and all of its drivers) as a module is invalid before https://git.kernel.org/linus/8e264c52e1dab8a7c1e036222ef376c8920c3423
-    coresight_suffixes = ["", "_LINKS_AND_SINKS", "_LINK_AND_SINK_TMC", "_CATU", "_SINK_TPIU", "_SINK_ETBV10", "_SOURCE_ETM4X", "_STM"]
+    coresight_suffixes = [
+        "", "_LINKS_AND_SINKS", "_LINK_AND_SINK_TMC", "_CATU", "_SINK_TPIU", "_SINK_ETBV10",
+        "_SOURCE_ETM4X", "_STM"
+    ]
     for coresight_sym in [f"CORESIGHT{s}" for s in coresight_suffixes]:
         cfg_items += [(coresight_sym, "drivers/hwtracing/coresight/Kconfig")]
 
     # CONFIG_CS89x0_PLATFORM as a module is invalid before https://git.kernel.org/linus/47fd22f2b84765a2f7e3f150282497b902624547
-    cfg_items += [("CS89x0_PLATFORM", "drivers/net/ethernet/cirrus/Kconfig", ["-e", "CS89x0", "-e"])]
+    cfg_items += [("CS89x0_PLATFORM", "drivers/net/ethernet/cirrus/Kconfig", ["-e", "CS89x0",
+                                                                              "-e"])]
 
     # CONFIG_CRYPTO_BLAKE2S_{ARM,X86} as modules is invalid after https://git.kernel.org/linus/2d16803c562ecc644803d42ba98a8e0aef9c014e
     cfg_items += [("CRYPTO_BLAKE2S_ARM", "arch/arm/crypto/Kconfig")]

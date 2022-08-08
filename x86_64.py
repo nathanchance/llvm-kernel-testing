@@ -8,8 +8,10 @@ from shutil import rmtree
 
 import lib
 
+
 def boot_qemu(cfg, log_str, build_folder, kernel_available):
     lib.boot_qemu(cfg, "x86_64", log_str, build_folder, kernel_available)
+
 
 def build_defconfigs(self, cfg):
     log_str = "x86_64 defconfig"
@@ -40,13 +42,17 @@ def build_defconfigs(self, cfg):
         lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
         boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
 
+
 def build_otherconfigs(self, cfg):
     log_str = "x86_64 allmodconfig"
     configs = []
     if "CONFIG_WERROR" in self.configs_present:
         configs += ["CONFIG_WERROR"]
     if self.linux_version_code < 507000:
-        configs += ["CONFIG_STM", "CONFIG_TEST_MEMCAT_P", "(https://github.com/ClangBuiltLinux/linux/issues/515)"]
+        configs += [
+            "CONFIG_STM", "CONFIG_TEST_MEMCAT_P",
+            "(https://github.com/ClangBuiltLinux/linux/issues/515)"
+        ]
     config_path, config_str = lib.gen_allconfig(self.build_folder, configs)
     if config_path:
         self.make_variables["KCONFIG_ALLCONFIG"] = config_path
@@ -83,6 +89,7 @@ def build_otherconfigs(self, cfg):
         if config_path:
             Path(config_path).unlink()
             del self.make_variables["KCONFIG_ALLCONFIG"]
+
 
 def build_distroconfigs(self, cfg):
     cfg_files = [("alpine", "x86_64")]
@@ -121,12 +128,15 @@ def build_distroconfigs(self, cfg):
         lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
         boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
 
+
 # https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f
 def has_d5cbd80e302df(linux_folder):
     with open(linux_folder.joinpath("arch", "x86", "boot", "compressed", "Makefile")) as f:
         return search("CLANG_FLAGS", f.read())
 
+
 class X86_64:
+
     def __init__(self, cfg):
         self.build_folder = cfg["build_folder"].joinpath(self.__class__.__name__.lower())
         self.commits_present = cfg["commits_present"]
@@ -145,8 +155,11 @@ class X86_64:
         else:
             if not has_d5cbd80e302df(self.linux_folder):
                 lib.header("Skipping x86_64 kernels")
-                print("x86_64 kernels do not cross compile without https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f")
-                lib.log(cfg, "x86_64 kernels skipped due to missing d5cbd80e302d on a non-x86_64 host")
+                print(
+                    "x86_64 kernels do not cross compile without https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f"
+                )
+                lib.log(cfg,
+                        "x86_64 kernels skipped due to missing d5cbd80e302d on a non-x86_64 host")
                 return
             cross_compile = "x86_64-linux-gnu-"
 

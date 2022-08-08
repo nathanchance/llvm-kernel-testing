@@ -7,8 +7,10 @@ from shutil import rmtree, which
 
 import lib
 
+
 def boot_qemu(cfg, log_str, build_folder, kernel_available, arch="arm32_v7"):
     lib.boot_qemu(cfg, arch, log_str, build_folder, kernel_available)
+
 
 def disable_be(linux_folder):
     with open(linux_folder.joinpath("arch", "arm", "mm", "Kconfig")) as f:
@@ -17,6 +19,7 @@ def disable_be(linux_folder):
         second_pattern = "depends on ARCH_SUPPORTS_BIG_ENDIAN"
         return not search(f"({first_pattern}|{second_pattern})\n\tdepends on !LD_IS_LLD", text)
 
+
 # https://github.com/ClangBuiltLinux/linux/issues/325
 def thumb2_ok(linux_folder):
     with open(linux_folder.joinpath("arch", "arm", "Kconfig")) as f:
@@ -24,6 +27,7 @@ def thumb2_ok(linux_folder):
     with open(linux_folder.joinpath("init", "Kconfig")) as f:
         has_3297481d688a5 = not search("config HAVE_FUTEX_CMPXCHG", f.read())
     return has_9d417cbe36eee or has_3297481d688a5
+
 
 def build_defconfigs(self, cfg):
     defconfigs = [("multi_v5_defconfig", "arm32_v5")]
@@ -52,11 +56,13 @@ def build_defconfigs(self, cfg):
             "variables": self.make_variables,
         }
         lib.kmake(kmake_cfg)
-        lib.scripts_config(kmake_cfg["linux_folder"], kmake_cfg["build_folder"], ["-e", "THUMB2_KERNEL"])
+        lib.scripts_config(kmake_cfg["linux_folder"], kmake_cfg["build_folder"],
+                           ["-e", "THUMB2_KERNEL"])
         kmake_cfg["targets"] = ["olddefconfig", "all"]
         rc, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
         boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0, defconfig[1])
+
 
 def build_otherconfigs(self, cfg):
     for cfg_target in ["allmodconfig", "allnoconfig", "tinyconfig"]:
@@ -85,6 +91,7 @@ def build_otherconfigs(self, cfg):
         if config_path:
             Path(config_path).unlink()
             del self.make_variables["KCONFIG_ALLCONFIG"]
+
 
 def build_distroconfigs(self, cfg):
     cfg_files = [("alpine", "armv7")]
@@ -115,7 +122,9 @@ def build_distroconfigs(self, cfg):
         if distro != "fedora":
             boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
 
+
 class ARM:
+
     def __init__(self, cfg):
         self.build_folder = cfg["build_folder"].joinpath(self.__class__.__name__.lower())
         self.commits_present = cfg["commits_present"]

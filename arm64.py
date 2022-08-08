@@ -8,8 +8,10 @@ from shutil import rmtree
 
 import lib
 
+
 def boot_qemu(cfg, log_str, build_folder, kernel_available, arch="arm64"):
     lib.boot_qemu(cfg, arch, log_str, build_folder, kernel_available)
+
 
 def build_defconfigs(self, cfg):
     log_str = "arm64 defconfig"
@@ -72,6 +74,7 @@ def build_defconfigs(self, cfg):
         lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
         boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
 
+
 def build_otherconfigs(self, cfg):
     log_str = "arm64 allmodconfig"
     configs = []
@@ -129,6 +132,7 @@ def build_otherconfigs(self, cfg):
         rc, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
 
+
 def build_distroconfigs(self, cfg):
     cfg_files = [("alpine", "aarch64")]
     cfg_files += [("archlinux", "aarch64")]
@@ -160,11 +164,14 @@ def build_distroconfigs(self, cfg):
         lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
         boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
 
+
 def has_d8e85e144bbe1(linux_folder):
     with open(linux_folder.joinpath("arch", "arm64", "Kconfig")) as f:
         return search('prompt "Endianness"', f.read())
 
+
 class ARM64:
+
     def __init__(self, cfg):
         self.build_folder = cfg["build_folder"].joinpath(self.__class__.__name__.lower())
         self.commits_present = cfg["commits_present"]
