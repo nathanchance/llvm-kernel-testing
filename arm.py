@@ -73,6 +73,10 @@ def build_otherconfigs(self, cfg):
                 configs += ["CONFIG_CPU_BIG_ENDIAN"]
             if "CONFIG_WERROR" in self.configs_present:
                 configs += ["CONFIG_WERROR"]
+            if self.llvm_version_code >= 1500000:
+                configs += [
+                    "CONFIG_FPE_NWFPE", "(https://github.com/ClangBuiltLinux/linux/issues/1666)"
+                ]
             config_path, config_str = lib.gen_allconfig(self.build_folder, configs)
             if config_path:
                 self.make_variables["KCONFIG_ALLCONFIG"] = config_path
