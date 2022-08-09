@@ -14,16 +14,22 @@ def boot_qemu(cfg, log_str, build_folder, kernel_available, arch="ppc64le"):
 
 def build_defconfigs(self, cfg):
     log_str = "powerpc ppc44x_defconfig"
-    kmake_cfg = {
-        "linux_folder": self.linux_folder,
-        "build_folder": self.build_folder,
-        "log_file": lib.log_file_from_str(self.log_folder, log_str),
-        "targets": ["distclean", log_str.split(" ")[1], "all", "uImage"],
-        "variables": self.make_variables,
-    }
-    rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
-    boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0, "ppc32")
+    if has_2255411d1d0f0(self.linux_folder):
+        lib.log(
+            cfg,
+            f"{log_str} skipped due to 2255411d1d0f0 (https://github.com/ClangBuiltLinux/linux/issues/1679)"
+        )
+    else:
+        kmake_cfg = {
+            "linux_folder": self.linux_folder,
+            "build_folder": self.build_folder,
+            "log_file": lib.log_file_from_str(self.log_folder, log_str),
+            "targets": ["distclean", log_str.split(" ")[1], "all", "uImage"],
+            "variables": self.make_variables,
+        }
+        rc, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
+        boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0, "ppc32")
 
     log_str = "powerpc pmac32_defconfig"
     if has_297565aa22cfa(self.linux_folder):
@@ -42,7 +48,10 @@ def build_defconfigs(self, cfg):
         lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
         boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0, "ppc32_mac")
     else:
-        lib.log(cfg, f"{log_str} skipped due to missing 297565aa22cf")
+        lib.log(
+            cfg,
+            f"{log_str} skipped due to missing 297565aa22cf (https://github.com/ClangBuiltLinux/linux/issues/563)"
+        )
 
     log_str = "powerpc pseries_defconfig"
     kmake_cfg = {
@@ -168,6 +177,13 @@ def build_distroconfigs(self, cfg):
 def has_0355785313e21(linux_folder):
     with open(linux_folder.joinpath("arch", "powerpc", "Makefile")) as f:
         return search(escape("LDFLAGS_vmlinux-$(CONFIG_RELOCATABLE) += -z notext"), f.read())
+
+
+# https://github.com/ClangBuiltLinux/linux/issues/1679
+def has_2255411d1d0f0(linux_folder):
+    with open(linux_folder.joinpath("arch", "powerpc", "platforms", "Kconfig.cputype")) as f:
+        pattern = 'config POWERPC_CPU\n\tbool "Generic 32 bits powerpc"\n\tdepends on PPC_BOOK3S_32'
+        return search(pattern, f.read())
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/1160
