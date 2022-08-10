@@ -100,7 +100,7 @@ class S390:
         self.configs_folder = cfg["configs_folder"]
         self.configs_present = cfg["configs_present"]
         self.linux_folder = cfg["linux_folder"]
-        self.llvm_version_code = ["llvm_version_code"]
+        self.llvm_version_code = cfg["llvm_version_code"]
         self.linux_version_code = cfg["linux_version_code"]
         self.log_folder = cfg["log_folder"]
         self.make_variables = deepcopy(cfg["make_variables"])
