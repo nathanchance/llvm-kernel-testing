@@ -3,7 +3,7 @@
 from copy import deepcopy
 from pathlib import Path
 from platform import machine
-from re import search
+from re import escape, search
 from shutil import rmtree
 
 import lib
@@ -107,12 +107,21 @@ def build_distroconfigs(self, cfg):
             "build_folder": self.build_folder,
             "config_file": self.configs_folder.joinpath(distro, cfg_basename),
         }
+        has_x32 = lib.is_set(sc_cfg["linux_folder"], sc_cfg["build_folder"], "X86_X32_ABI")
+        need_gnu_objcopy = not has_aaeed6ecc1253(sc_cfg["linux_folder"])
+        if has_x32 and need_gnu_objcopy:
+            gnu_objcopy = {"OBJCOPY": f"{self.cross_compile}objcopy"}
+        else:
+            gnu_objcopy = {}
         kmake_cfg = {
             "linux_folder": sc_cfg["linux_folder"],
             "build_folder": sc_cfg["build_folder"],
             "log_file": lib.log_file_from_str(self.log_folder, log_str),
             "targets": ["olddefconfig", "all"],
-            "variables": self.make_variables,
+            "variables": {
+                **self.make_variables,
+                **gnu_objcopy
+            },
         }
         log_str += lib.setup_config(sc_cfg)
         if self.linux_version_code < 507000:
@@ -127,6 +136,13 @@ def build_distroconfigs(self, cfg):
         rc, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
         boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
+
+
+# https://github.com/ClangBuiltLinux/linux/issues/514
+# https://git.kernel.org/linus/aaeed6ecc1253ce1463fa1aca0b70a4ccbc9fa75
+def has_aaeed6ecc1253(linux_folder):
+    with open(linux_folder.joinpath("arch", "x86", "Kconfig")) as f:
+        return search(escape("https://github.com/ClangBuiltLinux/linux/issues/514"), f.read())
 
 
 # https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f
@@ -149,10 +165,10 @@ class X86_64:
         self.save_objects = cfg["save_objects"]
         self.targets_to_build = cfg["targets_to_build"]
 
+        self.cross_compile = ""
+
     def build(self, cfg):
-        if machine() == "x86_64":
-            cross_compile = ""
-        else:
+        if machine() != "x86_64":
             if not has_d5cbd80e302df(self.linux_folder):
                 lib.header("Skipping x86_64 kernels")
                 print(
@@ -161,7 +177,7 @@ class X86_64:
                 lib.log(cfg,
                         "x86_64 kernels skipped due to missing d5cbd80e302d on a non-x86_64 host")
                 return
-            cross_compile = "x86_64-linux-gnu-"
+            self.cross_compile = "x86_64-linux-gnu-"
 
         self.make_variables["ARCH"] = "x86_64"
 
@@ -169,14 +185,14 @@ class X86_64:
 
         if self.linux_version_code >= 510000:
             self.make_variables["LLVM_IAS"] = "1"
-            if not "6f5b41a2f5a63" in self.commits_present and cross_compile:
-                self.make_variables["CROSS_COMPILE"] = cross_compile
+            if not "6f5b41a2f5a63" in self.commits_present and self.cross_compile:
+                self.make_variables["CROSS_COMPILE"] = self.cross_compile
         else:
             lib.header("Building x86_64 kernels")
 
             if cross_compile:
-                self.make_variables["CROSS_COMPILE"] = cross_compile
-            if not lib.check_binutils(cfg, "x86_64", cross_compile):
+                self.make_variables["CROSS_COMPILE"] = self.cross_compile
+            if not lib.check_binutils(cfg, "x86_64", self.cross_compile):
                 return
             binutils_version, binutils_location = lib.get_binary_info(f"{cross_compile}as")
             print(f"\nbinutils version: {binutils_version}")
