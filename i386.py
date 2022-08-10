@@ -183,11 +183,6 @@ class I386:
             cross_compile = "x86_64-linux-gnu-"
             if not "6f5b41a2f5a63" in self.commits_present:
                 self.make_variables["CROSS_COMPILE"] = cross_compile
-            if not lib.check_binutils(cfg, "i386", cross_compile):
-                return
-            binutils_version, binutils_location = lib.get_binary_info(f"{cross_compile}as")
-            print(f"\nbinutils version: {binutils_version}")
-            print(f"binutils location: {binutils_location}")
 
         if "def" in self.targets_to_build:
             build_defconfigs(self, cfg)
