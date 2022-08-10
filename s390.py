@@ -119,6 +119,18 @@ class S390:
                 "s390x kernels skipped due to missing fixes from 5.6 (https://lore.kernel.org/r/your-ad-here.call-01580230449-ext-6884@work.hours/)"
             )
             return
+        elif self.linux_version_code >= 514000 and self.llvm_version_code < 1300000:
+            lib.header("Skipping s390x kernels")
+            print("Reason: s390 kernels cannot build with LLVM versions prior to 13.0.0 on 5.14+.")
+            print("        https://git.kernel.org/linus/e2bc3e91d91ede6710801fa0737e4e4ed729b19e")
+            lib.log(cfg, "s390x kernels skipped due to LLVM < 13.0.0 and Linux 5.14+ (e2bc3e91d91ed)")
+            return
+        elif self.linux_version_code >= 519000 and self.llvm_version_code < 1400000:
+            lib.header("Skipping s390x kernels")
+            print("Reason: s390 kernels cannot build with LLVM versions prior to 14.0.0 on 5.19+.")
+            print("        https://git.kernel.org/linus/8218827b73c6e41029438a2d3cc573286beee914")
+            lib.log(cfg, "s390x kernels skipped due to LLVM < 14.0.0 and Linux 5.19+ (8218827b73c6e)")
+            return
 
         cross_compile = "s390x-linux-gnu-"
         self.make_variables["ARCH"] = "s390"
