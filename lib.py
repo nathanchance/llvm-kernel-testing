@@ -692,6 +692,9 @@ def setup_config(sc_cfg):
     for gpio_sym in [f"GPIO_{s}" for s in gpio_suffixes]:
         cfg_items += [(gpio_sym, "drivers/gpio/Kconfig")]
 
+    # CONFIG_IIO_RESCALE_KUNIT_TEST as a module is invalid before https://git.kernel.org/linus/0565d238b9b4abb7b904248d9064bea80ac706fe
+    cfg_items += [("IIO_RESCALE_KUNIT_TEST", "drivers/iio/test/Kconfig")]
+
     # CONFIG_IMX_DSP as a module is invalid before https://git.kernel.org/linus/f52cdcce9197fef9d4a68792dd3b840ad2b77117
     cfg_items += [("IMX_DSP", "drivers/firmware/imx/Kconfig")]
 
