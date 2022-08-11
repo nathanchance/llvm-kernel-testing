@@ -134,7 +134,7 @@ class RISCV:
             self.make_variables["CROSS_COMPILE"] = cross_compile
             if not lib.check_binutils(cfg, "riscv", cross_compile):
                 return
-            binutils_version, binutils_location = lib.get_binary_info(gnu_as)
+            binutils_version, binutils_location = lib.get_binary_info(f"{cross_compile}as")
             print(f"binutils version: {binutils_version}")
             print(f"binutils location: {binutils_location}")
 
