@@ -7,7 +7,7 @@ from pathlib import Path
 from re import search
 from shutil import copyfile, rmtree, which
 from subprocess import DEVNULL, PIPE, Popen, run, STDOUT
-from sys import stdout
+from sys import stdout, version_info
 from tempfile import mkstemp
 from time import time
 
@@ -324,6 +324,28 @@ def is_modular(linux_folder, build_folder, cfg_sym):
     return config_val(linux_folder, build_folder, cfg_sym) == "m"
 
 
+def is_relative_to(path_one, path_two):
+    """
+    Checks if path_one is relative to path_two. Needed for Python < 3.9
+    compatibility :(
+
+    Parameters:
+        path_one (Path): A Path object pointing to the potential child path.
+        path_two (Path): A Path object pointing to the potential parent path.
+
+    Returns:
+        Ttrue
+    """
+    if version_info >= (3, 9):
+        return path_one.is_relative_to(path_two)
+    else:
+        try:
+            path_one.relative_to(path_two)
+        except ValueError:
+            return False
+        return True
+
+
 def is_set(linux_folder, build_folder, cfg_sym):
     """
     Checks if a configuration value is set (either enabled as 'y'/'n' or has a
@@ -377,7 +399,7 @@ def kmake(kmake_cfg):
     make_flags = ["-C", linux_folder.as_posix()]
     make_flags += [f"-skj{cores}"]
 
-    if build_folder.is_relative_to(linux_folder):
+    if is_relative_to(build_folder, linux_folder):
         build_folder = build_folder.relative_to(linux_folder)
 
     make_variables = []

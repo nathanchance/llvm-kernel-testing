@@ -226,7 +226,7 @@ def initial_config_and_setup(args):
     cfg["llvm_version_code"] = lib.create_llvm_version_code()
 
     boot_utils_folder = Path(args.boot_utils_folder)
-    if boot_utils_folder.is_relative_to(base_folder):
+    if lib.is_relative_to(boot_utils_folder, base_folder):
         lib.header("Updating boot-utils")
         clone_update_boot_utils(boot_utils_folder)
     cfg["boot_utils_folder"] = boot_utils_folder
