@@ -100,7 +100,10 @@ def build_otherconfigs(self, cfg):
             "build_folder": self.build_folder,
             "log_file": lib.log_file_from_str(self.log_folder, log_str),
             "targets": ["distclean", log_str.split(" ")[1], "all"],
-            "variables": self.make_variables,
+            "variables": {
+                **self.make_variables,
+                **self.ld_bfd
+            },
         }
         rc, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
