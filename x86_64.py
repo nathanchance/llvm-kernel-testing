@@ -188,13 +188,11 @@ class X86_64:
             if not "6f5b41a2f5a63" in self.commits_present and self.cross_compile:
                 self.make_variables["CROSS_COMPILE"] = self.cross_compile
         else:
-            lib.header("Building x86_64 kernels")
-
-            if cross_compile:
+            if self.cross_compile:
                 self.make_variables["CROSS_COMPILE"] = self.cross_compile
             if not lib.check_binutils(cfg, "x86_64", self.cross_compile):
                 return
-            binutils_version, binutils_location = lib.get_binary_info(f"{cross_compile}as")
+            binutils_version, binutils_location = lib.get_binary_info(f"{self.cross_compile}as")
             print(f"\nbinutils version: {binutils_version}")
             print(f"binutils location: {binutils_location}")
 
