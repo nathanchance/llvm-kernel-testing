@@ -95,7 +95,7 @@ def has_f2928e224d85e(linux_folder):
 
 def has_efi(linux_folder):
     with open(linux_folder.joinpath("arch", "riscv", "Kconfig")) as f:
-        return search("config EFI", f.text())
+        return search("config EFI", f.read())
 
 
 class RISCV:
