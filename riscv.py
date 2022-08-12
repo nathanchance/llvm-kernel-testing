@@ -77,12 +77,20 @@ def build_distroconfigs(self, cfg):
             log_str += lib.setup_config(sc_cfg)
             rc, time = lib.kmake(kmake_cfg)
             lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
-            boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
+            if has_f2928e224d85e(kmake_cfg["linux_folder"]):
+                boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
+            else:
+                lib.log(cfg, f"{log_str} qemu boot skipped due to missing f2928e224d85e")
 
 
 def has_ec3a5cb61146c(linux_folder):
     with open(linux_folder.joinpath("arch", "riscv", "Makefile")) as f:
         return search(escape("KBUILD_CFLAGS += -mno-relax"), f.read())
+
+
+def has_f2928e224d85e(linux_folder):
+    with open(linux_folder.joinpath("arch", "riscv", "kernel", "reset.c")) as f:
+        return search(escape("void (*pm_power_off)(void) = NULL;"), f.read())
 
 
 def has_efi(linux_folder):
