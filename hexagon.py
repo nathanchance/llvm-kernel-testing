@@ -22,7 +22,7 @@ def build_defconfigs(self, cfg):
 
 
 def build_otherconfigs(self, cfg):
-    if has_ffb92ce826fd8(self.linux_folder):
+    if has_ffb92ce826fd8(self.linux_folder) and self.llvm_version_code >= 1300000:
         log_str = "hexagon allmodconfig"
         configs = []
         if "CONFIG_WERROR" in self.configs_present:
