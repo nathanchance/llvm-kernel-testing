@@ -56,6 +56,7 @@ class HEXAGON:
         self.commits_present = cfg["commits_present"]
         self.configs_present = cfg["configs_present"]
         self.linux_folder = cfg["linux_folder"]
+        self.llvm_version_code = cfg["llvm_version_code"]
         self.log_folder = cfg["log_folder"]
         self.make_variables = deepcopy(cfg["make_variables"])
         self.save_objects = cfg["save_objects"]
