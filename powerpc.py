@@ -64,7 +64,12 @@ def build_defconfigs(self, cfg):
         },
     }
     pseries_targets = ["distclean", log_str.split(" ")[1]]
-    if not has_51696f39cbee5(kmake_cfg["linux_folder"]) and self.llvm_version_code >= 1200000:
+    # https://github.com/ClangBuiltLinux/linux/issues/1292
+    wa_cbl_1292 = not has_51696f39cbee5(
+        kmake_cfg["linux_folder"]) and self.llvm_version_code >= 1200000
+    # https://github.com/ClangBuiltLinux/linux/issues/1445
+    wa_cbl_1445 = self.linux_version_code >= 518000 and self.llvm_version_code < 1400000
+    if wa_cbl_1292 or wa_cbl_1445:
         if has_dwc(kmake_cfg["linux_folder"]):
             pseries_targets += ["disable-werror.config", "all"]
         else:
