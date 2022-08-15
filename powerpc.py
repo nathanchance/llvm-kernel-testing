@@ -46,7 +46,11 @@ def build_defconfigs(self, cfg):
         kmake_cfg["targets"] = ["olddefconfig", "all"]
         rc, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
-        boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0, "ppc32_mac")
+        if self.llvm_version_code >= 1400000:
+            boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0, "ppc32_mac")
+        else:
+            lib.log(cfg,
+                    f"{log_str} qemu boot skipped due to LLVM < 14.0.0 (lack of 1e3c6fc7cb9d2)")
     else:
         lib.log(
             cfg,
