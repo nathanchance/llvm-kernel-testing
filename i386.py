@@ -3,7 +3,7 @@
 from copy import deepcopy
 from pathlib import Path
 from platform import machine
-from re import search
+from re import escape, search
 from shutil import rmtree
 
 import lib
@@ -110,8 +110,8 @@ def disable_nf_configs(llvm_version_code, linux_folder):
 def fortify_broken(linux_folder):
     with open(linux_folder.joinpath("security", "Kconfig")) as f:
         text = f.read()
-        bug_one = "https://bugs.llvm.org/show_bug.cgi?id=50322"
-        bug_two = "https://github.com/llvm/llvm-project/issues/53645"
+        bug_one = escape("https://bugs.llvm.org/show_bug.cgi?id=50322")
+        bug_two = escape("https://github.com/llvm/llvm-project/issues/53645")
         return search(bug_one, text) or search(bug_two, text)
 
 
