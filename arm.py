@@ -20,15 +20,6 @@ def disable_be(linux_folder):
         return not search(f"({first_pattern}|{second_pattern})\n\tdepends on !LD_IS_LLD", text)
 
 
-def has_c6d5f1933085f(linux_folder):
-    with open(
-            linux_folder.joinpath("drivers", "net", "ethernet", "stmicro", "stmmac",
-                                  "stmmac_ptp.c")) as f:
-        return search(
-            escape("priv->plat->cdc_error_adj = (2 * NSEC_PER_SEC) / priv->plat->clk_ptp_rate;"),
-            f.read())
-
-
 def has_uldivmod_wa(linux_folder):
     return linux_folder.joinpath("arch", "arm", "lib", "aeabi_uldivmod.c").exists()
 
@@ -91,11 +82,6 @@ def build_otherconfigs(self, cfg):
                     configs += [
                         "CONFIG_FPE_NWFPE", "(https://github.com/ClangBuiltLinux/linux/issues/1666)"
                     ]
-                if self.llvm_version_code >= 1600000:
-                    configs += ["CONFIG_MTD_SWAP"]
-                    if not has_c6d5f1933085f(self.linux_folder):
-                        configs += ["CONFIG_STMMAC_ETH"]
-                    configs += ["(https://github.com/ClangBuiltLinux/linux/issues/1688)"]
             config_path, config_str = lib.gen_allconfig(self.build_folder, configs)
             if config_path:
                 self.make_variables["KCONFIG_ALLCONFIG"] = config_path
@@ -140,18 +126,6 @@ def build_distroconfigs(self, cfg):
             "variables": self.make_variables,
         }
         log_str += lib.setup_config(sc_cfg)
-        if self.llvm_version_code >= 1600000 and not has_uldivmod_wa(kmake_cfg["linux_folder"]):
-            cfg_syms = ["CONFIG_ATM_MPOA", "CONFIG_MTD_SWAP"]
-            if not has_c6d5f1933085f(self.linux_folder):
-                cfg_syms += ["CONFIG_STMMAC_ETH"]
-            sc_args = []
-            for cfg_sym in cfg_syms:
-                if lib.is_set(kmake_cfg["linux_folder"], kmake_cfg["build_folder"], cfg_sym):
-                    sc_args += ["-d", cfg_sym]
-                    log_str += f" + {cfg_sym}=n"
-            if sc_args:
-                log_str += " (https://github.com/ClangBuiltLinux/linux/issues/1688)"
-                lib.scripts_config(kmake_cfg["linux_folder"], kmake_cfg["build_folder"], sc_args)
         rc, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
         if distro != "fedora":
