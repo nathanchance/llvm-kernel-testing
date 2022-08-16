@@ -8,7 +8,13 @@ from shutil import rmtree
 import lib
 
 
-def boot_qemu(cfg, log_str, build_folder, kernel_available):
+def boot_qemu(self, cfg, log_str, build_folder, kernel_available):
+    if self.qemu_version_code < 600000:
+        qemu_ver = lib.get_qemu_version(self.qemu_exec)
+        lib.log(
+            cfg,
+            f"{log_str} qemu boot skipped due to skipped due to a QEMU binary older than 6.0.0 (found {qemu_ver})"
+        )
     lib.boot_qemu(cfg, "s390", log_str, build_folder, kernel_available)
 
 
@@ -23,7 +29,7 @@ def build_defconfigs(self, cfg):
     }
     rc, time = lib.kmake(kmake_cfg)
     lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
-    boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
+    boot_qemu(self, cfg, log_str, kmake_cfg["build_folder"], rc == 0)
 
 
 def build_otherconfigs(self, cfg):
@@ -76,7 +82,7 @@ def build_distroconfigs(self, cfg):
             lib.scripts_config(kmake_cfg["linux_folder"], kmake_cfg["build_folder"], sc_args)
         rc, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
-        boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
+        boot_qemu(self, cfg, log_str, kmake_cfg["build_folder"], rc == 0)
 
 
 # https://git.kernel.org/linus/efe5e0fea4b24872736c62a0bcfc3f99bebd2005
@@ -104,6 +110,8 @@ class S390:
         self.linux_version_code = cfg["linux_version_code"]
         self.log_folder = cfg["log_folder"]
         self.make_variables = deepcopy(cfg["make_variables"])
+        self.qemu_exec = "qemu-system-s390x"
+        self.qemu_version_code = lib.create_qemu_version_code(self.qemu_exec)
         self.save_objects = cfg["save_objects"]
         self.targets_to_build = cfg["targets_to_build"]
 

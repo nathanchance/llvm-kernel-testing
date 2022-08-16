@@ -172,6 +172,21 @@ def create_llvm_version_code():
     return create_version_code(version_tuple)
 
 
+def create_qemu_version_code(qemu_exec):
+    """
+    Turns the version of QEMU being used to boot test the kernel into an
+    integer with at least six digits.
+
+    Parameters:
+        qemu_exec (str): The name of the QEMU binary to version check.
+
+    Returns:
+        An integer with at least six digits.
+    """
+    version_tuple = get_qemu_version(qemu_exec).split(".")
+    return create_version_code(version_tuple)
+
+
 def die(die_str):
     """
     Prints a string in bold red then exits with an error code of 1.
@@ -277,6 +292,20 @@ def get_linux_version(linux_folder):
     rmtree(include_config, ignore_errors=True)
 
     return f"Linux {kernelversion}{localversion}"
+
+
+def get_qemu_version(qemu_exec):
+    """
+    Get the QEMU version information from the QEMU version string.
+
+    Parameters:
+        qemu_exec (str): The name of the QEMU binary to version check.
+
+    Returns:
+        The QEMU version number as a string.
+    """
+    qemu_output = capture_cmd([qemu_exec, "--version"])
+    return qemu_output.split("\n")[0].split(" ")[3]
 
 
 def get_time_diff(start_time, end_time):
