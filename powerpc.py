@@ -29,7 +29,13 @@ def build_defconfigs(self, cfg):
         }
         rc, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
-        boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0, "ppc32")
+        if self.llvm_version_code < 1200001 and has_48cf12d88969b(kmake_cfg["linux_folder"]):
+            lib.log(
+                cfg,
+                f"{log_str} qemu_boot skipped (https://github.com/ClangBuiltLinux/linux/issues/1345)"
+            )
+        else:
+            boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0, "ppc32")
 
     log_str = "powerpc pmac32_defconfig"
     if has_297565aa22cfa(self.linux_folder):
@@ -209,6 +215,13 @@ def has_231b232df8f67(linux_folder):
 def has_297565aa22cfa(linux_folder):
     with open(linux_folder.joinpath("arch", "powerpc", "lib", "xor_vmx.c")) as f:
         return search("__restrict", f.read())
+
+
+# https://github.com/ClangBuiltLinux/linux/issues/1345
+def has_48cf12d88969b(linux_folder):
+    with open(linux_folder.joinpath("arch", "powerpc", "kernel", "irq.c")) as f:
+        text = escape("static __always_inline void call_do_softirq(const void *sp)")
+        return search(text, f.read())
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/1292
