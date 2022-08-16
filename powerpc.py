@@ -90,6 +90,9 @@ def build_defconfigs(self, cfg):
     boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0, "ppc64")
 
     log_str = "powerpc powernv_defconfig"
+    powernv_vars = {}
+    if self.llvm_version_code < 1200000 and not "LD" in self.ppc64le_vars:
+        powernv_vars = {"LD": f"{self.cross_compile}ld"}
     kmake_cfg = {
         "linux_folder": self.linux_folder,
         "build_folder": self.build_folder,
@@ -97,7 +100,8 @@ def build_defconfigs(self, cfg):
         "targets": ["distclean", log_str.split(" ")[1], "all"],
         "variables": {
             **self.make_variables,
-            **self.ppc64le_vars
+            **self.ppc64le_vars,
+            **powernv_vars
         },
     }
     rc, time = lib.kmake(kmake_cfg)
