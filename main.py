@@ -62,10 +62,11 @@ def add_to_path(folder):
     if folder:
         folder = Path(folder)
         if not folder.exists():
-            utils.die(f"Supplied folder ('{folder}') does not exist?")
+            raise FileNotFoundError(f"Supplied folder ('{folder}') does not exist?")
         bin_folder = folder.joinpath("bin")
         if not bin_folder.exists():
-            utils.die(f"Supplied folder ('{folder}') does not have a 'bin' folder in it?")
+            raise FileNotFoundError(
+                f"Supplied folder ('{folder}') does not have a 'bin' folder in it?")
         if not bin_folder.as_posix() in environ['PATH']:
             environ['PATH'] = f"{bin_folder}:" + environ['PATH']
 

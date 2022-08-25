@@ -187,18 +187,6 @@ def create_qemu_version_code(qemu_exec):
     return create_version_code(version_tuple)
 
 
-def die(die_str):
-    """
-    Prints a string in bold red then exits with an error code of 1.
-
-    Parameters:
-        die_str (str): String to print in red; prefixed with "ERROR: "
-                       automatically.
-    """
-    red(f"ERROR: {die_str}")
-    exit(1)
-
-
 def gen_allconfig(build_folder, configs):
     """
     Generate a file for use with KCONFIG_ALLCONFIG.
