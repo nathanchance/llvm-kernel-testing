@@ -192,6 +192,10 @@ def initial_config_and_setup(args):
         cfg (dict): A dictionary of configuration values
     """
     linux_folder = Path(args.linux_folder)
+    if not linux_folder.exists():
+        raise FileNotFoundError(
+            f"Supplied Linux source folder ('{linux_folder}') could not be found!")
+
     log_folder = Path(args.log_folder)
 
     # Ensure log folder is created for future writing
