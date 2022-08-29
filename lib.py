@@ -783,6 +783,9 @@ def setup_config(sc_cfg):
     # CONFIG_SND_SOC_SOF_HDA_PROBES as a module is invalid before https://git.kernel.org/linus/e18610eaa66a1849aaa00ca43d605fb1a6fed800
     cfg_items += [("SND_SOC_SOF_HDA_PROBES", "sound/soc/sof/intel/Kconfig")]
 
+    # CONFIG_SND_SOC_SPRD_MCDT as a module is invalid before https://git.kernel.org/linus/fd357ec595d36676c239d8d16706a270a961ac32
+    cfg_items += [("SND_SOC_SPRD_MCDT", "sound/soc/sprd/Kconfig")]
+
     # CONFIG_SYSCTL_KUNIT_TEST as a module is invalid before https://git.kernel.org/linus/c475c77d5b56398303e726969e81208196b3aab3
     cfg_items += [("SYSCTL_KUNIT_TEST", "lib/Kconfig.debug")]
 
