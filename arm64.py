@@ -101,6 +101,9 @@ def build_otherconfigs(self, cfg):
     if "CONFIG_LTO_CLANG_THIN" in self.configs_present:
         log_str = "arm64 allmodconfig"
         configs = ["CONFIG_GCOV_KERNEL", "CONFIG_KASAN", "CONFIG_LTO_CLANG_THIN=y"]
+        # https://github.com/ClangBuiltLinux/linux/issues/1704
+        if self.llvm_version_code >= 1600000 and not has_tsan_mem_funcs(self.linux_folder):
+            configs += ["CONFIG_KCSAN"]
         if "CONFIG_WERROR" in self.configs_present:
             configs += ["CONFIG_WERROR"]
         config_path, config_str = lib.gen_allconfig(self.build_folder, configs)
@@ -168,6 +171,12 @@ def build_distroconfigs(self, cfg):
 def has_d8e85e144bbe1(linux_folder):
     with open(linux_folder.joinpath("arch", "arm64", "Kconfig")) as f:
         return search('prompt "Endianness"', f.read())
+
+
+# https://github.com/ClangBuiltLinux/linux/issues/1704
+def has_tsan_mem_funcs(linux_folder):
+    with open(linux_folder.joinpath("kernel", "kcsan", "core.c")) as f:
+        return search("__tsan_memset", f.read())
 
 
 class ARM64:

@@ -72,6 +72,9 @@ def build_otherconfigs(self, cfg):
     if "CONFIG_LTO_CLANG_THIN" in self.configs_present:
         log_str = "x86_64 allmodconfig"
         configs = ["CONFIG_GCOV_KERNEL", "CONFIG_KASAN", "CONFIG_LTO_CLANG_THIN=y"]
+        # https://github.com/ClangBuiltLinux/linux/issues/1704
+        if self.llvm_version_code >= 1600000 and not has_tsan_mem_funcs(self.linux_folder):
+            configs += ["CONFIG_KCSAN"]
         if "CONFIG_WERROR" in self.configs_present:
             configs += ["CONFIG_WERROR"]
         config_path, config_str = lib.gen_allconfig(self.build_folder, configs)
@@ -151,6 +154,12 @@ def has_d5cbd80e302df(linux_folder):
         return search("CLANG_FLAGS", f.read())
 
 
+# https://github.com/ClangBuiltLinux/linux/issues/1704
+def has_tsan_mem_funcs(linux_folder):
+    with open(linux_folder.joinpath("kernel", "kcsan", "core.c")) as f:
+        return search("__tsan_memset", f.read())
+
+
 class X86_64:
 
     def __init__(self, cfg):
@@ -160,6 +169,7 @@ class X86_64:
         self.configs_present = cfg["configs_present"]
         self.linux_folder = cfg["linux_folder"]
         self.linux_version_code = cfg["linux_version_code"]
+        self.llvm_version_code = cfg["llvm_version_code"]
         self.log_folder = cfg["log_folder"]
         self.make_variables = deepcopy(cfg["make_variables"])
         self.save_objects = cfg["save_objects"]
