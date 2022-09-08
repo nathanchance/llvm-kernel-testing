@@ -7,7 +7,7 @@ from pathlib import Path
 from re import search
 from shutil import copyfile, rmtree, which
 from subprocess import DEVNULL, PIPE, Popen, run, STDOUT
-from sys import stdout, version_info
+from sys import stderr, stdout, version_info
 from tempfile import mkstemp
 from time import time
 
@@ -28,6 +28,8 @@ def boot_qemu(cfg, arch, log_str, build_folder, kernel_available):
         boot_qemu_py = cfg["boot_utils_folder"].joinpath("boot-qemu.py").as_posix()
         cmd = [boot_qemu_py, "-a", arch, "-k", build_folder.as_posix()]
         pretty_print_cmd(cmd)
+        stderr.flush()
+        stdout.flush()
         result = run(cmd)
         if result.returncode == 0:
             result_str = "successful"
@@ -324,6 +326,7 @@ def header(hdr_str, end='\n'):
     for x in range(0, len(hdr_str) + 6):
         print("=", end="")
     print("\n\033[0m", end=end)
+    stdout.flush()
 
 
 def is_modular(linux_folder, build_folder, cfg_sym):
@@ -439,6 +442,8 @@ def kmake(kmake_cfg):
 
     pretty_print_cmd(make_cmd)
     start_time = time()
+    stderr.flush()
+    stdout.flush()
     with Popen(make_cmd, stderr=STDOUT, stdout=PIPE) as p, open(log_file, "bw") as f:
         while True:
             byte = p.stdout.read(1)
@@ -559,7 +564,7 @@ def pretty_print_cmd(cmd):
                 cmd_pretty += f' "{element}"'
         else:
             cmd_pretty += f" {element}"
-    print(f"\n$ {cmd_pretty.strip()}")
+    print(f"\n$ {cmd_pretty.strip()}", flush=True)
 
 
 def process_cfg_item(linux_folder, build_folder, cfg_item):
