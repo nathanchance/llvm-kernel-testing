@@ -70,7 +70,7 @@ function fetch_configs() {
     set -x
     for DISTRO in "${DISTROS[@]}"; do
         case ${DISTRO} in
-            alpine) for CONFIG in aarch64 armv7 x86_64; do fetch_alpine_config "${CONFIG}"; done ;;
+            alpine) for CONFIG in aarch64 armv7 riscv64 x86_64; do fetch_alpine_config "${CONFIG}"; done ;;
             archlinux) for CONFIG in armv5 armv7 aarch64 x86_64; do fetch_archlinux_config "${CONFIG}"; done ;;
             debian) for CONFIG in amd64 arm64 armmp i386 powerpc64le s390x; do fetch_debian_config "${CONFIG}"; done ;;
             fedora) for CONFIG in aarch64 armv7hl ppc64le s390x x86_64; do fetch_fedora_config "${CONFIG}"; done ;;

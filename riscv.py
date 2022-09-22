@@ -57,7 +57,7 @@ def build_otherconfigs(self, cfg):
 
 def build_distroconfigs(self, cfg):
     if self.linux_version_code > 508000 and has_ec3a5cb61146c(self.linux_folder):
-        for cfg_file in [("opensuse", "riscv64")]:
+        for cfg_file in [("alpine", "riscv64"), ("opensuse", "riscv64")]:
             distro = cfg_file[0]
             cfg_basename = f"{cfg_file[1]}.config"
             log_str = f"riscv {distro} config"
