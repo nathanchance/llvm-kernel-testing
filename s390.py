@@ -37,6 +37,9 @@ def build_otherconfigs(self, cfg):
         log_str = f"s390 {other_cfg}"
         if other_cfg == "allmodconfig":
             configs = []
+            if has_925d046e7e52(self.linux_folder):
+                configs += ["CONFIG_INFINIBAND_ADDR_TRANS"]
+                configs += ["(https://github.com/ClangBuiltLinux/linux/issues/1687)"]
             if "CONFIG_WERROR" in self.configs_present:
                 configs += ["CONFIG_WERROR"]
             config_path, config_str = lib.gen_allconfig(self.build_folder, configs)
@@ -83,6 +86,13 @@ def build_distroconfigs(self, cfg):
         rc, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
         boot_qemu(self, cfg, log_str, kmake_cfg["build_folder"], rc == 0)
+
+
+# https://github.com/ClangBuiltLinux/linux/issues/1687
+# https://git.kernel.org/linus/925d046e7e52c71c3531199ce137e141807ef740
+def has_925d046e7e52(linux_folder):
+    with open(linux_folder.joinpath("drivers", "infiniband", "core", "cma.c")) as f:
+        return search("static void cma_netevent_work_handler", f.read())
 
 
 # https://git.kernel.org/linus/efe5e0fea4b24872736c62a0bcfc3f99bebd2005
