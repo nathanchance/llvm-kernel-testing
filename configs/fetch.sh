@@ -35,8 +35,8 @@ function fetch_debian_config() { (
     TMP_DIR=$(mktemp -d -p "${PWD}")
     cd "${TMP_DIR}" || exit ${?}
 
-    PACK_VER_SIGNED=5.19.0-2
-    KER_VER_SIGNED=5.19.11-1
+    PACK_VER_SIGNED=6.0.0-rc7
+    KER_VER_SIGNED=6.0~rc7-1~exp1
     PACK_VER_UNSIGNED=$PACK_VER_SIGNED
     KER_VER_UNSIGNED=$KER_VER_SIGNED
     case ${1} in
