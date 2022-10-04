@@ -6,6 +6,7 @@ from os import environ, SEEK_END
 from pathlib import Path
 from re import search
 from shutil import which
+from signal import signal, SIGINT
 from subprocess import run
 from time import time
 
@@ -249,6 +250,14 @@ def initial_config_and_setup(args):
     return cfg
 
 
+def interrupt_handler(signum, frame):
+    """
+    Causes Ctrl-C to exit with a non-zero error code. Parameters are ignored so
+    they are explicitly undocumented.
+    """
+    exit(130)
+
+
 def parse_arguments():
     """
     Parses arguments to script.
@@ -395,6 +404,8 @@ def tc_lnx_env_info(cfg):
 
 
 if __name__ == '__main__':
+    signal(SIGINT, interrupt_handler)
+
     start_time = time()
 
     args = parse_arguments()
