@@ -661,7 +661,9 @@ def setup_config(sc_cfg):
     build_folder.mkdir(parents=True)
 
     # Copy '.config'
-    copyfile(config_file, build_folder.joinpath(".config"))
+    config_dst = build_folder.joinpath(".config")
+    pretty_print_cmd(["cp", config_file.as_posix(), config_dst.as_posix()])
+    copyfile(config_file, config_dst)
 
     # CONFIG_DEBUG_INFO_BTF has two conditions:
     #
