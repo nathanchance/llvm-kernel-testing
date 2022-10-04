@@ -42,6 +42,10 @@ def build_defconfigs(self, cfg):
         lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
         boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
 
+    if lib.has_kcfi(self.linux_folder):
+        build_cfi_kernel(self, cfg)
+        build_cfi_kernel(self, cfg, use_lto=True)
+
 
 def build_otherconfigs(self, cfg):
     log_str = "x86_64 allmodconfig"
@@ -139,6 +143,32 @@ def build_distroconfigs(self, cfg):
         rc, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
         boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
+
+
+def build_cfi_kernel(self, cfg, use_lto=False):
+    if use_lto:
+        log_str = "x86_64 defconfig + CONFIG_CFI_CLANG=y + CONFIG_LTO_CLANG_THIN=y"
+        log_file = "x86_64-defconfig-cfi-lto.log"
+    else:
+        log_str = "x86_64 defconfig + CONFIG_CFI_CLANG=y"
+        log_file = "x86_64-defconfig-cfi.log"
+    kmake_cfg = {
+        "linux_folder": self.linux_folder,
+        "build_folder": self.build_folder,
+        "log_file": self.log_folder.joinpath(log_file),
+        "targets": ["distclean", log_str.split(" ")[1]],
+        "variables": self.make_variables,
+    }
+    lib.kmake(kmake_cfg)
+    sc_args = ["-e", "CFI_CLANG"]
+    if use_lto:
+        sc_args += ["-d", "LTO_NONE"]
+        sc_args += ["-e", "LTO_CLANG_THIN"]
+    lib.scripts_config(kmake_cfg["linux_folder"], kmake_cfg["build_folder"], sc_args)
+    kmake_cfg["targets"] = ["olddefconfig", "all"]
+    rc, time = lib.kmake(kmake_cfg)
+    lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
+    boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/514

@@ -312,6 +312,20 @@ def get_time_diff(start_time, end_time):
     return timedelta(seconds=int(end_time - start_time))
 
 
+def has_kcfi(linux_folder):
+    """
+    Checks if the Linux source has kCFI.
+
+    Parameters:
+        linux_folder (Path): A Path object pointing to the Linux kernel source.
+
+    Returns:
+        True if kCFI is present, false if not.
+    """
+    with open(linux_folder.joinpath("arch", "Kconfig")) as f:
+        return search("fsanitize=kcfi", f.read())
+
+
 def header(hdr_str, end='\n'):
     """
     Prints a fancy header in bold text.
@@ -536,11 +550,6 @@ def modify_config(linux_folder, build_folder, mod_type):
         args = ["-d", "CPU_BIG_ENDIAN", "-e", "CPU_LITTLE_ENDIAN"]
     elif mod_type == "thinlto":
         args = ["-d", "LTO_NONE", "-e", "LTO_CLANG_THIN"]
-    elif mod_type == "clang hardening":
-        args = ["-e", "CFI_CLANG"]
-        args += ["-d", "LTO_NONE"]
-        args += ["-e", "LTO_CLANG_THIN"]
-        args += ["-e", "SHADOW_CALL_STACK"]
     scripts_config(linux_folder, build_folder, args)
 
 

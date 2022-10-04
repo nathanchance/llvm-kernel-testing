@@ -126,13 +126,15 @@ def check_for_configs(linux_folder):
     configs_present = []
 
     with open(linux_folder.joinpath("arch", "Kconfig")) as f:
+        file_text = f.read()
         for config in ["LTO_CLANG_THIN", "CFI_CLANG"]:
-            if search(f"config {config}", f.read()):
+            if search(f"config {config}", file_text):
                 configs_present += [f"CONFIG_{config}"]
 
     with open(linux_folder.joinpath("init", "Kconfig")) as f:
+        file_text = f.read()
         for config in ["WERROR"]:
-            if search(f"config {config}", f.read()):
+            if search(f"config {config}", file_text):
                 configs_present += [f"CONFIG_{config}"]
 
     return configs_present

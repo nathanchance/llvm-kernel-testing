@@ -59,20 +59,9 @@ def build_defconfigs(self, cfg):
         boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
 
     if "CONFIG_CFI_CLANG" in self.configs_present:
-        log_str = "arm64 defconfig + CONFIG_CFI_CLANG=y + CONFIG_SHADOW_CALL_STACK=y"
-        kmake_cfg = {
-            "linux_folder": self.linux_folder,
-            "build_folder": self.build_folder,
-            "log_file": self.log_folder.joinpath("arm64-defconfig-lto-scs-cfi.log"),
-            "targets": ["distclean", log_str.split(" ")[1]],
-            "variables": self.make_variables,
-        }
-        lib.kmake(kmake_cfg)
-        lib.modify_config(kmake_cfg["linux_folder"], kmake_cfg["build_folder"], "clang hardening")
-        kmake_cfg["targets"] = ["olddefconfig", "all"]
-        rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
-        boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
+        if lib.has_kcfi(self.linux_folder):
+            build_cfi_kernel(self, cfg, use_lto=False)
+        build_cfi_kernel(self, cfg)
 
 
 def build_otherconfigs(self, cfg):
@@ -166,6 +155,33 @@ def build_distroconfigs(self, cfg):
         rc, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
         boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
+
+
+def build_cfi_kernel(self, cfg, use_lto=True):
+    if use_lto:
+        log_str = "arm64 defconfig + CONFIG_CFI_CLANG=y + CONFIG_LTO_CLANG_THIN=y + CONFIG_SHADOW_CALL_STACK=y"
+        log_file = "arm64-defconfig-cfi-lto-scs.log"
+    else:
+        log_str = "arm64 defconfig + CONFIG_CFI_CLANG=y + CONFIG_SHADOW_CALL_STACK=y"
+        log_file = "arm64-defconfig-cfi-scs.log"
+    kmake_cfg = {
+        "linux_folder": self.linux_folder,
+        "build_folder": self.build_folder,
+        "log_file": self.log_folder.joinpath(log_file),
+        "targets": ["distclean", log_str.split(" ")[1]],
+        "variables": self.make_variables,
+    }
+    lib.kmake(kmake_cfg)
+    sc_args = ["-e", "CFI_CLANG"]
+    sc_args += ["-e", "SHADOW_CALL_STACK"]
+    if use_lto:
+        sc_args += ["-d", "LTO_NONE"]
+        sc_args += ["-e", "LTO_CLANG_THIN"]
+    lib.scripts_config(kmake_cfg["linux_folder"], kmake_cfg["build_folder"], sc_args)
+    kmake_cfg["targets"] = ["olddefconfig", "all"]
+    rc, time = lib.kmake(kmake_cfg)
+    lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg["log_file"])
+    boot_qemu(cfg, log_str, kmake_cfg["build_folder"], rc == 0)
 
 
 def has_d8e85e144bbe1(linux_folder):
