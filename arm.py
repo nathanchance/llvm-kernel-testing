@@ -20,8 +20,9 @@ def disable_be(linux_folder):
         return not search(f"({first_pattern}|{second_pattern})\n\tdepends on !LD_IS_LLD", text)
 
 
-def has_uldivmod_wa(linux_folder):
-    return linux_folder.joinpath("arch", "arm", "lib", "aeabi_uldivmod.c").exists()
+def has_nwfpe_replexitval(linux_folder):
+    with open(linux_folder.joinpath("arch", "arm", "nwfpe", "Makefile")) as f:
+        return search("replexitval=never", f.read())
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/325
@@ -77,7 +78,7 @@ def build_otherconfigs(self, cfg):
                 configs += ["CONFIG_CPU_BIG_ENDIAN"]
             if "CONFIG_WERROR" in self.configs_present:
                 configs += ["CONFIG_WERROR"]
-            if not has_uldivmod_wa(self.linux_folder):
+            if not has_nwfpe_replexitval(self.linux_folder):
                 if self.llvm_version_code >= 1500000:
                     configs += [
                         "CONFIG_FPE_NWFPE", "(https://github.com/ClangBuiltLinux/linux/issues/1666)"
