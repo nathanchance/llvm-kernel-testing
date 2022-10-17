@@ -753,6 +753,9 @@ def setup_config(sc_cfg):
     # CONFIG_IMX_DSP as a module is invalid before https://git.kernel.org/linus/f52cdcce9197fef9d4a68792dd3b840ad2b77117
     cfg_items += [("IMX_DSP", "drivers/firmware/imx/Kconfig")]
 
+    # CONFIG_KPROBES_SANITY_TEST as a module is invalid before https://git.kernel.org/linus/e44e81c5b90f698025eadceb7eef8661eda117d5
+    cfg_items += [("KPROBES_SANITY_TEST", "lib/Kconfig.debug")]
+
     # CONFIG_PCI_DRA7XX{,_HOST,_EP} as modules is invalid before https://git.kernel.org/linus/3b868d150efd3c586762cee4410cfc75f46d2a07
     # CONFIG_PCI_EXYNOS as a module is invalid before https://git.kernel.org/linus/778f7c194b1dac351d345ce723f8747026092949
     # CONFIG_PCI_MESON as a module is invalid before https://git.kernel.org/linus/a98d2187efd9e6d554efb50e3ed3a2983d340fe5
