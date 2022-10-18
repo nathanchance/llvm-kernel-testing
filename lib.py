@@ -735,6 +735,9 @@ def setup_config(sc_cfg):
     cfg_items += [("CRYPTO_BLAKE2S_ARM", "arch/arm/crypto/Kconfig")]
     cfg_items += [("CRYPTO_BLAKE2S_X86", "crypto/Kconfig")]
 
+    # CONFIG_DAX as a module is invalid after https://git.kernel.org/next/linux-next/c/47ff0a68f6be7961879ee267485f8c7720932985
+    cfg_items += [("DAX", "drivers/dax/Kconfig")]
+
     # CONFIG_DRM_GEM_{CMA,SHMEM}_HELPER as modules is invalid before https://git.kernel.org/linus/4b2b5e142ff499a2bef2b8db0272bbda1088a3fe
     for drm_helper in ["CMA", "SHMEM"]:
         # These are not user selectable symbols so unset them and let Kconfig set them as necessary.
