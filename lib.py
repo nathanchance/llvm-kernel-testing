@@ -143,6 +143,27 @@ def create_version_code(version):
     return int("{:d}{:02d}{:03d}".format(major, minor, patch))
 
 
+def create_binutils_version_code(as_exec):
+    """
+    Turns the version of binutils being used to build the kernel into an
+    integer with at least six digits.
+
+    Parameters:
+        as_exec (Path): A Path object pointing to the 'as' binary to get the
+                        version from.
+
+    Returns:
+        An integer with at least six digits.
+    """
+    as_output = capture_cmd([as_exec, "--version"]).split("\n")[0]
+    # "GNU assembler (GNU Binutils) 2.39.50.20221024" -> "2.39.50.20221024" -> ['2', '39', '50']
+    # "GNU assembler version 2.39-3.fc38" -> "2.39-3.fc38" -> ['2.39'] -> ['2', '39'] -> ['2', '39', '0']
+    version_list = as_output.split(" ")[-1].split("-")[0].split(".")[0:3]
+    if len(version_list) == 2:
+        version_list += ['0']
+    return create_version_code(version_list)
+
+
 def create_linux_version_code(linux_folder):
     """
     Turns the version of the Linux kernel being compiled into an integer with
@@ -154,8 +175,8 @@ def create_linux_version_code(linux_folder):
     Returns:
         An integer with at least six digits.
     """
-    version_tuple = get_kernelversion(linux_folder).split("-")[0].split(".")
-    return create_version_code(version_tuple)
+    version_list = get_kernelversion(linux_folder).split("-")[0].split(".")
+    return create_version_code(version_list)
 
 
 def create_llvm_version_code():
@@ -170,8 +191,8 @@ def create_llvm_version_code():
     clang_input = "__clang_major__ __clang_minor__ __clang_patchlevel__"
     clang_output = capture_cmd(clang_cmd, input=clang_input)
 
-    version_tuple = clang_output.split("\n")[-2].split(" ")
-    return create_version_code(version_tuple)
+    version_list = clang_output.split("\n")[-2].split(" ")
+    return create_version_code(version_list)
 
 
 def create_qemu_version_code(qemu_exec):
@@ -185,8 +206,8 @@ def create_qemu_version_code(qemu_exec):
     Returns:
         An integer with at least six digits.
     """
-    version_tuple = get_qemu_version(qemu_exec).split(".")
-    return create_version_code(version_tuple)
+    version_list = get_qemu_version(qemu_exec).split(".")
+    return create_version_code(version_list)
 
 
 def gen_allconfig(build_folder, configs):

@@ -33,7 +33,13 @@ def build_defconfigs(self, cfg):
 
 
 def build_otherconfigs(self, cfg):
-    for other_cfg in ["allmodconfig", "allnoconfig", "tinyconfig"]:
+    other_cfgs = ["allmodconfig"]
+    skipped_cfgs = []
+    if self.binutils_version_code < 239050:
+        other_cfgs += ["allnoconfig", "tinyconfig"]
+    else:
+        skipped_cfgs += ["allnoconfig", "tinyconfig"]
+    for other_cfg in other_cfgs:
         log_str = f"s390 {other_cfg}"
         if other_cfg == "allmodconfig":
             configs = []
@@ -60,6 +66,12 @@ def build_otherconfigs(self, cfg):
         if config_path:
             Path(config_path).unlink()
             del self.make_variables["KCONFIG_ALLCONFIG"]
+    if skipped_cfgs:
+        for skipped_cfg in skipped_cfgs:
+            lib.log(
+                cfg,
+                f"s390 {skipped_cfg} skipped due to binutils linker error (https://github.com/ClangBuiltLinux/linux/issues/1747)"
+            )
 
 
 def build_distroconfigs(self, cfg):
@@ -153,6 +165,7 @@ class S390:
             return
 
         cross_compile = "s390x-linux-gnu-"
+        self.binutils_version_code = lib.create_binutils_version_code(f"{cross_compile}as")
         self.make_variables["ARCH"] = "s390"
 
         for variable in ["LD", "OBJCOPY", "OBJDUMP"]:
