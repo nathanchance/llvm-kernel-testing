@@ -137,6 +137,9 @@ def check_for_configs(linux_folder):
             if search(f"config {config}", file_text):
                 configs_present += [f"CONFIG_{config}"]
 
+    if linux_folder.joinpath("lib", "Kconfig.kmsan").exists():
+        configs_present += ["CONFIG_KMSAN"]
+
     return configs_present
 
 

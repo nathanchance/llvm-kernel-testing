@@ -79,6 +79,10 @@ def build_otherconfigs(self, cfg):
         # https://github.com/ClangBuiltLinux/linux/issues/1704
         if self.llvm_version_code >= 1600000 and not has_tsan_mem_funcs(self.linux_folder):
             configs += ["CONFIG_KCSAN"]
+            if should_disable_kmsan(self.linux_folder, self.configs_present):
+                configs += [
+                    "CONFIG_KMSAN", "(https://github.com/ClangBuiltLinux/linux/issues/1741)"
+                ]
         if "CONFIG_WERROR" in self.configs_present:
             configs += ["CONFIG_WERROR"]
         config_path, config_str = lib.gen_allconfig(self.build_folder, configs)
@@ -188,6 +192,13 @@ def has_d5cbd80e302df(linux_folder):
 def has_tsan_mem_funcs(linux_folder):
     with open(linux_folder.joinpath("kernel", "kcsan", "core.c")) as f:
         return search("__tsan_memset", f.read())
+
+
+# https://github.com/ClangBuiltLinux/linux/issues/1741
+def should_disable_kmsan(linux_folder, configs_present):
+    if "CONFIG_KMSAN" in configs_present:
+        return not linux_folder.joinpath("include", "linux", "kmsan_string.h").exists()
+    return False
 
 
 class X86_64:
