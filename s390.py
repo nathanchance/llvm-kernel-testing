@@ -35,7 +35,7 @@ def build_defconfigs(self, cfg):
 def build_otherconfigs(self, cfg):
     other_cfgs = ["allmodconfig"]
     skipped_cfgs = []
-    if self.binutils_version_code < 239050:
+    if self.binutils_version_code < 239050 or not is_relocatable_a_choice(self.linux_folder):
         other_cfgs += ["allnoconfig", "tinyconfig"]
     else:
         skipped_cfgs += ["allnoconfig", "tinyconfig"]
@@ -70,7 +70,7 @@ def build_otherconfigs(self, cfg):
         for skipped_cfg in skipped_cfgs:
             lib.log(
                 cfg,
-                f"s390 {skipped_cfg} skipped due to binutils linker error (https://github.com/ClangBuiltLinux/linux/issues/1747)"
+                f"s390 {skipped_cfg} skipped due to linker error with CONFIG_RELOCATABLE=n (https://github.com/ClangBuiltLinux/linux/issues/1747)"
             )
 
 
@@ -118,6 +118,11 @@ def has_integrated_as_support(linux_folder):
         return search("ifndef CONFIG_AS_IS_LLVM", f.read())
     with open(linux_folder.joinpath("arch", "s390", "kernel", "entry.S")) as f:
         return search("ifdef CONFIG_AS_IS_LLVM", f.read())
+
+
+def is_relocatable_a_choice(linux_folder):
+    with open(linux_folder.joinpath("arch", "s390", "Kconfig")) as f:
+        return search("config RELOCATABLE\n\tbool", f.read())
 
 
 class S390:
