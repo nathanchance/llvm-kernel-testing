@@ -122,7 +122,7 @@ def has_integrated_as_support(linux_folder):
 
 def is_relocatable_a_choice(linux_folder):
     with open(linux_folder.joinpath("arch", "s390", "Kconfig")) as f:
-        return search("config RELOCATABLE\n\tbool", f.read())
+        return search('config RELOCATABLE\n\tbool "', f.read())
 
 
 class S390:
