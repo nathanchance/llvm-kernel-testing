@@ -1,10 +1,7 @@
-# Run shellcheck, shfmt, and yapf
 name: Lint checks
 on: [push, pull_request]
 jobs:
-  shellcheck:
-    uses: ClangBuiltLinux/actions-workflows/.github/workflows/shellcheck.yml@main
-  shfmt:
-    uses: ClangBuiltLinux/actions-workflows/.github/workflows/shfmt.yml@main
+  fish:
+    uses: nathanchance/actions-workflows/.github/workflows/fish_format.yml@main
   yapf:
     uses: ClangBuiltLinux/actions-workflows/.github/workflows/yapf.yml@main
