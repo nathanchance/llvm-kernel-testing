@@ -864,6 +864,17 @@ def setup_config(sc_cfg):
     if mfd_arizona_is_m and not has_33d550701b915:
         sc_args += ["-e", "MFD_ARIZONA"]
 
+    # CONFIG_USB_FOTG210_{HCD,UDC} as modules is invalid after https://git.kernel.org/gregkh/usb/c/aeffd2c3b09f4f50438ec8960095129798bcb33a
+    # Done manually because 'tristate'/'bool' is not right after 'config USB_FOTG210_UDC'...
+    # This file check is good enough, as patch 1 adds this file and patch 2 is
+    # the one that changes the symbols from 'tristate' to 'bool'. Due to the
+    # nature of the changes, the two patches *should* always be together (i.e.,
+    # it is not expected that patch 1 shows up somewhere without patch 2...).
+    if linux_folder.joinpath("drivers", "usb", "fotg210", "Kconfig").exists():
+        for usb_fotg_sym in [f"USB_FOTG210_{s}" for s in ["HCD", "UDC"]]:
+            if is_modular(linux_folder, build_folder, usb_fotg_sym):
+                sc_args += ["-e", usb_fotg_sym]
+
     if sc_args:
         scripts_config(linux_folder, build_folder, ["-k"] + sc_args)
 
