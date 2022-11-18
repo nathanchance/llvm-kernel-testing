@@ -32,23 +32,23 @@ supported_architectures = [
 class ArchitectureFactory:
 
     def get(self, arch, cfg):
-        if arch == "arm":
+        if arch == 'arm':
             return ARM(cfg)
-        if arch == "arm64":
+        if arch == 'arm64':
             return ARM64(cfg)
-        if arch == "hexagon":
+        if arch == 'hexagon':
             return HEXAGON(cfg)
-        if arch == "i386":
+        if arch == 'i386':
             return I386(cfg)
-        if arch == "mips":
+        if arch == 'mips':
             return MIPS(cfg)
-        if arch == "powerpc":
+        if arch == 'powerpc':
             return POWERPC(cfg)
-        if arch == "riscv":
+        if arch == 'riscv':
             return RISCV(cfg)
-        if arch == "s390":
+        if arch == 's390':
             return S390(cfg)
-        if arch == "x86_64":
+        if arch == 'x86_64':
             return X86_64(cfg)
 
 
@@ -64,7 +64,7 @@ def add_to_path(folder):
         folder = Path(folder)
         if not folder.exists():
             raise FileNotFoundError(f"Supplied folder ('{folder}') does not exist?")
-        bin_folder = folder.joinpath("bin")
+        bin_folder = folder.joinpath('bin')
         if not bin_folder.exists():
             raise FileNotFoundError(
                 f"Supplied folder ('{folder}') does not have a 'bin' folder in it?")
@@ -81,7 +81,7 @@ def build_kernels(cfg):
         cfg (dict): Global configuration dictionary
     """
     arch_factory = ArchitectureFactory()
-    for arch_name in cfg["architectures"]:
+    for arch_name in cfg['architectures']:
         arch = arch_factory.get(arch_name, cfg)
 
         if not arch.clang_supports_target():
@@ -106,8 +106,8 @@ def check_for_commits(linux_folder):
     """
     commits_present = []
 
-    if linux_folder.joinpath("scripts", "Makefile.clang").exists():
-        commits_present += ["6f5b41a2f5a63"]
+    if linux_folder.joinpath('scripts', 'Makefile.clang').exists():
+        commits_present += ['6f5b41a2f5a63']
 
     return commits_present
 
@@ -125,20 +125,20 @@ def check_for_configs(linux_folder):
     """
     configs_present = []
 
-    with open(linux_folder.joinpath("arch", "Kconfig")) as f:
+    with open(linux_folder.joinpath('arch', 'Kconfig')) as f:
         file_text = f.read()
-        for config in ["LTO_CLANG_THIN", "CFI_CLANG"]:
+        for config in ['LTO_CLANG_THIN', 'CFI_CLANG']:
             if search(f"config {config}", file_text):
                 configs_present += [f"CONFIG_{config}"]
 
     with open(linux_folder.joinpath("init", "Kconfig")) as f:
         file_text = f.read()
-        for config in ["WERROR"]:
+        for config in ['WERROR']:
             if search(f"config {config}", file_text):
                 configs_present += [f"CONFIG_{config}"]
 
-    if linux_folder.joinpath("lib", "Kconfig.kmsan").exists():
-        configs_present += ["CONFIG_KMSAN"]
+    if linux_folder.joinpath('lib', 'Kconfig.kmsan').exists():
+        configs_present += ['CONFIG_KMSAN']
 
     return configs_present
 
@@ -153,10 +153,10 @@ def clone_update_boot_utils(boot_utils_folder):
     if not boot_utils_folder.exists():
         boot_utils_folder.parent.mkdir(exist_ok=True, parents=True)
         git_clone = [
-            "git", "clone", "https://github.com/ClangBuiltLinux/boot-utils", boot_utils_folder
+            'git', 'clone', 'https://github.com/ClangBuiltLinux/boot-utils', boot_utils_folder
         ]
         run(git_clone, check=True)
-    git_pull = ["git", "-C", boot_utils_folder, "pull", "--no-edit"]
+    git_pull = ['git', '-C', boot_utils_folder, 'pull', '--no-edit']
     run(git_pull, check=True)
 
 
@@ -168,13 +168,13 @@ def format_logs(cfg):
     Parameters:
         cfg (dict): Global configuration dictionary
     """
-    str_to_remove = cfg["linux_folder"].as_posix() + "/"
-    logs = cfg["logs"]
+    str_to_remove = cfg['linux_folder'].as_posix() + '/'
+    logs = cfg['logs']
 
     for key, file in logs.items():
         if Path(file).exists():
             # Trim trailing new line by truncating by one byte.
-            with open(file, "rb+") as f:
+            with open(file, 'rb+') as f:
                 f.seek(-1, SEEK_END)
                 f.truncate()
 
@@ -182,8 +182,8 @@ def format_logs(cfg):
             # if building in tree.
             with open(file) as f:
                 old_log = f.read()
-                new_log = old_log.replace(str_to_remove, "")
-            with open(file, "w") as f:
+                new_log = old_log.replace(str_to_remove, '')
+            with open(file, 'w') as f:
                 f.write(new_log)
 
 
@@ -209,48 +209,48 @@ def initial_config_and_setup(args):
     log_folder.mkdir(exist_ok=True, parents=True)
 
     cfg = {
-        "architectures": args.architectures,
-        "commits_present": check_for_commits(linux_folder),
-        "configs_folder": base_folder.joinpath("configs"),
-        "configs_present": check_for_configs(linux_folder),
-        "linux_folder": linux_folder,
-        "log_folder": log_folder,
-        "logs": {},
-        "targets_to_build": args.targets_to_build,
-        "save_objects": args.save_objects,
+        'architectures': args.architectures,
+        'commits_present': check_for_commits(linux_folder),
+        'configs_folder': base_folder.joinpath('configs'),
+        'configs_present': check_for_configs(linux_folder),
+        'linux_folder': linux_folder,
+        'log_folder': log_folder,
+        'logs': {},
+        'targets_to_build': args.targets_to_build,
+        'save_objects': args.save_objects,
     }
 
     for log in ['failed', 'info', 'skipped', 'success']:
-        cfg["logs"][log] = log_folder.joinpath(f"{log}.log")
+        cfg['logs'][log] = log_folder.joinpath(f"{log}.log")
 
     for prefix in [args.binutils_prefix, args.llvm_prefix, args.tc_prefix, args.qemu_prefix]:
         add_to_path(prefix)
 
     build_folder = args.build_folder
     if not build_folder:
-        build_folder = linux_folder.joinpath("build")
-    cfg["build_folder"] = Path(build_folder)
+        build_folder = linux_folder.joinpath('build')
+    cfg['build_folder'] = Path(build_folder)
 
     # Ensure PATH has been updated with proper folders above before creating
     # these.
-    cfg["linux_version_code"] = lib.create_linux_version_code(linux_folder)
-    cfg["llvm_version_code"] = lib.create_llvm_version_code()
+    cfg['linux_version_code'] = lib.create_linux_version_code(linux_folder)
+    cfg['llvm_version_code'] = lib.create_llvm_version_code()
 
     boot_utils_folder = Path(args.boot_utils_folder)
     if lib.is_relative_to(boot_utils_folder, base_folder):
-        lib.header("Updating boot-utils")
+        lib.header('Updating boot-utils')
         clone_update_boot_utils(boot_utils_folder)
-    cfg["boot_utils_folder"] = boot_utils_folder
+    cfg['boot_utils_folder'] = boot_utils_folder
 
     make_variables = {}
-    if args.use_ccache and which("ccache"):
-        make_variables["CC"] = "ccache clang"
-        make_variables["HOSTCC"] = "ccache clang"
-    if which("pbzip2"):
-        make_variables["KBZIP2"] = "pbzip2"
-    if which("pigz"):
-        make_variables["KGZIP"] = "pigz"
-    cfg["make_variables"] = make_variables
+    if args.use_ccache and which('ccache'):
+        make_variables['CC'] = 'ccache clang'
+        make_variables['HOSTCC'] = 'ccache clang'
+    if which('pbzip2'):
+        make_variables['KBZIP2'] = 'pbzip2'
+    if which('pigz'):
+        make_variables['KGZIP'] = 'pigz'
+    cfg['make_variables'] = make_variables
 
     return cfg
 
@@ -272,62 +272,62 @@ def parse_arguments():
     """
     parser = ArgumentParser()
 
-    parser.add_argument("-a",
-                        "--architectures",
+    parser.add_argument('-a',
+                        '--architectures',
                         choices=supported_architectures,
                         default=supported_architectures,
-                        metavar="ARCH",
-                        nargs="+",
-                        help="Architectures to build for (default: %(default)s).")
+                        metavar='ARCH',
+                        nargs='+',
+                        help='Architectures to build for (default: %(default)s).')
     parser.add_argument(
-        "-b",
-        "--build-folder",
+        '-b',
+        '--build-folder',
         type=str,
         help="Path to build folder (default: 'build' folder in Linux kernel source folder).")
     parser.add_argument(
-        "--binutils-prefix",
+        '--binutils-prefix',
         type=str,
         help=
         "Path to binutils installation (parent of 'bin' folder, default: Use binutils from PATH).")
-    parser.add_argument("--boot-utils-folder",
-                        default=base_folder.joinpath("src", "boot-utils"),
+    parser.add_argument('--boot-utils-folder',
+                        default=base_folder.joinpath('src', 'boot-utils'),
                         type=str,
-                        help="Path to boot-utils folder (default: %(default)s).")
-    parser.add_argument("-l",
-                        "--linux-folder",
+                        help='Path to boot-utils folder (default: %(default)s).')
+    parser.add_argument('-l',
+                        '--linux-folder',
                         required=True,
                         type=str,
-                        help="Path to Linux source folder (required).")
+                        help='Path to Linux source folder (required).')
     parser.add_argument(
-        "--llvm-prefix",
+        '--llvm-prefix',
         type=str,
         help="Path to LLVM installation (parent of 'bin' folder, default: Use LLVM from PATH).")
-    parser.add_argument("--log-folder",
-                        default=base_folder.joinpath("logs",
-                                                     datetime.now().strftime("%Y%m%d-%H%M")),
+    parser.add_argument('--log-folder',
+                        default=base_folder.joinpath('logs',
+                                                     datetime.now().strftime('%Y%m%d-%H%M')),
                         type=str,
-                        help="Folder to store log files in (default: %(default)s).")
-    parser.add_argument("--save-objects",
-                        action="store_true",
-                        help="Save object files (default: Remove build folder).")
-    parser.add_argument("-t",
-                        "--targets-to-build",
+                        help='Folder to store log files in (default: %(default)s).')
+    parser.add_argument('--save-objects',
+                        action='store_true',
+                        help='Save object files (default: Remove build folder).')
+    parser.add_argument('-t',
+                        '--targets-to-build',
                         choices=supported_targets,
                         default=supported_targets,
-                        metavar="TARGETS",
-                        nargs="+",
-                        help="Testing targets to build (default: %(default)s).")
+                        metavar='TARGETS',
+                        nargs='+',
+                        help='Testing targets to build (default: %(default)s).')
     parser.add_argument(
-        "--tc-prefix",
+        '--tc-prefix',
         type=str,
         help=
         "Path to toolchain installation (parent of 'bin' folder, default: Use toolchain from PATH)."
     )
-    parser.add_argument("--use-ccache",
-                        action="store_true",
-                        help="Use ccache for building (default: Do not use ccache).")
+    parser.add_argument('--use-ccache',
+                        action='store_true',
+                        help='Use ccache for building (default: Do not use ccache).')
     parser.add_argument(
-        "--qemu-prefix",
+        '--qemu-prefix',
         type=str,
         help="Path to QEMU installation (parent of 'bin' folder, default: Use QEMU from PATH).")
 
@@ -359,13 +359,13 @@ def report_results(cfg, start_time):
     lib.log(cfg, f"Total script runtime: {lib.get_time_diff(start_time, time())}")
     format_logs(cfg)
 
-    logs = cfg["logs"]
+    logs = cfg['logs']
 
     header_strs = {
-        "info": "Toolchain, kernel, and runtime information",
-        "success": "List of successful tests",
-        "failed": "List of failed tests",
-        "skipped": "List of skipped tests",
+        'info': 'Toolchain, kernel, and runtime information',
+        'success': 'List of successful tests',
+        'failed': 'List of failed tests',
+        'skipped': 'List of skipped tests',
     }
     for key, log_str in header_strs.items():
         log_file = logs[key]
@@ -385,17 +385,17 @@ def tc_lnx_env_info(cfg):
     Parameters:
         cfg (dict): Global configuration dictionary
     """
-    lib.header("Build information")
+    lib.header('Build information')
 
-    log_file = cfg["logs"]["info"]
+    log_file = cfg['logs']['info']
 
-    binutils_version, binutils_location = lib.get_binary_info("as")
-    clang_version, clang_location = lib.get_binary_info("clang")
-    linux_location = cfg["linux_folder"]
+    binutils_version, binutils_location = lib.get_binary_info('as')
+    clang_version, clang_location = lib.get_binary_info('clang')
+    linux_location = cfg['linux_folder']
     linux_version = lib.get_linux_version(linux_location)
     path = environ['PATH']
 
-    with open(log_file, "w") as f:
+    with open(log_file, 'w') as f:
         f.write(f"{clang_version}\n")
         f.write(f"clang location: {clang_location}\n")
         f.write(f"binutils version: {binutils_version}\n")
