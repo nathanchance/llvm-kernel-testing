@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-from copy import deepcopy
-from pathlib import Path
-from platform import machine
-from re import search
-from shutil import rmtree
+import copy
+import pathlib
+import platform
+import re
+import shutil
 
 import lib
 
@@ -84,7 +84,7 @@ def build_otherconfigs(self, cfg):
     rc, time = lib.kmake(kmake_cfg)
     lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time, kmake_cfg['log_file'])
     if config_path:
-        Path(config_path).unlink()
+        pathlib.Path(config_path).unlink()
         del self.make_variables['KCONFIG_ALLCONFIG']
 
     if 'CONFIG_LTO_CLANG_THIN' in self.configs_present:
@@ -109,7 +109,7 @@ def build_otherconfigs(self, cfg):
         rc, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
         if config_path:
-            Path(config_path).unlink()
+            pathlib.Path(config_path).unlink()
             del self.make_variables['KCONFIG_ALLCONFIG']
 
     for cfg_target in ['allnoconfig', 'tinyconfig']:
@@ -186,13 +186,13 @@ def build_cfi_kernel(self, cfg, use_lto=True):
 
 def has_d8e85e144bbe1(linux_folder):
     with open(linux_folder.joinpath('arch', 'arm64', 'Kconfig')) as f:
-        return search('prompt "Endianness"', f.read())
+        return re.search('prompt "Endianness"', f.read())
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/1704
 def has_tsan_mem_funcs(linux_folder):
     with open(linux_folder.joinpath('kernel', 'kcsan', 'core.c')) as f:
-        return search('__tsan_memset', f.read())
+        return re.search('__tsan_memset', f.read())
 
 
 class ARM64:
@@ -206,14 +206,14 @@ class ARM64:
         self.linux_version_code = cfg['linux_version_code']
         self.llvm_version_code = cfg['llvm_version_code']
         self.log_folder = cfg['log_folder']
-        self.make_variables = deepcopy(cfg['make_variables'])
+        self.make_variables = copy.deepcopy(cfg['make_variables'])
         self.save_objects = cfg['save_objects']
         self.targets_to_build = cfg['targets_to_build']
 
     def build(self, cfg):
         self.make_variables['ARCH'] = 'arm64'
 
-        if machine() == 'aarch64':
+        if platform.machine() == 'aarch64':
             cross_compile = ''
         else:
             cross_compile = 'aarch64-linux-gnu-'
@@ -241,7 +241,7 @@ class ARM64:
             build_distroconfigs(self, cfg)
 
         if not self.save_objects:
-            rmtree(self.build_folder)
+            shutil.rmtree(self.build_folder)
 
     def clang_supports_target(self):
         return lib.clang_supports_target('aarch64-linux-gnu')

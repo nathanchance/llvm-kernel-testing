@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-from copy import deepcopy
-from pathlib import Path
-from re import escape, search
-from shutil import rmtree, which
+import copy
+import pathlib
+import re
+import shutil
 
 import lib
 
@@ -154,7 +154,7 @@ def build_otherconfigs(self, cfg):
         rc, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time, kmake_cfg['log_file'])
         if config_path:
-            Path(config_path).unlink()
+            pathlib.Path(config_path).unlink()
             del self.make_variables['KCONFIG_ALLCONFIG']
 
 
@@ -195,39 +195,39 @@ def build_distroconfigs(self, cfg):
 # https://github.com/ClangBuiltLinux/linux/issues/811
 def has_0355785313e21(linux_folder):
     with open(linux_folder.joinpath('arch', 'powerpc', 'Makefile')) as f:
-        return search(escape('LDFLAGS_vmlinux-$(CONFIG_RELOCATABLE) += -z notext'), f.read())
+        return re.search(re.escape('LDFLAGS_vmlinux-$(CONFIG_RELOCATABLE) += -z notext'), f.read())
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/1679
 def has_2255411d1d0f0(linux_folder):
     with open(linux_folder.joinpath('arch', 'powerpc', 'platforms', 'Kconfig.cputype')) as f:
         pattern = 'config POWERPC_CPU\n\tbool "Generic 32 bits powerpc"\n\tdepends on PPC_BOOK3S_32'
-        return search(pattern, f.read())
+        return re.search(pattern, f.read())
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/1160
 def has_231b232df8f67(linux_folder):
     with open(linux_folder.joinpath('arch', 'powerpc', 'platforms', 'Kconfig.cputype')) as f:
-        return search('depends on PPC32 || COMPAT', f.read())
+        return re.search('depends on PPC32 || COMPAT', f.read())
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/563
 def has_297565aa22cfa(linux_folder):
     with open(linux_folder.joinpath('arch', 'powerpc', 'lib', 'xor_vmx.c')) as f:
-        return search('__restrict', f.read())
+        return re.search('__restrict', f.read())
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/1345
 def has_48cf12d88969b(linux_folder):
     with open(linux_folder.joinpath('arch', 'powerpc', 'kernel', 'irq.c')) as f:
-        text = escape('static __always_inline void call_do_softirq(const void *sp)')
-        return search(text, f.read())
+        text = re.escape('static __always_inline void call_do_softirq(const void *sp)')
+        return re.search(text, f.read())
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/1292
 def has_51696f39cbee5(linux_folder):
     with open(linux_folder.joinpath('arch', 'powerpc', 'kvm', 'book3s_hv_nested.c')) as f:
-        return search('noinline_for_stack void byteswap_pt_regs', f.read())
+        return re.search('noinline_for_stack void byteswap_pt_regs', f.read())
 
 
 def has_dwc(linux_folder):
@@ -244,7 +244,7 @@ class POWERPC:
         self.linux_version_code = cfg['linux_version_code']
         self.llvm_version_code = cfg['llvm_version_code']
         self.log_folder = cfg['log_folder']
-        self.make_variables = deepcopy(cfg['make_variables'])
+        self.make_variables = copy.deepcopy(cfg['make_variables'])
         self.save_objects = cfg['save_objects']
         self.targets_to_build = cfg['targets_to_build']
 
@@ -254,7 +254,7 @@ class POWERPC:
         self.make_variables['ARCH'] = 'powerpc'
         for cross_compile in ['powerpc64-linux-gnu-', 'powerpc-linux-gnu-']:
             gnu_as = f"{cross_compile}as"
-            if which(gnu_as):
+            if shutil.which(gnu_as):
                 break
         self.cross_compile = cross_compile
         self.make_variables['CROSS_COMPILE'] = self.cross_compile
@@ -280,7 +280,7 @@ class POWERPC:
             build_distroconfigs(self, cfg)
 
         if not self.save_objects:
-            rmtree(self.build_folder)
+            shutil.rmtree(self.build_folder)
 
     def clang_supports_target(self):
         return lib.clang_supports_target('powerpc-linux-gnu')

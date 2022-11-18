@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-from copy import deepcopy
-from pathlib import Path
-from platform import machine
-from re import escape, search
-from shutil import rmtree
+import copy
+import pathlib
+import platform
+import re
+import shutil
 
 import lib
 
@@ -71,7 +71,7 @@ def build_otherconfigs(self, cfg):
         rc, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time, kmake_cfg['log_file'])
         if config_path:
-            Path(config_path).unlink()
+            pathlib.Path(config_path).unlink()
             del self.make_variables['KCONFIG_ALLCONFIG']
 
 
@@ -110,9 +110,9 @@ def disable_nf_configs(llvm_version_code, linux_folder):
 def fortify_broken(linux_folder):
     with open(linux_folder.joinpath('security', 'Kconfig')) as f:
         text = f.read()
-        bug_one = escape('https://bugs.llvm.org/show_bug.cgi?id=50322')
-        bug_two = escape('https://github.com/llvm/llvm-project/issues/53645')
-        return search(bug_one, text) or search(bug_two, text)
+        bug_one = re.escape('https://bugs.llvm.org/show_bug.cgi?id=50322')
+        bug_two = re.escape('https://github.com/llvm/llvm-project/issues/53645')
+        return re.search(bug_one, text) or re.search(bug_two, text)
 
 
 # https://git.kernel.org/linus/583bfd484bcc85e9371e7205fa9e827c18ae34fb
@@ -121,19 +121,19 @@ def has_583bfd484bcc(linux_folder):
         text = f.read()
         lto = 'select ARCH_SUPPORTS_LTO_CLANG_THIN'
         lto_x86_64 = 'select ARCH_SUPPORTS_LTO_CLANG_THIN\tif X86_64'
-        return search(lto, text) and not search(lto_x86_64, text)
+        return re.search(lto, text) and not re.search(lto_x86_64, text)
 
 
 # https://git.kernel.org/linus/bb73d07148c405c293e576b40af37737faf23a6a
 def has_bb73d07148c40(linux_folder):
     with open(linux_folder.joinpath('arch', 'x86', 'tools', 'relocs.c')) as f:
-        return search('R_386_PLT32:', f.read())
+        return re.search('R_386_PLT32:', f.read())
 
 
 # https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f
 def has_d5cbd80e302df(linux_folder):
     with open(linux_folder.joinpath('arch', 'x86', 'boot', 'compressed', 'Makefile')) as f:
-        return search('CLANG_FLAGS', f.read())
+        return re.search('CLANG_FLAGS', f.read())
 
 
 class I386:
@@ -147,7 +147,7 @@ class I386:
         self.linux_version_code = cfg['linux_version_code']
         self.llvm_version_code = cfg['llvm_version_code']
         self.log_folder = cfg['log_folder']
-        self.make_variables = deepcopy(cfg['make_variables'])
+        self.make_variables = copy.deepcopy(cfg['make_variables'])
         self.save_objects = cfg['save_objects']
         self.targets_to_build = cfg['targets_to_build']
 
@@ -171,7 +171,7 @@ class I386:
 
         self.make_variables['ARCH'] = 'i386'
         self.make_variables['LLVM_IAS'] = '1'
-        if not (machine() == 'i386' or machine() == 'x86_64'):
+        if not (platform.machine() == 'i386' or platform.machine() == 'x86_64'):
             if not has_d5cbd80e302df(self.linux_folder):
                 lib.header('Skipping i386 kernels')
                 print(
@@ -192,7 +192,7 @@ class I386:
             build_distroconfigs(self, cfg)
 
         if not self.save_objects:
-            rmtree(self.build_folder)
+            shutil.rmtree(self.build_folder)
 
     def clang_supports_target(self):
         return lib.clang_supports_target('i386-linux-gnu')

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-from copy import deepcopy
-from pathlib import Path
-from re import escape, search
-from shutil import rmtree, which
+import copy
+import pathlib
+import re
+import shutil
 
 import lib
 
@@ -17,20 +17,20 @@ def disable_be(linux_folder):
         text = f.read()
         first_pattern = 'bool "Build big-endian kernel"'
         second_pattern = 'depends on ARCH_SUPPORTS_BIG_ENDIAN'
-        return not search(f"({first_pattern}|{second_pattern})\n\tdepends on !LD_IS_LLD", text)
+        return not re.search(f"({first_pattern}|{second_pattern})\n\tdepends on !LD_IS_LLD", text)
 
 
 def has_nwfpe_replexitval(linux_folder):
     with open(linux_folder.joinpath('arch', 'arm', 'nwfpe', 'Makefile')) as f:
-        return search('replexitval=never', f.read())
+        return re.search('replexitval=never', f.read())
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/325
 def thumb2_ok(linux_folder):
     with open(linux_folder.joinpath('arch', 'arm', 'Kconfig')) as f:
-        has_9d417cbe36eee = search('select HAVE_FUTEX_CMPXCHG if FUTEX', f.read())
+        has_9d417cbe36eee = re.search('select HAVE_FUTEX_CMPXCHG if FUTEX', f.read())
     with open(linux_folder.joinpath('init', 'Kconfig')) as f:
-        has_3297481d688a5 = not search('config HAVE_FUTEX_CMPXCHG', f.read())
+        has_3297481d688a5 = not re.search('config HAVE_FUTEX_CMPXCHG', f.read())
     return has_9d417cbe36eee or has_3297481d688a5
 
 
@@ -99,7 +99,7 @@ def build_otherconfigs(self, cfg):
         rc, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time, kmake_cfg['log_file'])
         if config_path:
-            Path(config_path).unlink()
+            pathlib.Path(config_path).unlink()
             del self.make_variables['KCONFIG_ALLCONFIG']
 
 
@@ -144,7 +144,7 @@ class ARM:
         self.linux_version_code = cfg['linux_version_code']
         self.llvm_version_code = cfg['llvm_version_code']
         self.log_folder = cfg['log_folder']
-        self.make_variables = deepcopy(cfg['make_variables'])
+        self.make_variables = copy.deepcopy(cfg['make_variables'])
         self.save_objects = cfg['save_objects']
         self.targets_to_build = cfg['targets_to_build']
 
@@ -155,7 +155,7 @@ class ARM:
 
         for cross_compile in ['arm-linux-gnu-', 'arm-linux-gnueabihf-', 'arm-linux-gnueabi-']:
             gnu_as = f"{cross_compile}as"
-            if which(gnu_as):
+            if shutil.which(gnu_as):
                 break
 
         if self.llvm_version_code >= 1300000 and self.linux_version_code >= 513000:
@@ -178,7 +178,7 @@ class ARM:
             build_distroconfigs(self, cfg)
 
         if not self.save_objects:
-            rmtree(self.build_folder)
+            shutil.rmtree(self.build_folder)
 
     def clang_supports_target(self):
         return lib.clang_supports_target('arm-linux-gnueabi')

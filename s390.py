@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-from copy import deepcopy
-from pathlib import Path
-from re import search
-from shutil import rmtree
+import copy
+import pathlib
+import re
+import shutil
 
 import lib
 
@@ -64,7 +64,7 @@ def build_otherconfigs(self, cfg):
         rc, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time, kmake_cfg['log_file'])
         if config_path:
-            Path(config_path).unlink()
+            pathlib.Path(config_path).unlink()
             del self.make_variables["KCONFIG_ALLCONFIG"]
     if skipped_cfgs:
         for skipped_cfg in skipped_cfgs:
@@ -104,25 +104,25 @@ def build_distroconfigs(self, cfg):
 # https://git.kernel.org/linus/925d046e7e52c71c3531199ce137e141807ef740
 def has_925d046e7e52(linux_folder):
     with open(linux_folder.joinpath('drivers', 'infiniband', 'core', 'cma.c')) as f:
-        return search('static void cma_netevent_work_handler', f.read())
+        return re.search('static void cma_netevent_work_handler', f.read())
 
 
 # https://git.kernel.org/linus/efe5e0fea4b24872736c62a0bcfc3f99bebd2005
 def has_efe5e0fea4b24(linux_folder):
     with open(linux_folder.joinpath('arch', 's390', 'include', 'asm', 'bitops.h')) as f:
-        return not search('"(o|n|x)i\t%0,%b1\\\\n"', f.read())
+        return not re.search('"(o|n|x)i\t%0,%b1\\\\n"', f.read())
 
 
 def has_integrated_as_support(linux_folder):
     with open(linux_folder.joinpath('arch', 's390', 'Makefile')) as f:
-        return search('ifndef CONFIG_AS_IS_LLVM', f.read())
+        return re.search('ifndef CONFIG_AS_IS_LLVM', f.read())
     with open(linux_folder.joinpath('arch', 's390', 'kernel', 'entry.S')) as f:
-        return search('ifdef CONFIG_AS_IS_LLVM', f.read())
+        return re.search('ifdef CONFIG_AS_IS_LLVM', f.read())
 
 
 def is_relocatable_a_choice(linux_folder):
     with open(linux_folder.joinpath('arch', 's390', 'Kconfig')) as f:
-        return search('config RELOCATABLE\n\tbool "', f.read())
+        return re.search('config RELOCATABLE\n\tbool "', f.read())
 
 
 class S390:
@@ -136,7 +136,7 @@ class S390:
         self.llvm_version_code = cfg['llvm_version_code']
         self.linux_version_code = cfg['linux_version_code']
         self.log_folder = cfg['log_folder']
-        self.make_variables = deepcopy(cfg['make_variables'])
+        self.make_variables = copy.deepcopy(cfg['make_variables'])
         self.qemu_exec = 'qemu-system-s390x'
         self.qemu_version_code = lib.create_qemu_version_code(self.qemu_exec)
         self.save_objects = cfg['save_objects']
@@ -197,7 +197,7 @@ class S390:
             build_distroconfigs(self, cfg)
 
         if not self.save_objects:
-            rmtree(self.build_folder)
+            shutil.rmtree(self.build_folder)
 
     def clang_supports_target(self):
         return lib.clang_supports_target('s390x-linux-gnu')

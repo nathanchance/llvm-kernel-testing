@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
-from collections import OrderedDict
-from datetime import timedelta
-from os import sched_getaffinity
-from pathlib import Path
-from re import search
-from shutil import copyfile, rmtree, which
-from subprocess import DEVNULL, PIPE, Popen, run, STDOUT
-from sys import stderr, stdout, version_info
-from tempfile import mkstemp
-from time import time
+import collections
+import datetime
+import os
+import pathlib
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
 
 
 def boot_qemu(cfg, arch, log_str, build_folder, kernel_available):
@@ -28,9 +28,9 @@ def boot_qemu(cfg, arch, log_str, build_folder, kernel_available):
         boot_qemu_py = cfg['boot_utils_folder'].joinpath('boot-qemu.py').as_posix()
         cmd = [boot_qemu_py, '-a', arch, '-k', build_folder.as_posix()]
         pretty_print_cmd(cmd)
-        stderr.flush()
-        stdout.flush()
-        result = run(cmd)
+        sys.stderr.flush()
+        sys.stdout.flush()
+        result = subprocess.run(cmd)
         if result.returncode == 0:
             result_str = 'successful'
         else:
@@ -53,7 +53,7 @@ def can_be_modular(kconfig_file, cfg_sym):
     """
     if kconfig_file.exists():
         with open(kconfig_file) as f:
-            return search(f"config {cfg_sym}\n\ttristate", f.read())
+            return re.search(f"config {cfg_sym}\n\ttristate", f.read())
     return False
 
 
@@ -69,7 +69,8 @@ def capture_cmd(cmd, cwd=None, input=None):
     Returns:
         Output of cmd
     """
-    return run(cmd, capture_output=True, check=True, cwd=cwd, input=input, text=True).stdout
+    return subprocess.run(cmd, capture_output=True, check=True, cwd=cwd, input=input,
+                          text=True).stdout
 
 
 def check_binutils(cfg, arch, cross_compile):
@@ -83,7 +84,7 @@ def check_binutils(cfg, arch, cross_compile):
     Returns:
         True if binutils is available in PATH, False if not.
     """
-    if which(f"{cross_compile}as"):
+    if shutil.which(f"{cross_compile}as"):
         return True
     else:
         msg = f"{arch} kernels skipped due to missing binutils"
@@ -100,7 +101,11 @@ def clang_supports_target(target):
         target (str): Target string to test.
     """
     clang_cmd = ['clang', f"--target={target}", '-c', '-x', 'c', '-', '-o', '/dev/null']
-    clang = run(clang_cmd, input='', stderr=DEVNULL, stdout=DEVNULL, text=True)
+    clang = subprocess.run(clang_cmd,
+                           input='',
+                           stderr=subprocess.DEVNULL,
+                           stdout=subprocess.DEVNULL,
+                           text=True)
     return clang.returncode == 0
 
 
@@ -227,7 +232,7 @@ def gen_allconfig(build_folder, configs):
     log_str = ''
 
     if configs:
-        config_file, config_path = mkstemp(dir=build_folder, text=True)
+        config_file, config_path = tempfile.mkstemp(dir=build_folder, text=True)
         with open(config_file, 'w') as f:
             for item in configs:
                 if 'CONFIG_' in item:
@@ -257,7 +262,7 @@ def get_binary_info(binary):
         A tuple of the version string and installation location as strings.
     """
     version = capture_cmd([binary, '--version']).split('\n')[0]
-    location = Path(which(binary)).parent
+    location = pathlib.Path(shutil.which(binary)).parent
 
     return version, location
 
@@ -300,7 +305,7 @@ def get_linux_version(linux_folder):
 
     localversion = capture_cmd(['scripts/setlocalversion'], cwd=linux_folder)
 
-    rmtree(include_config, ignore_errors=True)
+    shutil.rmtree(include_config, ignore_errors=True)
 
     return f"Linux {kernelversion}{localversion}"
 
@@ -330,7 +335,7 @@ def get_time_diff(start_time, end_time):
     Returns:
         A string with the length of time between the two times.
     """
-    return timedelta(seconds=int(end_time - start_time))
+    return datetime.timedelta(seconds=int(end_time - start_time))
 
 
 def has_kcfi(linux_folder):
@@ -344,7 +349,7 @@ def has_kcfi(linux_folder):
         True if kCFI is present, false if not.
     """
     with open(linux_folder.joinpath('arch', 'Kconfig')) as f:
-        return search('fsanitize=kcfi', f.read())
+        return re.search('fsanitize=kcfi', f.read())
 
 
 def header(hdr_str, end='\n'):
@@ -361,7 +366,7 @@ def header(hdr_str, end='\n'):
     for x in range(0, len(hdr_str) + 6):
         print('=', end='')
     print('\n\033[0m', end=end)
-    stdout.flush()
+    sys.stdout.flush()
 
 
 def is_modular(linux_folder, build_folder, cfg_sym):
@@ -391,7 +396,7 @@ def is_relative_to(path_one, path_two):
     Returns:
         Ttrue
     """
-    if version_info >= (3, 9):
+    if sys.version_info >= (3, 9):
         return path_one.is_relative_to(path_two)
     else:
         try:
@@ -449,7 +454,7 @@ def kmake(kmake_cfg):
     variables = kmake_cfg['variables']
     targets = kmake_cfg['targets']
 
-    cores = len(sched_getaffinity(0))
+    cores = len(os.sched_getaffinity(0))
 
     make_flags = ['-C', linux_folder.as_posix()]
     make_flags += [f"-skj{cores}"]
@@ -467,7 +472,7 @@ def kmake(kmake_cfg):
     }
     if variables:
         make_variables_dict.update(variables)
-    make_variables_dict = OrderedDict(sorted(make_variables_dict.items()))
+    make_variables_dict = collections.OrderedDict(sorted(make_variables_dict.items()))
     for key, value in make_variables_dict.items():
         make_variables += [f"{key}={value}"]
 
@@ -476,21 +481,22 @@ def kmake(kmake_cfg):
     make_cmd = ['make'] + make_flags + make_variables + make_targets
 
     pretty_print_cmd(make_cmd)
-    start_time = time()
-    stderr.flush()
-    stdout.flush()
-    with Popen(make_cmd, stderr=STDOUT, stdout=PIPE) as p, open(log_file, 'bw') as f:
+    start_time = time.time()
+    sys.stderr.flush()
+    sys.stdout.flush()
+    with subprocess.Popen(make_cmd, stderr=subprocess.STDOUT,
+                          stdout=subprocess.PIPE) as p, open(log_file, 'bw') as f:
         while True:
             byte = p.stdout.read(1)
             if byte:
-                stdout.buffer.write(byte)
-                stdout.flush()
+                sys.stdout.buffer.write(byte)
+                sys.stdout.flush()
                 f.write(byte)
             else:
                 break
     result = p.returncode
 
-    command_time = get_time_diff(start_time, time())
+    command_time = get_time_diff(start_time, time.time())
     print(f"\nReal\t{command_time}")
 
     return p.returncode, command_time
@@ -549,7 +555,7 @@ def log_result(cfg, log_str, success, time, build_log):
     if not success:
         with open(build_log) as f:
             for line in f:
-                if search('error:|warning:|undefined', line):
+                if re.search('error:|warning:|undefined', line):
                     msg += f"\n{line.strip()}"
     log(cfg, msg)
 
@@ -658,7 +664,7 @@ def scripts_config(linux_folder, build_folder, args, capture_output=False):
     if capture_output:
         return capture_cmd(cmd)
     pretty_print_cmd(cmd)
-    run(cmd, check=True)
+    subprocess.run(cmd, check=True)
 
 
 def setup_config(sc_cfg):
@@ -678,13 +684,13 @@ def setup_config(sc_cfg):
     sc_args = []
 
     # Clean up build folder
-    rmtree(build_folder, ignore_errors=True)
+    shutil.rmtree(build_folder, ignore_errors=True)
     build_folder.mkdir(parents=True)
 
     # Copy '.config'
     config_dst = build_folder.joinpath('.config')
     pretty_print_cmd(['cp', config_file.as_posix(), config_dst.as_posix()])
-    copyfile(config_file, config_dst)
+    shutil.copyfile(config_file, config_dst)
 
     # CONFIG_DEBUG_INFO_BTF has two conditions:
     #
@@ -697,7 +703,7 @@ def setup_config(sc_cfg):
     # that the build does not error.
     debug_info_btf = 'DEBUG_INFO_BTF'
     debug_info_btf_y = is_set(linux_folder, build_folder, debug_info_btf)
-    pahole_available = which('pahole')
+    pahole_available = shutil.which('pahole')
     if debug_info_btf_y and not (pahole_available and linux_version_code >= 507000):
         log_cfgs += [debug_info_btf]
         sc_args += ['-d', debug_info_btf]
@@ -859,7 +865,7 @@ def setup_config(sc_cfg):
     # CONFIG_MFD_ARIZONA as a module is invalid before https://git.kernel.org/linus/33d550701b915938bd35ca323ee479e52029adf2
     # Done manually because 'tristate'/'bool' is not right after 'config MFD_ARIZONA'...
     with open(linux_folder.joinpath('drivers', 'mfd', 'Makefile')) as f:
-        has_33d550701b915 = search('arizona-objs', f.read())
+        has_33d550701b915 = re.search('arizona-objs', f.read())
     mfd_arizona_is_m = is_modular(linux_folder, build_folder, 'MFD_ARIZONA')
     if mfd_arizona_is_m and not has_33d550701b915:
         sc_args += ['-e', 'MFD_ARIZONA']

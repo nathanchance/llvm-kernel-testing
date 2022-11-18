@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-from copy import deepcopy
-from pathlib import Path
-from re import escape, search
-from shutil import rmtree
+import copy
+import pathlib
+import re
+import shutil
 
 import lib
 
@@ -40,13 +40,13 @@ def build_otherconfigs(self, cfg):
         rc, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time, kmake_cfg['log_file'])
         if config_path:
-            Path(config_path).unlink()
+            pathlib.Path(config_path).unlink()
             del self.make_variables['KCONFIG_ALLCONFIG']
 
 
 def has_ffb92ce826fd8(linux_folder):
     with open(linux_folder.joinpath('arch', 'hexagon', 'lib', 'io.c')) as f:
-        return search(escape('EXPORT_SYMBOL(__raw_readsw)'), f.read())
+        return re.search(re.escape('EXPORT_SYMBOL(__raw_readsw)'), f.read())
 
 
 class HEXAGON:
@@ -58,7 +58,7 @@ class HEXAGON:
         self.linux_folder = cfg['linux_folder']
         self.llvm_version_code = cfg['llvm_version_code']
         self.log_folder = cfg['log_folder']
-        self.make_variables = deepcopy(cfg['make_variables'])
+        self.make_variables = copy.deepcopy(cfg['make_variables'])
         self.save_objects = cfg['save_objects']
         self.targets_to_build = cfg['targets_to_build']
 
@@ -69,7 +69,7 @@ class HEXAGON:
             self.make_variables['CROSS_COMPILE'] = 'hexagon-linux-musl-'
 
         with open(self.linux_folder.joinpath('arch', 'hexagon', 'Makefile')) as f:
-            has_788dcee0306e1 = search(escape('KBUILD_CFLAGS += -mlong-calls'), f.read())
+            has_788dcee0306e1 = re.search(re.escape('KBUILD_CFLAGS += -mlong-calls'), f.read())
             has_f1f99adf05f21 = self.linux_folder.joinpath('arch', 'hexagon', 'lib',
                                                            'divsi3.S').exists()
             if not (has_788dcee0306e1 and has_f1f99adf05f21):
@@ -95,7 +95,7 @@ class HEXAGON:
             build_otherconfigs(self, cfg)
 
         if not self.save_objects:
-            rmtree(self.build_folder)
+            shutil.rmtree(self.build_folder)
 
     def clang_supports_target(self):
         return lib.clang_supports_target('hexagon-linux-musl')

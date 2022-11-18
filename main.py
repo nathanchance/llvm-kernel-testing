@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 
-from argparse import ArgumentParser
-from datetime import datetime
-from os import environ, SEEK_END
-from pathlib import Path
-from re import search
-from shutil import which
-from signal import signal, SIGINT
-from subprocess import run
-from time import time
+import argparse
+import datetime
+import os
+import pathlib
+import re
+import shutil
+import signal
+import subprocess
+import time
 
 from arm import ARM
 from arm64 import ARM64
@@ -22,7 +22,7 @@ from x86_64 import X86_64
 
 import lib
 
-base_folder = Path(__file__).resolve().parent
+base_folder = pathlib.Path(__file__).resolve().parent
 supported_targets = ['def', 'other', 'distro']
 supported_architectures = [
     'arm', 'arm64', 'hexagon', 'i386', 'mips', 'powerpc', 'riscv', 's390', 'x86_64'
@@ -61,15 +61,15 @@ def add_to_path(folder):
                       added to PATH.
     """
     if folder:
-        folder = Path(folder)
+        folder = pathlib.Path(folder)
         if not folder.exists():
             raise FileNotFoundError(f"Supplied folder ('{folder}') does not exist?")
         bin_folder = folder.joinpath('bin')
         if not bin_folder.exists():
             raise FileNotFoundError(
                 f"Supplied folder ('{folder}') does not have a 'bin' folder in it?")
-        if not bin_folder.as_posix() in environ['PATH']:
-            environ['PATH'] = f"{bin_folder}:" + environ['PATH']
+        if not bin_folder.as_posix() in os.environ['PATH']:
+            os.environ['PATH'] = f"{bin_folder}:" + os.environ['PATH']
 
 
 def build_kernels(cfg):
@@ -128,13 +128,13 @@ def check_for_configs(linux_folder):
     with open(linux_folder.joinpath('arch', 'Kconfig')) as f:
         file_text = f.read()
         for config in ['LTO_CLANG_THIN', 'CFI_CLANG']:
-            if search(f"config {config}", file_text):
+            if re.search(f"config {config}", file_text):
                 configs_present += [f"CONFIG_{config}"]
 
     with open(linux_folder.joinpath("init", "Kconfig")) as f:
         file_text = f.read()
         for config in ['WERROR']:
-            if search(f"config {config}", file_text):
+            if re.search(f"config {config}", file_text):
                 configs_present += [f"CONFIG_{config}"]
 
     if linux_folder.joinpath('lib', 'Kconfig.kmsan').exists():
@@ -155,9 +155,9 @@ def clone_update_boot_utils(boot_utils_folder):
         git_clone = [
             'git', 'clone', 'https://github.com/ClangBuiltLinux/boot-utils', boot_utils_folder
         ]
-        run(git_clone, check=True)
+        subprocess.run(git_clone, check=True)
     git_pull = ['git', '-C', boot_utils_folder, 'pull', '--no-edit']
-    run(git_pull, check=True)
+    subprocess.run(git_pull, check=True)
 
 
 def format_logs(cfg):
@@ -172,10 +172,10 @@ def format_logs(cfg):
     logs = cfg['logs']
 
     for key, file in logs.items():
-        if Path(file).exists():
+        if pathlib.Path(file).exists():
             # Trim trailing new line by truncating by one byte.
             with open(file, 'rb+') as f:
-                f.seek(-1, SEEK_END)
+                f.seek(-1, os.SEEK_END)
                 f.truncate()
 
             # Replace all instances of the Linux source folder with nothing, as
@@ -198,12 +198,12 @@ def initial_config_and_setup(args):
     Returns:
         cfg (dict): A dictionary of configuration values
     """
-    linux_folder = Path(args.linux_folder)
+    linux_folder = pathlib.Path(args.linux_folder)
     if not linux_folder.exists():
         raise FileNotFoundError(
             f"Supplied Linux source folder ('{linux_folder}') could not be found!")
 
-    log_folder = Path(args.log_folder)
+    log_folder = pathlib.Path(args.log_folder)
 
     # Ensure log folder is created for future writing
     log_folder.mkdir(exist_ok=True, parents=True)
@@ -229,26 +229,26 @@ def initial_config_and_setup(args):
     build_folder = args.build_folder
     if not build_folder:
         build_folder = linux_folder.joinpath('build')
-    cfg['build_folder'] = Path(build_folder)
+    cfg['build_folder'] = pathlib.Path(build_folder)
 
     # Ensure PATH has been updated with proper folders above before creating
     # these.
     cfg['linux_version_code'] = lib.create_linux_version_code(linux_folder)
     cfg['llvm_version_code'] = lib.create_llvm_version_code()
 
-    boot_utils_folder = Path(args.boot_utils_folder)
+    boot_utils_folder = pathlib.Path(args.boot_utils_folder)
     if lib.is_relative_to(boot_utils_folder, base_folder):
         lib.header('Updating boot-utils')
         clone_update_boot_utils(boot_utils_folder)
     cfg['boot_utils_folder'] = boot_utils_folder
 
     make_variables = {}
-    if args.use_ccache and which('ccache'):
+    if args.use_ccache and shutil.which('ccache'):
         make_variables['CC'] = 'ccache clang'
         make_variables['HOSTCC'] = 'ccache clang'
-    if which('pbzip2'):
+    if shutil.which('pbzip2'):
         make_variables['KBZIP2'] = 'pbzip2'
-    if which('pigz'):
+    if shutil.which('pigz'):
         make_variables['KGZIP'] = 'pigz'
     cfg['make_variables'] = make_variables
 
@@ -270,7 +270,7 @@ def parse_arguments():
     Returns:
         A Namespace object containing key values from parser.parse_args()
     """
-    parser = ArgumentParser()
+    parser = argparse.ArgumentParser()
 
     parser.add_argument('-a',
                         '--architectures',
@@ -303,8 +303,9 @@ def parse_arguments():
         type=str,
         help="Path to LLVM installation (parent of 'bin' folder, default: Use LLVM from PATH).")
     parser.add_argument('--log-folder',
-                        default=base_folder.joinpath('logs',
-                                                     datetime.now().strftime('%Y%m%d-%H%M')),
+                        default=base_folder.joinpath(
+                            'logs',
+                            datetime.datetime.now().strftime('%Y%m%d-%H%M')),
                         type=str,
                         help='Folder to store log files in (default: %(default)s).')
     parser.add_argument('--save-objects',
@@ -356,7 +357,7 @@ def report_results(cfg, start_time):
         cfg (dict): Global configuration dictionary
         start_time (int): Intial time that the script started running.
     """
-    lib.log(cfg, f"Total script runtime: {lib.get_time_diff(start_time, time())}")
+    lib.log(cfg, f"Total script runtime: {lib.get_time_diff(start_time, time.time())}")
     format_logs(cfg)
 
     logs = cfg['logs']
@@ -393,7 +394,7 @@ def tc_lnx_env_info(cfg):
     clang_version, clang_location = lib.get_binary_info('clang')
     linux_location = cfg['linux_folder']
     linux_version = lib.get_linux_version(linux_location)
-    path = environ['PATH']
+    path = os.environ['PATH']
 
     with open(log_file, 'w') as f:
         f.write(f"{clang_version}\n")
@@ -409,9 +410,9 @@ def tc_lnx_env_info(cfg):
 
 
 if __name__ == '__main__':
-    signal(SIGINT, interrupt_handler)
+    signal.signal(signal.SIGINT, interrupt_handler)
 
-    start_time = time()
+    start_time = time.time()
 
     args = parse_arguments()
     cfg = initial_config_and_setup(args)

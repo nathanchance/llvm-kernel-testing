@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-from copy import deepcopy
-from re import search
-from shutil import rmtree, which
+import copy
+import re
+import shutil
 
 import lib
 
@@ -37,7 +37,7 @@ def build_defconfigs(self, cfg):
         'variables': self.make_variables,
     }
     lib.kmake(kmake_cfg)
-    kaslr_sc_args = deepcopy(self.sc_args)
+    kaslr_sc_args = copy.deepcopy(self.sc_args)
     kaslr_sc_args += ['-e', 'RELOCATABLE']
     kaslr_sc_args += ['--set-val', 'RELOCATION_TABLE_SIZE', '0x00200000']
     kaslr_sc_args += ['-e', 'RANDOMIZE_BASE']
@@ -112,7 +112,7 @@ def build_otherconfigs(self, cfg):
 # https://git.kernel.org/mips/c/c47c7ab9b53635860c6b48736efdd22822d726d7
 def has_c47c7ab9b5363(linux_folder):
     with open(linux_folder.joinpath('arch', 'mips', 'configs', 'malta_defconfig')) as f:
-        return search('CONFIG_BLK_DEV_INITRD=y', f.read())
+        return re.search('CONFIG_BLK_DEV_INITRD=y', f.read())
 
 
 def has_e91946d6d93ef(linux_folder):
@@ -127,7 +127,7 @@ class MIPS:
         self.linux_version_code = cfg['linux_version_code']
         self.llvm_version_code = cfg['llvm_version_code']
         self.log_folder = cfg['log_folder']
-        self.make_variables = deepcopy(cfg['make_variables'])
+        self.make_variables = copy.deepcopy(cfg['make_variables'])
         self.save_objects = cfg['save_objects']
         self.targets_to_build = cfg['targets_to_build']
 
@@ -143,7 +143,7 @@ class MIPS:
 
         for cross_compile in ['mips64-linux-gnu-', 'mips-linux-gnu-', 'mipsel-linux-gnu-']:
             gnu_as = f"{cross_compile}as"
-            if which(gnu_as):
+            if shutil.which(gnu_as):
                 break
         self.cross_compile = cross_compile
 
@@ -172,7 +172,7 @@ class MIPS:
             build_otherconfigs(self, cfg)
 
         if not self.save_objects:
-            rmtree(self.build_folder)
+            shutil.rmtree(self.build_folder)
 
     def clang_supports_target(self):
         return lib.clang_supports_target('mips-linux-gnu')

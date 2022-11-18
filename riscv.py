@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-from copy import deepcopy
-from pathlib import Path
-from re import escape, search
-from shutil import rmtree
+import copy
+import pathlib
+import re
+import shutil
 
 import lib
 
@@ -51,7 +51,7 @@ def build_otherconfigs(self, cfg):
         rc, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time, kmake_cfg['log_file'])
         if config_path:
-            Path(config_path).unlink()
+            pathlib.Path(config_path).unlink()
             del self.make_variables['KCONFIG_ALLCONFIG']
 
 
@@ -85,17 +85,17 @@ def build_distroconfigs(self, cfg):
 
 def has_ec3a5cb61146c(linux_folder):
     with open(linux_folder.joinpath('arch', 'riscv', 'Makefile')) as f:
-        return search(escape('KBUILD_CFLAGS += -mno-relax'), f.read())
+        return re.search(re.escape('KBUILD_CFLAGS += -mno-relax'), f.read())
 
 
 def has_f2928e224d85e(linux_folder):
     with open(linux_folder.joinpath('arch', 'riscv', 'kernel', 'reset.c')) as f:
-        return search(escape('void (*pm_power_off)(void) = NULL;'), f.read())
+        return re.search(re.escape('void (*pm_power_off)(void) = NULL;'), f.read())
 
 
 def has_efi(linux_folder):
     with open(linux_folder.joinpath('arch', 'riscv', 'Kconfig')) as f:
-        return search('config EFI', f.read())
+        return re.search('config EFI', f.read())
 
 
 class RISCV:
@@ -109,7 +109,7 @@ class RISCV:
         self.linux_version_code = cfg['linux_version_code']
         self.llvm_version_code = cfg['llvm_version_code']
         self.log_folder = cfg['log_folder']
-        self.make_variables = deepcopy(cfg['make_variables'])
+        self.make_variables = copy.deepcopy(cfg['make_variables'])
         self.save_objects = cfg['save_objects']
         self.targets_to_build = cfg['targets_to_build']
 
@@ -161,7 +161,7 @@ class RISCV:
             build_distroconfigs(self, cfg)
 
         if not self.save_objects:
-            rmtree(self.build_folder)
+            shutil.rmtree(self.build_folder)
 
     def clang_supports_target(self):
         return lib.clang_supports_target('riscv64-linux-gnu')

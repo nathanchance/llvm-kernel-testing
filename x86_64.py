@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-from copy import deepcopy
-from pathlib import Path
-from platform import machine
-from re import escape, search
-from shutil import rmtree
+import copy
+import pathlib
+import platform
+import re
+import shutil
 
 import lib
 
@@ -70,7 +70,7 @@ def build_otherconfigs(self, cfg):
     rc, time = lib.kmake(kmake_cfg)
     lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time, kmake_cfg['log_file'])
     if config_path:
-        Path(config_path).unlink()
+        pathlib.Path(config_path).unlink()
         del self.make_variables['KCONFIG_ALLCONFIG']
 
     if 'CONFIG_LTO_CLANG_THIN' in self.configs_present:
@@ -98,7 +98,7 @@ def build_otherconfigs(self, cfg):
         rc, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
         if config_path:
-            Path(config_path).unlink()
+            pathlib.Path(config_path).unlink()
             del self.make_variables['KCONFIG_ALLCONFIG']
 
 
@@ -179,19 +179,19 @@ def build_cfi_kernel(self, cfg, use_lto=False):
 # https://git.kernel.org/linus/aaeed6ecc1253ce1463fa1aca0b70a4ccbc9fa75
 def has_aaeed6ecc1253(linux_folder):
     with open(linux_folder.joinpath('arch', 'x86', 'Kconfig')) as f:
-        return search(escape('https://github.com/ClangBuiltLinux/linux/issues/514'), f.read())
+        return re.search(re.escape('https://github.com/ClangBuiltLinux/linux/issues/514'), f.read())
 
 
 # https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f
 def has_d5cbd80e302df(linux_folder):
     with open(linux_folder.joinpath('arch', 'x86', 'boot', 'compressed', 'Makefile')) as f:
-        return search('CLANG_FLAGS', f.read())
+        return re.search('CLANG_FLAGS', f.read())
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/1704
 def has_tsan_mem_funcs(linux_folder):
     with open(linux_folder.joinpath('kernel', 'kcsan', 'core.c')) as f:
-        return search('__tsan_memset', f.read())
+        return re.search('__tsan_memset', f.read())
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/1741
@@ -212,14 +212,14 @@ class X86_64:
         self.linux_version_code = cfg['linux_version_code']
         self.llvm_version_code = cfg['llvm_version_code']
         self.log_folder = cfg['log_folder']
-        self.make_variables = deepcopy(cfg['make_variables'])
+        self.make_variables = copy.deepcopy(cfg['make_variables'])
         self.save_objects = cfg['save_objects']
         self.targets_to_build = cfg['targets_to_build']
 
         self.cross_compile = ''
 
     def build(self, cfg):
-        if machine() != 'x86_64':
+        if platform.machine() != 'x86_64':
             if not has_d5cbd80e302df(self.linux_folder):
                 lib.header('Skipping x86_64 kernels')
                 print(
@@ -255,7 +255,7 @@ class X86_64:
             build_distroconfigs(self, cfg)
 
         if not self.save_objects:
-            rmtree(self.build_folder)
+            shutil.rmtree(self.build_folder)
 
     def clang_supports_target(self):
         return lib.clang_supports_target('x86_64-linux-gnu')
