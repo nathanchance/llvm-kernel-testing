@@ -68,8 +68,8 @@ def add_to_path(folder):
         if not bin_folder.exists():
             raise FileNotFoundError(
                 f"Supplied folder ('{folder}') does not have a 'bin' folder in it?")
-        if not bin_folder.as_posix() in os.environ['PATH']:
-            os.environ['PATH'] = f"{bin_folder}:" + os.environ['PATH']
+        if not str(bin_folder) in os.environ['PATH']:
+            os.environ['PATH'] = f"{bin_folder}:{os.environ['PATH']}"
 
 
 def build_kernels(cfg):
@@ -168,7 +168,7 @@ def format_logs(cfg):
     Parameters:
         cfg (dict): Global configuration dictionary
     """
-    str_to_remove = cfg['linux_folder'].as_posix() + '/'
+    str_to_remove = f"{cfg['linux_folder']}/"
     logs = cfg['logs']
 
     for key, file in logs.items():

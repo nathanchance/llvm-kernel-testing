@@ -25,8 +25,8 @@ def boot_qemu(cfg, arch, log_str, build_folder, kernel_available):
         kernel_available (bool): Whether or not kernel was successfully built.
     """
     if kernel_available:
-        boot_qemu_py = cfg['boot_utils_folder'].joinpath('boot-qemu.py').as_posix()
-        cmd = [boot_qemu_py, '-a', arch, '-k', build_folder.as_posix()]
+        boot_qemu_py = cfg['boot_utils_folder'].joinpath('boot-qemu.py')
+        cmd = [boot_qemu_py, '-a', arch, '-k', build_folder]
         pretty_print_cmd(cmd)
         sys.stderr.flush()
         sys.stdout.flush()
@@ -456,7 +456,7 @@ def kmake(kmake_cfg):
 
     cores = len(os.sched_getaffinity(0))
 
-    make_flags = ['-C', linux_folder.as_posix()]
+    make_flags = ['-C', linux_folder]
     make_flags += [f"-skj{cores}"]
 
     if is_relative_to(build_folder, linux_folder):
@@ -468,7 +468,7 @@ def kmake(kmake_cfg):
         'LLVM': '1',
         'LLVM_IAS': '0',
         'LOCALVERSION': '-cbl',
-        'O': build_folder.as_posix(),
+        'O': build_folder,
     }
     if variables:
         make_variables_dict.update(variables)
@@ -591,6 +591,9 @@ def pretty_print_cmd(cmd):
     """
     cmd_pretty = ''
     for element in cmd:
+        # Explicitly cast element to str(), as it might not be iterable
+        # otherwise.
+        element = str(element)
         if ' ' in element:
             if '=' in element:
                 var = element.split('=')[0]
@@ -657,8 +660,8 @@ def scripts_config(linux_folder, build_folder, args, capture_output=False):
                                          getting the value of configuration
                                          symbols.
     """
-    scripts_config = linux_folder.joinpath('scripts', 'config').as_posix()
-    config = build_folder.joinpath('.config').as_posix()
+    scripts_config = linux_folder.joinpath('scripts', 'config')
+    config = build_folder.joinpath('.config')
 
     cmd = [scripts_config, '--file', config] + args
     if capture_output:
@@ -689,7 +692,7 @@ def setup_config(sc_cfg):
 
     # Copy '.config'
     config_dst = build_folder.joinpath('.config')
-    pretty_print_cmd(['cp', config_file.as_posix(), config_dst.as_posix()])
+    pretty_print_cmd(['cp', config_file, config_dst])
     shutil.copyfile(config_file, config_dst)
 
     # CONFIG_DEBUG_INFO_BTF has two conditions:
@@ -714,7 +717,7 @@ def setup_config(sc_cfg):
         sc_args += ['-d', bpf_preload]
 
     # Distribution fun
-    if 'debian' in config_file.as_posix():
+    if 'debian' in str(config_file):
         # We are building upstream kernels, which do not have Debian's
         # signing keys in their source.
         system_trusted_keys = 'SYSTEM_TRUSTED_KEYS'
@@ -727,7 +730,7 @@ def setup_config(sc_cfg):
             if is_modular(linux_folder, build_folder, android_cfg):
                 sc_args += ['-e', android_cfg]
 
-    if 'archlinux' in config_file.as_posix():
+    if 'archlinux' in str(config_file):
         # These files will not exist in our kernel tree.
         extra_firmware = 'EXTRA_FIRMWARE'
         if is_set(linux_folder, build_folder, extra_firmware):
