@@ -97,7 +97,7 @@ def build_defconfigs(self, cfg):
 
     log_str = 'powerpc powernv_defconfig'
     powernv_vars = {}
-    if self.llvm_version_code < 1200000 and not 'LD' in self.ppc64le_vars:
+    if self.llvm_version_code < 1200000 and 'LD' not in self.ppc64le_vars:
         powernv_vars = {'LD': f"{self.cross_compile}ld"}
     kmake_cfg = {
         'linux_folder': self.linux_folder,

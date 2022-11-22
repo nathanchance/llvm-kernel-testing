@@ -80,7 +80,7 @@ def build_defconfigs(self, cfg):
         if '32r1' in generic_cfg:
             generic_make_variables['CROSS_COMPILE'] = self.cross_compile
             generic_make_variables['LLVM_IAS'] = '0'
-        if not 'el' in generic_cfg:
+        if 'el' not in generic_cfg:
             generic_make_variables.update(self.ld_bfd)
         kmake_cfg = {
             'linux_folder': self.linux_folder,

@@ -289,7 +289,7 @@ def parse_arguments():
     parser.add_argument(
         '--binutils-prefix',
         type=str,
-        help=
+        help=  # noqa: E251
         "Path to binutils installation (parent of 'bin' folder, default: Use binutils from PATH).")
     parser.add_argument('--boot-utils-folder',
                         default=base_folder.joinpath('src', 'boot-utils'),
@@ -323,7 +323,7 @@ def parse_arguments():
     parser.add_argument(
         '--tc-prefix',
         type=str,
-        help=
+        help=  # noqa: E251
         "Path to toolchain installation (parent of 'bin' folder, default: Use toolchain from PATH)."
     )
     parser.add_argument('--use-ccache',
@@ -332,7 +332,8 @@ def parse_arguments():
     parser.add_argument(
         '--qemu-prefix',
         type=str,
-        help="Path to QEMU installation (parent of 'bin' folder, default: Use QEMU from PATH).")
+        help=  # noqa: E251
+        "Path to QEMU installation (parent of 'bin' folder, default: Use QEMU from PATH).")
 
     return parser.parse_args()
 

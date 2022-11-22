@@ -182,7 +182,7 @@ class I386:
                         'i386 kernels skipped due to missing d5cbd80e302d on a non-x86_64 host')
                 return
             cross_compile = 'x86_64-linux-gnu-'
-            if not '6f5b41a2f5a63' in self.commits_present:
+            if '6f5b41a2f5a63' not in self.commits_present:
                 self.make_variables['CROSS_COMPILE'] = cross_compile
 
         if 'def' in self.targets_to_build:

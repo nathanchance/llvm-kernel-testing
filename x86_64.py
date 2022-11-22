@@ -238,7 +238,7 @@ class X86_64:  # pylint: disable=invalid-name
 
         if self.linux_version_code >= 510000:
             self.make_variables['LLVM_IAS'] = '1'
-            if not '6f5b41a2f5a63' in self.commits_present and self.cross_compile:
+            if '6f5b41a2f5a63' not in self.commits_present and self.cross_compile:
                 self.make_variables['CROSS_COMPILE'] = self.cross_compile
         else:
             if self.cross_compile:

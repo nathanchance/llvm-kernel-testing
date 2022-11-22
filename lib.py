@@ -38,7 +38,7 @@ def boot_qemu(cfg, arch, log_str, build_folder, kernel_available):
             result_str = 'successful'
     else:
         result_str = 'skipped'
-    if not 'config' in log_str:
+    if 'config' not in log_str:
         log_str += ' config'
     log(cfg, f"{log_str} qemu boot {result_str}")
 
@@ -426,7 +426,7 @@ def is_set(linux_folder, build_folder, cfg_sym):
         True if symbol is not 'n' or empty, False if not.
     """
     val = config_val(linux_folder, build_folder, cfg_sym)
-    return not val in ('', 'n', 'undef')
+    return val not in ('', 'n', 'undef')
 
 
 def kmake(kmake_cfg):
@@ -552,7 +552,7 @@ def log_result(cfg, log_str, success, time_str, build_log):
         build_log (Path): A Path object pointing to the build log.
     """
     result_str = 'successful' if success else 'failed'
-    if not 'config' in log_str:
+    if 'config' not in log_str:
         log_str += ' config'
     msg = f"{log_str} {result_str} in {time_str}"
     if not success:

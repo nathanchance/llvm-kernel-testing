@@ -65,7 +65,7 @@ class HEXAGON:
     def build(self, cfg):
         self.make_variables['ARCH'] = 'hexagon'
         self.make_variables['LLVM_IAS'] = '1'
-        if not '6f5b41a2f5a63' in self.commits_present:
+        if '6f5b41a2f5a63' not in self.commits_present:
             self.make_variables['CROSS_COMPILE'] = 'hexagon-linux-musl-'
 
         with open(self.linux_folder.joinpath('arch', 'hexagon', 'Makefile'),
