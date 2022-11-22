@@ -27,15 +27,15 @@ def build_defconfigs(self, cfg):
             'targets': ['distclean', log_str.split(' ')[1], 'all', 'uImage'],
             'variables': self.make_variables,
         }
-        rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
+        return_code, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
         if self.llvm_version_code < 1200001 and has_48cf12d88969b(kmake_cfg['linux_folder']):
             lib.log(
                 cfg,
                 f"{log_str} qemu_boot skipped (https://github.com/ClangBuiltLinux/linux/issues/1345)"
             )
         else:
-            boot_qemu(cfg, log_str, kmake_cfg['build_folder'], rc == 0, 'ppc32')
+            boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0, 'ppc32')
 
     log_str = 'powerpc pmac32_defconfig'
     if has_297565aa22cfa(self.linux_folder):
@@ -50,10 +50,10 @@ def build_defconfigs(self, cfg):
         sc_args = ['-e', 'SERIAL_PMACZILOG', '-e', 'SERIAL_PMACZILOG_CONSOLE']
         lib.scripts_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], sc_args)
         kmake_cfg['targets'] = ['olddefconfig', 'all']
-        rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
+        return_code, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
         if self.llvm_version_code >= 1400000:
-            boot_qemu(cfg, log_str, kmake_cfg['build_folder'], rc == 0, 'ppc32_mac')
+            boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0, 'ppc32_mac')
         else:
             lib.log(cfg,
                     f"{log_str} qemu boot skipped due to LLVM < 14.0.0 (lack of 1e3c6fc7cb9d2)")
@@ -91,9 +91,9 @@ def build_defconfigs(self, cfg):
     else:
         pseries_targets += ['all']
     kmake_cfg['targets'] = pseries_targets
-    rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
-    boot_qemu(cfg, log_str, kmake_cfg['build_folder'], rc == 0, 'ppc64')
+    return_code, time = lib.kmake(kmake_cfg)
+    lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
+    boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0, 'ppc64')
 
     log_str = 'powerpc powernv_defconfig'
     powernv_vars = {}
@@ -110,9 +110,9 @@ def build_defconfigs(self, cfg):
             **powernv_vars
         },
     }
-    rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
-    boot_qemu(cfg, log_str, kmake_cfg['build_folder'], rc == 0)
+    return_code, time = lib.kmake(kmake_cfg)
+    lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
+    boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0)
 
     log_str = 'powerpc ppc64le_defconfig'
     kmake_cfg = {
@@ -125,13 +125,12 @@ def build_defconfigs(self, cfg):
             **self.ppc64le_vars
         },
     }
-    rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
+    return_code, time = lib.kmake(kmake_cfg)
+    lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
 
 
 def build_otherconfigs(self, cfg):
-    # TODO: allmodconfig should eventually be a part of this.
-    other_cfgs = ['allnoconfig', 'tinyconfig']
+    other_cfgs = ['allnoconfig', 'tinyconfig']  # eventually allmodconfig...
     for cfg_target in other_cfgs:
         log_str = f"powerpc {cfg_target}"
         if cfg_target == 'allmodconfig':
@@ -151,8 +150,8 @@ def build_otherconfigs(self, cfg):
             'targets': ['distclean', log_str.split(' ')[1], 'all'],
             'variables': self.make_variables,
         }
-        rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time, kmake_cfg['log_file'])
+        return_code, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, f"{log_str}{config_str}", return_code == 0, time, kmake_cfg['log_file'])
         if config_path:
             pathlib.Path(config_path).unlink()
             del self.make_variables['KCONFIG_ALLCONFIG']
@@ -187,51 +186,65 @@ def build_distroconfigs(self, cfg):
             },
         }
         log_str += lib.setup_config(sc_cfg)
-        rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
-        boot_qemu(cfg, log_str, kmake_cfg['build_folder'], rc == 0)
+        return_code, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
+        boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0)
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/811
 def has_0355785313e21(linux_folder):
-    with open(linux_folder.joinpath('arch', 'powerpc', 'Makefile')) as f:
-        return re.search(re.escape('LDFLAGS_vmlinux-$(CONFIG_RELOCATABLE) += -z notext'), f.read())
+    with open(linux_folder.joinpath('arch', 'powerpc', 'Makefile'), encoding='utf-8') as file:
+        return re.search(re.escape('LDFLAGS_vmlinux-$(CONFIG_RELOCATABLE) += -z notext'),
+                         file.read())
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/1679
 def has_2255411d1d0f0(linux_folder):
-    with open(linux_folder.joinpath('arch', 'powerpc', 'platforms', 'Kconfig.cputype')) as f:
+    with open(linux_folder.joinpath('arch', 'powerpc', 'platforms', 'Kconfig.cputype'),
+              encoding='utf-8') as file:
         pattern = 'config POWERPC_CPU\n\tbool "Generic 32 bits powerpc"\n\tdepends on PPC_BOOK3S_32'
-        return re.search(pattern, f.read())
+        return re.search(pattern, file.read())
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/1160
 def has_231b232df8f67(linux_folder):
-    with open(linux_folder.joinpath('arch', 'powerpc', 'platforms', 'Kconfig.cputype')) as f:
-        return re.search('depends on PPC32 || COMPAT', f.read())
+    with open(linux_folder.joinpath('arch', 'powerpc', 'platforms', 'Kconfig.cputype'),
+              encoding='utf-8') as file:
+        return re.search('depends on PPC32 || COMPAT', file.read())
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/563
 def has_297565aa22cfa(linux_folder):
-    with open(linux_folder.joinpath('arch', 'powerpc', 'lib', 'xor_vmx.c')) as f:
-        return re.search('__restrict', f.read())
+    with open(linux_folder.joinpath('arch', 'powerpc', 'lib', 'xor_vmx.c'),
+              encoding='utf-8') as file:
+        return re.search('__restrict', file.read())
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/1345
 def has_48cf12d88969b(linux_folder):
-    with open(linux_folder.joinpath('arch', 'powerpc', 'kernel', 'irq.c')) as f:
+    with open(linux_folder.joinpath('arch', 'powerpc', 'kernel', 'irq.c'),
+              encoding='utf-8') as file:
         text = re.escape('static __always_inline void call_do_softirq(const void *sp)')
-        return re.search(text, f.read())
+        return re.search(text, file.read())
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/1292
 def has_51696f39cbee5(linux_folder):
-    with open(linux_folder.joinpath('arch', 'powerpc', 'kvm', 'book3s_hv_nested.c')) as f:
-        return re.search('noinline_for_stack void byteswap_pt_regs', f.read())
+    with open(linux_folder.joinpath('arch', 'powerpc', 'kvm', 'book3s_hv_nested.c'),
+              encoding='utf-8') as file:
+        return re.search('noinline_for_stack void byteswap_pt_regs', file.read())
 
 
 def has_dwc(linux_folder):
     return linux_folder.joinpath('arch', 'powerpc', 'configs', 'disable-werror.config').exists()
+
+
+def get_cross_compile():
+    for cross_compile in ['powerpc64-linux-gnu-', 'powerpc-linux-gnu-']:
+        gnu_as = f"{cross_compile}as"
+        if shutil.which(gnu_as):
+            return cross_compile
+    return None
 
 
 class POWERPC:
@@ -240,6 +253,7 @@ class POWERPC:
         self.build_folder = cfg['build_folder'].joinpath(self.__class__.__name__.lower())
         self.configs_folder = cfg['configs_folder']
         self.configs_present = cfg['configs_present']
+        self.cross_compile = get_cross_compile()
         self.linux_folder = cfg['linux_folder']
         self.linux_version_code = cfg['linux_version_code']
         self.llvm_version_code = cfg['llvm_version_code']
@@ -252,18 +266,13 @@ class POWERPC:
 
     def build(self, cfg):
         self.make_variables['ARCH'] = 'powerpc'
-        for cross_compile in ['powerpc64-linux-gnu-', 'powerpc-linux-gnu-']:
-            gnu_as = f"{cross_compile}as"
-            if shutil.which(gnu_as):
-                break
-        self.cross_compile = cross_compile
         self.make_variables['CROSS_COMPILE'] = self.cross_compile
 
         lib.header('Building powerpc kernels')
 
         if not lib.check_binutils(cfg, 'powerpc', self.cross_compile):
             return
-        binutils_version, binutils_location = lib.get_binary_info(gnu_as)
+        binutils_version, binutils_location = lib.get_binary_info(f"{self.cross_compile}as")
         print(f"binutils version: {binutils_version}")
         print(f"binutils location: {binutils_location}")
 

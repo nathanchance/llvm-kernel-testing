@@ -8,6 +8,7 @@ import re
 import shutil
 import signal
 import subprocess
+import sys
 import time
 
 from arm import ARM
@@ -50,6 +51,7 @@ class ArchitectureFactory:
             return S390(cfg)
         if arch == 'x86_64':
             return X86_64(cfg)
+        raise Exception(f"No class for {arch}?")
 
 
 def add_to_path(folder):
@@ -86,7 +88,7 @@ def build_kernels(cfg):
 
         if not arch.clang_supports_target():
             lib.header(f"Skipping {arch_name} kernels")
-            print(f"Reason: clang was not configured with this target")
+            print("Reason: clang was not configured with this target")
             lib.log(cfg, f"{arch_name} kernels skipped due to missing clang target")
             continue
 
@@ -125,17 +127,17 @@ def check_for_configs(linux_folder):
     """
     configs_present = []
 
-    with open(linux_folder.joinpath('arch', 'Kconfig')) as f:
-        file_text = f.read()
-        for config in ['LTO_CLANG_THIN', 'CFI_CLANG']:
-            if re.search(f"config {config}", file_text):
-                configs_present += [f"CONFIG_{config}"]
+    with open(linux_folder.joinpath('arch', 'Kconfig'), encoding='utf-8') as file:
+        file_text = file.read()
+        for cfg in ['LTO_CLANG_THIN', 'CFI_CLANG']:
+            if re.search(f"config {cfg}", file_text):
+                configs_present += [f"CONFIG_{cfg}"]
 
-    with open(linux_folder.joinpath("init", "Kconfig")) as f:
-        file_text = f.read()
-        for config in ['WERROR']:
-            if re.search(f"config {config}", file_text):
-                configs_present += [f"CONFIG_{config}"]
+    with open(linux_folder.joinpath("init", "Kconfig"), encoding='utf-8') as file:
+        file_text = file.read()
+        for cfg in ['WERROR']:
+            if re.search(f"config {cfg}", file_text):
+                configs_present += [f"CONFIG_{cfg}"]
 
     if linux_folder.joinpath('lib', 'Kconfig.kmsan').exists():
         configs_present += ['CONFIG_KMSAN']
@@ -171,20 +173,20 @@ def format_logs(cfg):
     str_to_remove = f"{cfg['linux_folder']}/"
     logs = cfg['logs']
 
-    for key, file in logs.items():
+    for file in logs.items():
         if pathlib.Path(file).exists():
             # Trim trailing new line by truncating by one byte.
-            with open(file, 'rb+') as f:
-                f.seek(-1, os.SEEK_END)
-                f.truncate()
+            with open(file, 'rb+', encoding='utf-8') as file:
+                file.seek(-1, os.SEEK_END)
+                file.truncate()
 
             # Replace all instances of the Linux source folder with nothing, as
             # if building in tree.
-            with open(file) as f:
-                old_log = f.read()
+            with open(file, encoding='utf-8') as file:
+                old_log = file.read()
                 new_log = old_log.replace(str_to_remove, '')
-            with open(file, 'w') as f:
-                f.write(new_log)
+            with open(file, 'w', encoding='utf-8') as file:
+                file.write(new_log)
 
 
 def initial_config_and_setup(args):
@@ -255,12 +257,12 @@ def initial_config_and_setup(args):
     return cfg
 
 
-def interrupt_handler(signum, frame):
+def interrupt_handler(_signum, _frame):
     """
     Causes Ctrl-C to exit with a non-zero error code. Parameters are ignored so
     they are explicitly undocumented.
     """
-    exit(130)
+    sys.exit(130)
 
 
 def parse_arguments():
@@ -342,8 +344,8 @@ def pretty_print_log(log_file):
     Parameters:
         log_file (Path): A Path object pointing to the log file to print.
     """
-    with open(log_file) as f:
-        for line in f:
+    with open(log_file, encoding='utf-8') as file:
+        for line in file:
             line = line.strip()
             if line:
                 print(line)
@@ -373,8 +375,8 @@ def report_results(cfg, start_time):
         if log_file.exists():
             lib.header(log_str)
             if key == "info":
-                with open(log_file) as f:
-                    print(f.read().strip())
+                with open(log_file, encoding='utf-8') as file:
+                    print(file.read().strip())
             else:
                 pretty_print_log(log_file)
 
@@ -396,29 +398,28 @@ def tc_lnx_env_info(cfg):
     linux_version = lib.get_linux_version(linux_location)
     path = os.environ['PATH']
 
-    with open(log_file, 'w') as f:
-        f.write(f"{clang_version}\n")
-        f.write(f"clang location: {clang_location}\n")
-        f.write(f"binutils version: {binutils_version}\n")
-        f.write(f"binutils location: {binutils_location}\n")
-        f.write(f"{linux_version}")
-        f.write(f"Linux source location: {linux_location}\n")
-        f.write(f"PATH: {path}\n\n")
+    with open(log_file, 'w', encoding='utf-8') as file:
+        file.write(f"{clang_version}\n")
+        file.write(f"clang location: {clang_location}\n")
+        file.write(f"binutils version: {binutils_version}\n")
+        file.write(f"binutils location: {binutils_location}\n")
+        file.write(f"{linux_version}")
+        file.write(f"Linux source location: {linux_location}\n")
+        file.write(f"PATH: {path}\n\n")
 
-    with open(log_file) as f:
-        print(f.read().strip())
+    with open(log_file, encoding='utf-8') as file:
+        print(file.read().strip())
 
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, interrupt_handler)
 
-    start_time = time.time()
+    main_start_time = time.time()
 
-    args = parse_arguments()
-    cfg = initial_config_and_setup(args)
+    config = initial_config_and_setup(parse_arguments())
 
-    tc_lnx_env_info(cfg)
+    tc_lnx_env_info(config)
 
-    build_kernels(cfg)
+    build_kernels(config)
 
-    report_results(cfg, start_time)
+    report_results(config, main_start_time)

@@ -17,8 +17,8 @@ def build_defconfigs(self, cfg):
         'targets': ['distclean', log_str.split(' ')[1], 'all'],
         'variables': self.make_variables,
     }
-    rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
+    return_code, time = lib.kmake(kmake_cfg)
+    lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
 
 
 def build_otherconfigs(self, cfg):
@@ -37,16 +37,16 @@ def build_otherconfigs(self, cfg):
             'targets': ['distclean', log_str.split(' ')[1], 'all'],
             'variables': self.make_variables,
         }
-        rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time, kmake_cfg['log_file'])
+        return_code, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, f"{log_str}{config_str}", return_code == 0, time, kmake_cfg['log_file'])
         if config_path:
             pathlib.Path(config_path).unlink()
             del self.make_variables['KCONFIG_ALLCONFIG']
 
 
 def has_ffb92ce826fd8(linux_folder):
-    with open(linux_folder.joinpath('arch', 'hexagon', 'lib', 'io.c')) as f:
-        return re.search(re.escape('EXPORT_SYMBOL(__raw_readsw)'), f.read())
+    with open(linux_folder.joinpath('arch', 'hexagon', 'lib', 'io.c'), encoding='utf-8') as file:
+        return re.search(re.escape('EXPORT_SYMBOL(__raw_readsw)'), file.read())
 
 
 class HEXAGON:
@@ -68,8 +68,9 @@ class HEXAGON:
         if not '6f5b41a2f5a63' in self.commits_present:
             self.make_variables['CROSS_COMPILE'] = 'hexagon-linux-musl-'
 
-        with open(self.linux_folder.joinpath('arch', 'hexagon', 'Makefile')) as f:
-            has_788dcee0306e1 = re.search(re.escape('KBUILD_CFLAGS += -mlong-calls'), f.read())
+        with open(self.linux_folder.joinpath('arch', 'hexagon', 'Makefile'),
+                  encoding='utf-8') as file:
+            has_788dcee0306e1 = re.search(re.escape('KBUILD_CFLAGS += -mlong-calls'), file.read())
             has_f1f99adf05f21 = self.linux_folder.joinpath('arch', 'hexagon', 'lib',
                                                            'divsi3.S').exists()
             if not (has_788dcee0306e1 and has_f1f99adf05f21):

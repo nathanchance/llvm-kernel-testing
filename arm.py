@@ -13,24 +13,24 @@ def boot_qemu(cfg, log_str, build_folder, kernel_available, arch='arm32_v7'):
 
 
 def disable_be(linux_folder):
-    with open(linux_folder.joinpath('arch', 'arm', 'mm', 'Kconfig')) as f:
-        text = f.read()
+    with open(linux_folder.joinpath('arch', 'arm', 'mm', 'Kconfig'), encoding='utf-8') as file:
+        text = file.read()
         first_pattern = 'bool "Build big-endian kernel"'
         second_pattern = 'depends on ARCH_SUPPORTS_BIG_ENDIAN'
         return not re.search(f"({first_pattern}|{second_pattern})\n\tdepends on !LD_IS_LLD", text)
 
 
 def has_nwfpe_replexitval(linux_folder):
-    with open(linux_folder.joinpath('arch', 'arm', 'nwfpe', 'Makefile')) as f:
-        return re.search('replexitval=never', f.read())
+    with open(linux_folder.joinpath('arch', 'arm', 'nwfpe', 'Makefile'), encoding='utf-8') as file:
+        return re.search('replexitval=never', file.read())
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/325
 def thumb2_ok(linux_folder):
-    with open(linux_folder.joinpath('arch', 'arm', 'Kconfig')) as f:
-        has_9d417cbe36eee = re.search('select HAVE_FUTEX_CMPXCHG if FUTEX', f.read())
-    with open(linux_folder.joinpath('init', 'Kconfig')) as f:
-        has_3297481d688a5 = not re.search('config HAVE_FUTEX_CMPXCHG', f.read())
+    with open(linux_folder.joinpath('arch', 'arm', 'Kconfig'), encoding='utf-8') as file:
+        has_9d417cbe36eee = re.search('select HAVE_FUTEX_CMPXCHG if FUTEX', file.read())
+    with open(linux_folder.joinpath('init', 'Kconfig'), encoding='utf-8') as file:
+        has_3297481d688a5 = not re.search('config HAVE_FUTEX_CMPXCHG', file.read())
     return has_9d417cbe36eee or has_3297481d688a5
 
 
@@ -47,9 +47,9 @@ def build_defconfigs(self, cfg):
             'targets': ['distclean', log_str.split(' ')[1], 'all'],
             'variables': self.make_variables,
         }
-        rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
-        boot_qemu(cfg, log_str, kmake_cfg['build_folder'], rc == 0, defconfig[1])
+        return_code, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
+        boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0, defconfig[1])
 
     if thumb2_ok(self.linux_folder):
         log_str = 'arm multi_v7_defconfig + CONFIG_THUMB2_KERNEL=y'
@@ -64,9 +64,9 @@ def build_defconfigs(self, cfg):
         lib.scripts_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'],
                            ['-e', 'THUMB2_KERNEL'])
         kmake_cfg['targets'] = ['olddefconfig', 'all']
-        rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
-        boot_qemu(cfg, log_str, kmake_cfg['build_folder'], rc == 0, defconfig[1])
+        return_code, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
+        boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0, defconfig[1])
 
 
 def build_otherconfigs(self, cfg):
@@ -96,8 +96,8 @@ def build_otherconfigs(self, cfg):
             'targets': ['distclean', log_str.split(' ')[1], 'all'],
             'variables': self.make_variables,
         }
-        rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time, kmake_cfg['log_file'])
+        return_code, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, f"{log_str}{config_str}", return_code == 0, time, kmake_cfg['log_file'])
         if config_path:
             pathlib.Path(config_path).unlink()
             del self.make_variables['KCONFIG_ALLCONFIG']
@@ -127,10 +127,10 @@ def build_distroconfigs(self, cfg):
             'variables': self.make_variables,
         }
         log_str += lib.setup_config(sc_cfg)
-        rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
+        return_code, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
         if distro != 'fedora':
-            boot_qemu(cfg, log_str, kmake_cfg['build_folder'], rc == 0)
+            boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0)
 
 
 class ARM:

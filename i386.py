@@ -22,9 +22,9 @@ def build_defconfigs(self, cfg):
         'targets': ['distclean', log_str.split(' ')[1], 'all'],
         'variables': self.make_variables,
     }
-    rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
-    boot_qemu(cfg, log_str, kmake_cfg['build_folder'], rc == 0)
+    return_code, time = lib.kmake(kmake_cfg)
+    lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
+    boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0)
 
     if has_583bfd484bcc(self.linux_folder):
         log_str = 'i386 defconfig + CONFIG_LTO_CLANG_THIN=y'
@@ -38,9 +38,9 @@ def build_defconfigs(self, cfg):
         lib.kmake(kmake_cfg)
         lib.modify_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], 'thinlto')
         kmake_cfg['targets'] = ['olddefconfig', 'all']
-        rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
-        boot_qemu(cfg, log_str, kmake_cfg['build_folder'], rc == 0)
+        return_code, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
+        boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0)
 
 
 def build_otherconfigs(self, cfg):
@@ -68,8 +68,8 @@ def build_otherconfigs(self, cfg):
             'targets': ['distclean', log_str.split(' ')[1], 'all'],
             'variables': self.make_variables,
         }
-        rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time, kmake_cfg['log_file'])
+        return_code, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, f"{log_str}{config_str}", return_code == 0, time, kmake_cfg['log_file'])
         if config_path:
             pathlib.Path(config_path).unlink()
             del self.make_variables['KCONFIG_ALLCONFIG']
@@ -98,8 +98,8 @@ def build_distroconfigs(self, cfg):
             sc_args += ['-d', 'IP6_NF_TARGET_SYNPROXY']
             sc_args += ['-d', 'NFT_SYNPROXY']
             lib.scripts_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], sc_args)
-        rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
+        return_code, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/1442
@@ -108,8 +108,8 @@ def disable_nf_configs(llvm_version_code, linux_folder):
 
 
 def fortify_broken(linux_folder):
-    with open(linux_folder.joinpath('security', 'Kconfig')) as f:
-        text = f.read()
+    with open(linux_folder.joinpath('security', 'Kconfig'), encoding='utf-8') as file:
+        text = file.read()
         bug_one = re.escape('https://bugs.llvm.org/show_bug.cgi?id=50322')
         bug_two = re.escape('https://github.com/llvm/llvm-project/issues/53645')
         return re.search(bug_one, text) or re.search(bug_two, text)
@@ -117,8 +117,8 @@ def fortify_broken(linux_folder):
 
 # https://git.kernel.org/linus/583bfd484bcc85e9371e7205fa9e827c18ae34fb
 def has_583bfd484bcc(linux_folder):
-    with open(linux_folder.joinpath('arch', 'x86', 'Kconfig')) as f:
-        text = f.read()
+    with open(linux_folder.joinpath('arch', 'x86', 'Kconfig'), encoding='utf-8') as file:
+        text = file.read()
         lto = 'select ARCH_SUPPORTS_LTO_CLANG_THIN'
         lto_x86_64 = 'select ARCH_SUPPORTS_LTO_CLANG_THIN\tif X86_64'
         return re.search(lto, text) and not re.search(lto_x86_64, text)
@@ -126,14 +126,15 @@ def has_583bfd484bcc(linux_folder):
 
 # https://git.kernel.org/linus/bb73d07148c405c293e576b40af37737faf23a6a
 def has_bb73d07148c40(linux_folder):
-    with open(linux_folder.joinpath('arch', 'x86', 'tools', 'relocs.c')) as f:
-        return re.search('R_386_PLT32:', f.read())
+    with open(linux_folder.joinpath('arch', 'x86', 'tools', 'relocs.c'), encoding='utf-8') as file:
+        return re.search('R_386_PLT32:', file.read())
 
 
 # https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f
 def has_d5cbd80e302df(linux_folder):
-    with open(linux_folder.joinpath('arch', 'x86', 'boot', 'compressed', 'Makefile')) as f:
-        return re.search('CLANG_FLAGS', f.read())
+    with open(linux_folder.joinpath('arch', 'x86', 'boot', 'compressed', 'Makefile'),
+              encoding='utf-8') as file:
+        return re.search('CLANG_FLAGS', file.read())
 
 
 class I386:
@@ -158,7 +159,7 @@ class I386:
             print('        https://github.com/ClangBuiltLinux/linux/issues/194')
             lib.log(cfg, 'x86 kernels skipped due to missing 158807de5822')
             return
-        elif self.llvm_version_code >= 1200000 and not has_bb73d07148c40(self.linux_folder):
+        if self.llvm_version_code >= 1200000 and not has_bb73d07148c40(self.linux_folder):
             lib.header('Skipping i386 kernels')
             print(
                 'Reason: x86 kernels do not build properly with LLVM 12.0.0+ without R_386_PLT32 handling.'

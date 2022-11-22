@@ -30,11 +30,12 @@ def boot_qemu(cfg, arch, log_str, build_folder, kernel_available):
         pretty_print_cmd(cmd)
         sys.stderr.flush()
         sys.stdout.flush()
-        result = subprocess.run(cmd)
-        if result.returncode == 0:
-            result_str = 'successful'
-        else:
+        try:
+            subprocess.run(cmd, check=True)
+        except subprocess.CalledProcessError:
             result_str = 'failed'
+        else:
+            result_str = 'successful'
     else:
         result_str = 'skipped'
     if not 'config' in log_str:
@@ -52,12 +53,12 @@ def can_be_modular(kconfig_file, cfg_sym):
         cfg_sym (str): The Kconfig symbol to check.
     """
     if kconfig_file.exists():
-        with open(kconfig_file) as f:
-            return re.search(f"config {cfg_sym}\n\ttristate", f.read())
+        with open(kconfig_file, encoding='utf-8') as file:
+            return re.search(f"config {cfg_sym}\n\ttristate", file.read())
     return False
 
 
-def capture_cmd(cmd, cwd=None, input=None):
+def capture_cmd(cmd, cwd=None, input=None):  # pylint: disable=redefined-builtin
     """
     Capture the output of a command for further processing.
 
@@ -84,13 +85,13 @@ def check_binutils(cfg, arch, cross_compile):
     Returns:
         True if binutils is available in PATH, False if not.
     """
-    if shutil.which(f"{cross_compile}as"):
+    if cross_compile and shutil.which(f"{cross_compile}as"):
         return True
-    else:
-        msg = f"{arch} kernels skipped due to missing binutils"
-        log(cfg, msg)
-        print(f"{msg}\n")
-        return False
+
+    msg = f"{arch} kernels skipped due to missing binutils"
+    log(cfg, msg)
+    print(f"{msg}\n")
+    return False
 
 
 def clang_supports_target(target):
@@ -101,12 +102,16 @@ def clang_supports_target(target):
         target (str): Target string to test.
     """
     clang_cmd = ['clang', f"--target={target}", '-c', '-x', 'c', '-', '-o', '/dev/null']
-    clang = subprocess.run(clang_cmd,
-                           input='',
-                           stderr=subprocess.DEVNULL,
-                           stdout=subprocess.DEVNULL,
-                           text=True)
-    return clang.returncode == 0
+    try:
+        subprocess.run(clang_cmd,
+                       check=True,
+                       input='',
+                       stderr=subprocess.DEVNULL,
+                       stdout=subprocess.DEVNULL,
+                       text=True)
+    except subprocess.CalledProcessError:
+        return False
+    return True
 
 
 def config_val(linux_folder, build_folder, cfg_sym):
@@ -145,7 +150,7 @@ def create_version_code(version):
         An integer with at least six digits.
     """
     major, minor, patch = [int(version[i]) for i in (0, 1, 2)]
-    return int("{:d}{:02d}{:03d}".format(major, minor, patch))
+    return int(f"{major:d}{minor:02d}{patch:03d}")
 
 
 def create_binutils_version_code(as_exec):
@@ -233,7 +238,7 @@ def gen_allconfig(build_folder, configs):
 
     if configs:
         config_file, config_path = tempfile.mkstemp(dir=build_folder, text=True)
-        with open(config_file, 'w') as f:
+        with open(config_file, 'w', encoding='utf-8') as file:
             for item in configs:
                 if 'CONFIG_' in item:
                     # If item has a value ('=y', '=n', or '=m'), respect it.
@@ -242,7 +247,7 @@ def gen_allconfig(build_folder, configs):
                     # Otherwise, we assume '=n'.
                     else:
                         config = f"{item}=n"
-                    f.write(f"{config}\n")
+                    file.write(f"{config}\n")
                     log_str += f" + {config}"
                 else:
                     log_str += f" {item}"
@@ -300,8 +305,8 @@ def get_linux_version(linux_folder):
     include_config.mkdir(exist_ok=True, parents=True)
 
     autoconf = include_config.joinpath('auto.conf')
-    with open(autoconf, 'w') as f:
-        f.write('CONFIG_LOCALVERSION_AUTO=y')
+    with open(autoconf, 'w', encoding='utf-8') as file:
+        file.write('CONFIG_LOCALVERSION_AUTO=y')
 
     localversion = capture_cmd(['scripts/setlocalversion'], cwd=linux_folder)
 
@@ -348,8 +353,8 @@ def has_kcfi(linux_folder):
     Returns:
         True if kCFI is present, false if not.
     """
-    with open(linux_folder.joinpath('arch', 'Kconfig')) as f:
-        return re.search('fsanitize=kcfi', f.read())
+    with open(linux_folder.joinpath('arch', 'Kconfig'), encoding='utf-8') as file:
+        return re.search('fsanitize=kcfi', file.read())
 
 
 def header(hdr_str, end='\n'):
@@ -360,10 +365,10 @@ def header(hdr_str, end='\n'):
         hdr_str (str): String to print inside the header.
     """
     print('\033[1m')
-    for x in range(0, len(hdr_str) + 6):
+    for _x in range(0, len(hdr_str) + 6):
         print('=', end='')
     print(f"\n== {hdr_str} ==")
-    for x in range(0, len(hdr_str) + 6):
+    for _x in range(0, len(hdr_str) + 6):
         print('=', end='')
     print('\n\033[0m', end=end)
     sys.stdout.flush()
@@ -398,12 +403,11 @@ def is_relative_to(path_one, path_two):
     """
     if sys.version_info >= (3, 9):
         return path_one.is_relative_to(path_two)
-    else:
-        try:
-            path_one.relative_to(path_two)
-        except ValueError:
-            return False
-        return True
+    try:
+        path_one.relative_to(path_two)
+    except ValueError:
+        return False
+    return True
 
 
 def is_set(linux_folder, build_folder, cfg_sym):
@@ -422,7 +426,7 @@ def is_set(linux_folder, build_folder, cfg_sym):
         True if symbol is not 'n' or empty, False if not.
     """
     val = config_val(linux_folder, build_folder, cfg_sym)
-    return not (val == '' or val == 'n' or val == 'undef')
+    return not val in ('', 'n', 'undef')
 
 
 def kmake(kmake_cfg):
@@ -485,21 +489,20 @@ def kmake(kmake_cfg):
     sys.stderr.flush()
     sys.stdout.flush()
     with subprocess.Popen(make_cmd, stderr=subprocess.STDOUT,
-                          stdout=subprocess.PIPE) as p, open(log_file, 'bw') as f:
+                          stdout=subprocess.PIPE) as proc, open(log_file, 'bw') as file:
         while True:
-            byte = p.stdout.read(1)
+            byte = proc.stdout.read(1)
             if byte:
                 sys.stdout.buffer.write(byte)
                 sys.stdout.flush()
-                f.write(byte)
+                file.write(byte)
             else:
                 break
-    result = p.returncode
 
     command_time = get_time_diff(start_time, time.time())
     print(f"\nReal\t{command_time}")
 
-    return p.returncode, command_time
+    return proc.returncode, command_time
 
 
 def log(cfg, log_str):
@@ -519,8 +522,8 @@ def log(cfg, log_str):
     else:
         file = cfg['logs']['info']
 
-    with open(file, 'a') as f:
-        f.write(f"{log_str}\n\n")
+    with open(file, 'a', encoding='utf-8') as file:
+        file.write(f"{log_str}\n\n")
 
 
 def log_file_from_str(log_folder, log_str):
@@ -537,7 +540,7 @@ def log_file_from_str(log_folder, log_str):
     return log_folder.joinpath(f"{log_str.replace(' ', '-').replace('-config','')}.log")
 
 
-def log_result(cfg, log_str, success, time, build_log):
+def log_result(cfg, log_str, success, time_str, build_log):
     """
     Log result of kernel build based on result.
 
@@ -545,16 +548,16 @@ def log_result(cfg, log_str, success, time, build_log):
         cfg (dict): Global configuration dictionary
         log_str (str): Specific log string for kernel.
         success (bool): Whether or not the kernel build was successful.
-        time (str): Amount of time that command took to completed.
+        time_str (str): Amount of time that command took to completed.
         build_log (Path): A Path object pointing to the build log.
     """
     result_str = 'successful' if success else 'failed'
     if not 'config' in log_str:
         log_str += ' config'
-    msg = f"{log_str} {result_str} in {time}"
+    msg = f"{log_str} {result_str} in {time_str}"
     if not success:
-        with open(build_log) as f:
-            for line in f:
+        with open(build_log, encoding='utf-8') as file:
+            for line in file:
                 if re.search('error:|warning:|undefined', line):
                     msg += f"\n{line.strip()}"
     log(cfg, msg)
@@ -634,16 +637,6 @@ def process_cfg_item(linux_folder, build_folder, cfg_item):
     return []
 
 
-def red(red_str):
-    """
-    Prints string in bold red.
-
-    Parameters:
-        red_str (str): String to print in bold red.
-    """
-    print(f"\n\033[01;31m{red_str}\033[0m")
-
-
 def scripts_config(linux_folder, build_folder, args, capture_output=False):
     """
     Runs 'scripts/config' from Linux source folder against configuration in
@@ -660,14 +653,15 @@ def scripts_config(linux_folder, build_folder, args, capture_output=False):
                                          getting the value of configuration
                                          symbols.
     """
-    scripts_config = linux_folder.joinpath('scripts', 'config')
+    scripts_config_exec = linux_folder.joinpath('scripts', 'config')
     config = build_folder.joinpath('.config')
 
-    cmd = [scripts_config, '--file', config] + args
+    cmd = [scripts_config_exec, '--file', config] + args
     if capture_output:
         return capture_cmd(cmd)
     pretty_print_cmd(cmd)
     subprocess.run(cmd, check=True)
+    return None
 
 
 def setup_config(sc_cfg):
@@ -867,8 +861,8 @@ def setup_config(sc_cfg):
 
     # CONFIG_MFD_ARIZONA as a module is invalid before https://git.kernel.org/linus/33d550701b915938bd35ca323ee479e52029adf2
     # Done manually because 'tristate'/'bool' is not right after 'config MFD_ARIZONA'...
-    with open(linux_folder.joinpath('drivers', 'mfd', 'Makefile')) as f:
-        has_33d550701b915 = re.search('arizona-objs', f.read())
+    with open(linux_folder.joinpath('drivers', 'mfd', 'Makefile'), encoding='utf-8') as file:
+        has_33d550701b915 = re.search('arizona-objs', file.read())
     mfd_arizona_is_m = is_modular(linux_folder, build_folder, 'MFD_ARIZONA')
     if mfd_arizona_is_m and not has_33d550701b915:
         sc_args += ['-e', 'MFD_ARIZONA']

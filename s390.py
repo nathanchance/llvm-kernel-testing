@@ -27,9 +27,9 @@ def build_defconfigs(self, cfg):
         'targets': ['distclean', log_str.split(' ')[1], 'all'],
         'variables': self.make_variables,
     }
-    rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
-    boot_qemu(self, cfg, log_str, kmake_cfg['build_folder'], rc == 0)
+    return_code, time = lib.kmake(kmake_cfg)
+    lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
+    boot_qemu(self, cfg, log_str, kmake_cfg['build_folder'], return_code == 0)
 
 
 def build_otherconfigs(self, cfg):
@@ -61,8 +61,8 @@ def build_otherconfigs(self, cfg):
             'targets': ['distclean', log_str.split(' ')[1], 'all'],
             'variables': self.make_variables,
         }
-        rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time, kmake_cfg['log_file'])
+        return_code, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, f"{log_str}{config_str}", return_code == 0, time, kmake_cfg['log_file'])
         if config_path:
             pathlib.Path(config_path).unlink()
             del self.make_variables["KCONFIG_ALLCONFIG"]
@@ -95,34 +95,37 @@ def build_distroconfigs(self, cfg):
             log_str += ' + CONFIG_MARCH_Z196=y (https://github.com/ClangBuiltLinux/linux/issues/1264)'
             sc_args = ['-d', 'MARCH_ZEC12', '-e', 'MARCH_Z196']
             lib.scripts_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], sc_args)
-        rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
-        boot_qemu(self, cfg, log_str, kmake_cfg['build_folder'], rc == 0)
+        return_code, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
+        boot_qemu(self, cfg, log_str, kmake_cfg['build_folder'], return_code == 0)
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/1687
 # https://git.kernel.org/linus/925d046e7e52c71c3531199ce137e141807ef740
 def has_925d046e7e52(linux_folder):
-    with open(linux_folder.joinpath('drivers', 'infiniband', 'core', 'cma.c')) as f:
-        return re.search('static void cma_netevent_work_handler', f.read())
+    with open(linux_folder.joinpath('drivers', 'infiniband', 'core', 'cma.c'),
+              encoding='utf-8') as file:
+        return re.search('static void cma_netevent_work_handler', file.read())
 
 
 # https://git.kernel.org/linus/efe5e0fea4b24872736c62a0bcfc3f99bebd2005
 def has_efe5e0fea4b24(linux_folder):
-    with open(linux_folder.joinpath('arch', 's390', 'include', 'asm', 'bitops.h')) as f:
-        return not re.search('"(o|n|x)i\t%0,%b1\\\\n"', f.read())
+    with open(linux_folder.joinpath('arch', 's390', 'include', 'asm', 'bitops.h'),
+              encoding='utf-8') as file:
+        return not re.search('"(o|n|x)i\t%0,%b1\\\\n"', file.read())
 
 
 def has_integrated_as_support(linux_folder):
-    with open(linux_folder.joinpath('arch', 's390', 'Makefile')) as f:
-        return re.search('ifndef CONFIG_AS_IS_LLVM', f.read())
-    with open(linux_folder.joinpath('arch', 's390', 'kernel', 'entry.S')) as f:
-        return re.search('ifdef CONFIG_AS_IS_LLVM', f.read())
+    with open(linux_folder.joinpath('arch', 's390', 'Makefile'), encoding='utf-8') as file:
+        has_bb31074db95f735 = re.search('ifndef CONFIG_AS_IS_LLVM', file.read())
+    with open(linux_folder.joinpath('arch', 's390', 'kernel', 'entry.S'), encoding='utf-8') as file:
+        has_4c25f0ff6336738 = re.search('ifdef CONFIG_AS_IS_LLVM', file.read())
+    return has_bb31074db95f735 and has_4c25f0ff6336738
 
 
 def is_relocatable_a_choice(linux_folder):
-    with open(linux_folder.joinpath('arch', 's390', 'Kconfig')) as f:
-        return re.search('config RELOCATABLE\n\tbool "', f.read())
+    with open(linux_folder.joinpath('arch', 's390', 'Kconfig'), encoding='utf-8') as file:
+        return re.search('config RELOCATABLE\n\tbool "', file.read())
 
 
 class S390:
@@ -132,6 +135,8 @@ class S390:
         self.commits_present = cfg['commits_present']
         self.configs_folder = cfg['configs_folder']
         self.configs_present = cfg['configs_present']
+        self.cross_compile = 's390x-linux-gnu-'
+        self.binutils_version_code = lib.create_binutils_version_code(f"{self.cross_compile}as")
         self.linux_folder = cfg['linux_folder']
         self.llvm_version_code = cfg['llvm_version_code']
         self.linux_version_code = cfg['linux_version_code']
@@ -154,14 +159,14 @@ class S390:
                 's390x kernels skipped due to missing fixes from 5.6 (https://lore.kernel.org/r/your-ad-here.call-01580230449-ext-6884@work.hours/)'
             )
             return
-        elif self.linux_version_code >= 514000 and self.llvm_version_code < 1300000:
+        if self.linux_version_code >= 514000 and self.llvm_version_code < 1300000:
             lib.header('Skipping s390x kernels')
             print('Reason: s390 kernels cannot build with LLVM versions prior to 13.0.0 on 5.14+.')
             print('        https://git.kernel.org/linus/e2bc3e91d91ede6710801fa0737e4e4ed729b19e')
             lib.log(cfg,
                     's390x kernels skipped due to LLVM < 13.0.0 and Linux 5.14+ (e2bc3e91d91ed)')
             return
-        elif self.linux_version_code >= 519000 and self.llvm_version_code < 1400000:
+        if self.linux_version_code >= 519000 and self.llvm_version_code < 1400000:
             lib.header('Skipping s390x kernels')
             print('Reason: s390 kernels cannot build with LLVM versions prior to 14.0.0 on 5.19+.')
             print('        https://git.kernel.org/linus/8218827b73c6e41029438a2d3cc573286beee914')
@@ -169,23 +174,21 @@ class S390:
                     's390x kernels skipped due to LLVM < 14.0.0 and Linux 5.19+ (8218827b73c6e)')
             return
 
-        cross_compile = 's390x-linux-gnu-'
-        self.binutils_version_code = lib.create_binutils_version_code(f"{cross_compile}as")
         self.make_variables['ARCH'] = 's390'
 
         for variable in ['LD', 'OBJCOPY', 'OBJDUMP']:
-            self.make_variables[variable] = f"{cross_compile}{variable.lower()}"
+            self.make_variables[variable] = f"{self.cross_compile}{variable.lower()}"
 
         if has_integrated_as_support(self.linux_folder):
             self.make_variables['LLVM_IAS'] = '1'
         else:
-            self.make_variables['CROSS_COMPILE'] = cross_compile
+            self.make_variables['CROSS_COMPILE'] = self.cross_compile
 
         lib.header('Building s390 kernels')
 
-        if not lib.check_binutils(cfg, 's390', cross_compile):
+        if not lib.check_binutils(cfg, 's390', self.cross_compile):
             return
-        binutils_version, binutils_location = lib.get_binary_info(f"{cross_compile}as")
+        binutils_version, binutils_location = lib.get_binary_info(f"{self.cross_compile}as")
         print(f"binutils version: {binutils_version}")
         print(f"binutils location: {binutils_location}")
 

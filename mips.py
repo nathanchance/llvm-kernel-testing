@@ -24,9 +24,10 @@ def build_defconfigs(self, cfg):
     if self.sc_args:
         lib.scripts_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], self.sc_args)
     kmake_cfg['targets'] = ['olddefconfig', 'all']
-    rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, f"{log_str}{self.config_str}", rc == 0, time, kmake_cfg['log_file'])
-    boot_qemu(cfg, f"{log_str}{self.config_str}", kmake_cfg['build_folder'], rc == 0)
+    return_code, time = lib.kmake(kmake_cfg)
+    lib.log_result(cfg, f"{log_str}{self.config_str}", return_code == 0, time,
+                   kmake_cfg['log_file'])
+    boot_qemu(cfg, f"{log_str}{self.config_str}", kmake_cfg['build_folder'], return_code == 0)
 
     log_str = 'mips malta_defconfig + CONFIG_RANDOMIZE_BASE=y'
     kmake_cfg = {
@@ -43,9 +44,10 @@ def build_defconfigs(self, cfg):
     kaslr_sc_args += ['-e', 'RANDOMIZE_BASE']
     lib.scripts_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], kaslr_sc_args)
     kmake_cfg['targets'] = ['olddefconfig', 'all']
-    rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, f"{log_str}{self.config_str}", rc == 0, time, kmake_cfg['log_file'])
-    boot_qemu(cfg, f"{log_str}{self.config_str}", kmake_cfg['build_folder'], rc == 0)
+    return_code, time = lib.kmake(kmake_cfg)
+    lib.log_result(cfg, f"{log_str}{self.config_str}", return_code == 0, time,
+                   kmake_cfg['log_file'])
+    boot_qemu(cfg, f"{log_str}{self.config_str}", kmake_cfg['build_folder'], return_code == 0)
 
     log_str = 'mips malta_defconfig + CONFIG_CPU_BIG_ENDIAN=y'
     kmake_cfg = {
@@ -63,9 +65,11 @@ def build_defconfigs(self, cfg):
     if self.sc_args:
         lib.scripts_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], self.sc_args)
     kmake_cfg['targets'] = ['olddefconfig', 'all']
-    rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, f"{log_str}{self.config_str}", rc == 0, time, kmake_cfg['log_file'])
-    boot_qemu(cfg, f"{log_str}{self.config_str}", kmake_cfg['build_folder'], rc == 0, 'mips')
+    return_code, time = lib.kmake(kmake_cfg)
+    lib.log_result(cfg, f"{log_str}{self.config_str}", return_code == 0, time,
+                   kmake_cfg['log_file'])
+    boot_qemu(cfg, f"{log_str}{self.config_str}", kmake_cfg['build_folder'], return_code == 0,
+              'mips')
 
     generic_cfgs = ['32r1', '32r1el', '32r2', '32r2el']
     if self.llvm_version_code >= 1200000:
@@ -88,8 +92,8 @@ def build_defconfigs(self, cfg):
                 **generic_make_variables
             },
         }
-        rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
+        return_code, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
 
 
 def build_otherconfigs(self, cfg):
@@ -105,14 +109,15 @@ def build_otherconfigs(self, cfg):
                 **self.ld_bfd
             },
         }
-        rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
+        return_code, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
 
 
 # https://git.kernel.org/mips/c/c47c7ab9b53635860c6b48736efdd22822d726d7
 def has_c47c7ab9b5363(linux_folder):
-    with open(linux_folder.joinpath('arch', 'mips', 'configs', 'malta_defconfig')) as f:
-        return re.search('CONFIG_BLK_DEV_INITRD=y', f.read())
+    with open(linux_folder.joinpath('arch', 'mips', 'configs', 'malta_defconfig'),
+              encoding='utf-8') as file:
+        return re.search('CONFIG_BLK_DEV_INITRD=y', file.read())
 
 
 def has_e91946d6d93ef(linux_folder):

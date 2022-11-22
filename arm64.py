@@ -22,9 +22,9 @@ def build_defconfigs(self, cfg):
         'targets': ['distclean', log_str.split(' ')[1], 'all'],
         'variables': self.make_variables,
     }
-    rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
-    boot_qemu(cfg, log_str, kmake_cfg['build_folder'], rc == 0)
+    return_code, time = lib.kmake(kmake_cfg)
+    lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
+    boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0)
 
     if self.llvm_version_code >= 1300000:
         log_str = 'arm64 defconfig + CONFIG_CPU_BIG_ENDIAN=y'
@@ -38,9 +38,9 @@ def build_defconfigs(self, cfg):
         lib.kmake(kmake_cfg)
         lib.modify_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], 'big endian')
         kmake_cfg['targets'] = ['olddefconfig', 'all']
-        rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
-        boot_qemu(cfg, log_str, kmake_cfg['build_folder'], rc == 0, 'arm64be')
+        return_code, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
+        boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0, 'arm64be')
 
     if 'CONFIG_LTO_CLANG_THIN' in self.configs_present:
         log_str = 'arm64 defconfig + CONFIG_LTO_CLANG_THIN=y'
@@ -54,9 +54,9 @@ def build_defconfigs(self, cfg):
         lib.kmake(kmake_cfg)
         lib.modify_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], 'thinlto')
         kmake_cfg['targets'] = ['olddefconfig', 'all']
-        rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
-        boot_qemu(cfg, log_str, kmake_cfg['build_folder'], rc == 0)
+        return_code, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
+        boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0)
 
     if 'CONFIG_CFI_CLANG' in self.configs_present:
         if lib.has_kcfi(self.linux_folder):
@@ -81,8 +81,8 @@ def build_otherconfigs(self, cfg):
         'targets': ['distclean', log_str.split(' ')[1], 'all'],
         'variables': self.make_variables,
     }
-    rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time, kmake_cfg['log_file'])
+    return_code, time = lib.kmake(kmake_cfg)
+    lib.log_result(cfg, f"{log_str}{config_str}", return_code == 0, time, kmake_cfg['log_file'])
     if config_path:
         pathlib.Path(config_path).unlink()
         del self.make_variables['KCONFIG_ALLCONFIG']
@@ -106,8 +106,8 @@ def build_otherconfigs(self, cfg):
             'targets': ['distclean', log_str.split(' ')[1], 'all'],
             'variables': self.make_variables,
         }
-        rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
+        return_code, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
         if config_path:
             pathlib.Path(config_path).unlink()
             del self.make_variables['KCONFIG_ALLCONFIG']
@@ -121,8 +121,8 @@ def build_otherconfigs(self, cfg):
             'targets': ['distclean', log_str.split(' ')[1], 'all'],
             'variables': self.make_variables,
         }
-        rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
+        return_code, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
 
 
 def build_distroconfigs(self, cfg):
@@ -152,9 +152,9 @@ def build_distroconfigs(self, cfg):
         if distro == 'fedora' and self.linux_version_code < 507000:
             log_str += ' + CONFIG_STM=n (https://github.com/ClangBuiltLinux/linux/issues/515)'
             lib.scripts_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], ['-d', 'STM'])
-        rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
-        boot_qemu(cfg, log_str, kmake_cfg['build_folder'], rc == 0)
+        return_code, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
+        boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0)
 
 
 def build_cfi_kernel(self, cfg, use_lto=True):
@@ -179,20 +179,20 @@ def build_cfi_kernel(self, cfg, use_lto=True):
         sc_args += ['-e', 'LTO_CLANG_THIN']
     lib.scripts_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], sc_args)
     kmake_cfg['targets'] = ['olddefconfig', 'all']
-    rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
-    boot_qemu(cfg, log_str, kmake_cfg['build_folder'], rc == 0)
+    return_code, time = lib.kmake(kmake_cfg)
+    lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
+    boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0)
 
 
 def has_d8e85e144bbe1(linux_folder):
-    with open(linux_folder.joinpath('arch', 'arm64', 'Kconfig')) as f:
-        return re.search('prompt "Endianness"', f.read())
+    with open(linux_folder.joinpath('arch', 'arm64', 'Kconfig'), encoding='utf-8') as file:
+        return re.search('prompt "Endianness"', file.read())
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/1704
 def has_tsan_mem_funcs(linux_folder):
-    with open(linux_folder.joinpath('kernel', 'kcsan', 'core.c')) as f:
-        return re.search('__tsan_memset', f.read())
+    with open(linux_folder.joinpath('kernel', 'kcsan', 'core.c'), encoding='utf-8') as file:
+        return re.search('__tsan_memset', file.read())
 
 
 class ARM64:

@@ -22,9 +22,9 @@ def build_defconfigs(self, cfg):
         'targets': ['distclean', log_str.split(' ')[1], 'all'],
         'variables': self.make_variables,
     }
-    rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
-    boot_qemu(cfg, log_str, kmake_cfg['build_folder'], rc == 0)
+    return_code, time = lib.kmake(kmake_cfg)
+    lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
+    boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0)
 
     if 'CONFIG_LTO_CLANG_THIN' in self.configs_present:
         log_str = 'x86_64 defconfig + CONFIG_LTO_CLANG_THIN=y'
@@ -38,9 +38,9 @@ def build_defconfigs(self, cfg):
         lib.kmake(kmake_cfg)
         lib.modify_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], 'thinlto')
         kmake_cfg['targets'] = ['olddefconfig', 'all']
-        rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
-        boot_qemu(cfg, log_str, kmake_cfg['build_folder'], rc == 0)
+        return_code, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
+        boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0)
 
     if lib.has_kcfi(self.linux_folder):
         build_cfi_kernel(self, cfg)
@@ -67,8 +67,8 @@ def build_otherconfigs(self, cfg):
         'targets': ['distclean', log_str.split(' ')[1], 'all'],
         'variables': self.make_variables,
     }
-    rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time, kmake_cfg['log_file'])
+    return_code, time = lib.kmake(kmake_cfg)
+    lib.log_result(cfg, f"{log_str}{config_str}", return_code == 0, time, kmake_cfg['log_file'])
     if config_path:
         pathlib.Path(config_path).unlink()
         del self.make_variables['KCONFIG_ALLCONFIG']
@@ -95,8 +95,8 @@ def build_otherconfigs(self, cfg):
             'targets': ['distclean', log_str.split(' ')[1], 'all'],
             'variables': self.make_variables,
         }
-        rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
+        return_code, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
         if config_path:
             pathlib.Path(config_path).unlink()
             del self.make_variables['KCONFIG_ALLCONFIG']
@@ -144,9 +144,9 @@ def build_distroconfigs(self, cfg):
             if sc_args:
                 log_str += ' (https://github.com/ClangBuiltLinux/linux/issues/515)'
                 lib.scripts_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], sc_args)
-        rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
-        boot_qemu(cfg, log_str, kmake_cfg['build_folder'], rc == 0)
+        return_code, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
+        boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0)
 
 
 def build_cfi_kernel(self, cfg, use_lto=False):
@@ -170,28 +170,30 @@ def build_cfi_kernel(self, cfg, use_lto=False):
         sc_args += ['-e', 'LTO_CLANG_THIN']
     lib.scripts_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], sc_args)
     kmake_cfg['targets'] = ['olddefconfig', 'all']
-    rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
-    boot_qemu(cfg, log_str, kmake_cfg['build_folder'], rc == 0)
+    return_code, time = lib.kmake(kmake_cfg)
+    lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
+    boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0)
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/514
 # https://git.kernel.org/linus/aaeed6ecc1253ce1463fa1aca0b70a4ccbc9fa75
 def has_aaeed6ecc1253(linux_folder):
-    with open(linux_folder.joinpath('arch', 'x86', 'Kconfig')) as f:
-        return re.search(re.escape('https://github.com/ClangBuiltLinux/linux/issues/514'), f.read())
+    with open(linux_folder.joinpath('arch', 'x86', 'Kconfig'), encoding='utf-8') as file:
+        return re.search(re.escape('https://github.com/ClangBuiltLinux/linux/issues/514'),
+                         file.read())
 
 
 # https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f
 def has_d5cbd80e302df(linux_folder):
-    with open(linux_folder.joinpath('arch', 'x86', 'boot', 'compressed', 'Makefile')) as f:
-        return re.search('CLANG_FLAGS', f.read())
+    with open(linux_folder.joinpath('arch', 'x86', 'boot', 'compressed', 'Makefile'),
+              encoding='utf-8') as file:
+        return re.search('CLANG_FLAGS', file.read())
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/1704
 def has_tsan_mem_funcs(linux_folder):
-    with open(linux_folder.joinpath('kernel', 'kcsan', 'core.c')) as f:
-        return re.search('__tsan_memset', f.read())
+    with open(linux_folder.joinpath('kernel', 'kcsan', 'core.c'), encoding='utf-8') as file:
+        return re.search('__tsan_memset', file.read())
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/1741
@@ -201,7 +203,7 @@ def should_disable_kmsan(linux_folder, configs_present):
     return False
 
 
-class X86_64:
+class X86_64:  # pylint: disable=invalid-name
 
     def __init__(self, cfg):
         self.build_folder = cfg['build_folder'].joinpath(self.__class__.__name__.lower())

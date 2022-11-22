@@ -27,9 +27,9 @@ def build_defconfigs(self, cfg):
         kmake_cfg['targets'] = ['olddefconfig', 'all']
     else:
         kmake_cfg['targets'] += ['all']
-    rc, time = lib.kmake(kmake_cfg)
-    lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
-    boot_qemu(cfg, log_str, kmake_cfg['build_folder'], rc == 0)
+    return_code, time = lib.kmake(kmake_cfg)
+    lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
+    boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0)
 
 
 def build_otherconfigs(self, cfg):
@@ -48,8 +48,8 @@ def build_otherconfigs(self, cfg):
             'targets': ['distclean', log_str.split(' ')[1], 'all'],
             'variables': self.make_variables,
         }
-        rc, time = lib.kmake(kmake_cfg)
-        lib.log_result(cfg, f"{log_str}{config_str}", rc == 0, time, kmake_cfg['log_file'])
+        return_code, time = lib.kmake(kmake_cfg)
+        lib.log_result(cfg, f"{log_str}{config_str}", return_code == 0, time, kmake_cfg['log_file'])
         if config_path:
             pathlib.Path(config_path).unlink()
             del self.make_variables['KCONFIG_ALLCONFIG']
@@ -75,27 +75,28 @@ def build_distroconfigs(self, cfg):
                 'variables': self.make_variables,
             }
             log_str += lib.setup_config(sc_cfg)
-            rc, time = lib.kmake(kmake_cfg)
-            lib.log_result(cfg, log_str, rc == 0, time, kmake_cfg['log_file'])
+            return_code, time = lib.kmake(kmake_cfg)
+            lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
             if has_f2928e224d85e(kmake_cfg['linux_folder']):
-                boot_qemu(cfg, log_str, kmake_cfg['build_folder'], rc == 0)
+                boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0)
             else:
                 lib.log(cfg, f"{log_str} qemu boot skipped due to missing f2928e224d85e")
 
 
 def has_ec3a5cb61146c(linux_folder):
-    with open(linux_folder.joinpath('arch', 'riscv', 'Makefile')) as f:
-        return re.search(re.escape('KBUILD_CFLAGS += -mno-relax'), f.read())
+    with open(linux_folder.joinpath('arch', 'riscv', 'Makefile'), encoding='utf-8') as file:
+        return re.search(re.escape('KBUILD_CFLAGS += -mno-relax'), file.read())
 
 
 def has_f2928e224d85e(linux_folder):
-    with open(linux_folder.joinpath('arch', 'riscv', 'kernel', 'reset.c')) as f:
-        return re.search(re.escape('void (*pm_power_off)(void) = NULL;'), f.read())
+    with open(linux_folder.joinpath('arch', 'riscv', 'kernel', 'reset.c'),
+              encoding='utf-8') as file:
+        return re.search(re.escape('void (*pm_power_off)(void) = NULL;'), file.read())
 
 
 def has_efi(linux_folder):
-    with open(linux_folder.joinpath('arch', 'riscv', 'Kconfig')) as f:
-        return re.search('config EFI', f.read())
+    with open(linux_folder.joinpath('arch', 'riscv', 'Kconfig'), encoding='utf-8') as file:
+        return re.search('config EFI', file.read())
 
 
 class RISCV:
