@@ -173,19 +173,19 @@ def format_logs(cfg):
     str_to_remove = f"{cfg['linux_folder']}/"
     logs = cfg['logs']
 
-    for file in logs.items():
-        if pathlib.Path(file).exists():
+    for _key, log_file in logs.items():
+        if pathlib.Path(log_file).exists():
             # Trim trailing new line by truncating by one byte.
-            with open(file, 'rb+', encoding='utf-8') as file:
+            with open(log_file, 'rb+') as file:
                 file.seek(-1, os.SEEK_END)
                 file.truncate()
 
             # Replace all instances of the Linux source folder with nothing, as
             # if building in tree.
-            with open(file, encoding='utf-8') as file:
+            with open(log_file, encoding='utf-8') as file:
                 old_log = file.read()
                 new_log = old_log.replace(str_to_remove, '')
-            with open(file, 'w', encoding='utf-8') as file:
+            with open(log_file, 'w', encoding='utf-8') as file:
                 file.write(new_log)
 
 
