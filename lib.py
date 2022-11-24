@@ -853,6 +853,9 @@ def setup_config(sc_cfg):
     # CONFIG_VIRTIO_IOMMU as a module is invalid before https://git.kernel.org/linus/fa4afd78ea12cf31113f8b146b696c500d6a9dc3
     cfg_items += [('VIRTIO_IOMMU', 'drivers/iommu/Kconfig')]
 
+    # CONFIG_X86_AMD_PSTATE as a module is invalid after https://git.kernel.org/next/linux-next/c/456ca88d8a5258fc66edc42a10053ac8473de2b1
+    cfg_items += [('X86_AMD_PSTATE', 'drivers/cpufreq/Kconfig.x86')]
+
     # CONFIG_ZPOOL as a module is invalid after https://git.kernel.org/linus/b3fbd58fcbb10725a1314688e03b1af6827c42f9
     cfg_items += [('ZPOOL', 'mm/Kconfig')]
 
