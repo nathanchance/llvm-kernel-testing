@@ -40,7 +40,7 @@ for distro in $distros
 
             for arch in amd64 arm64 armmp i386 powerpc64le s390x
                 set package_version_signed 6.1.0-0
-                set kernel_version_signed 6.1~rc5-1~exp1
+                set kernel_version_signed 6.1~rc6-1~exp1
                 set package_version_unsigned $package_version_signed
                 set kernel_version_unsigned $kernel_version_signed
 
@@ -60,8 +60,6 @@ for distro in $distros
                     case armmp powerpc64le s390x
                         switch $arch
                             case armmp
-                                # For some reason, there is no armmp 6.1-rc5...
-                                set kernel_version_unsigned (string replace rc5 rc3 $kernel_version_unsigned)
                                 set deb_arch_final armhf
                             case powerpc64le
                                 set deb_arch_final ppc64el
