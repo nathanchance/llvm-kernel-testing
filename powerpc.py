@@ -29,7 +29,7 @@ def build_defconfigs(self, cfg):
         }
         return_code, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
-        if self.llvm_version_code < 1200001 and has_48cf12d88969b(kmake_cfg['linux_folder']):
+        if self.llvm_version < (12, 0, 1) and has_48cf12d88969b(kmake_cfg['linux_folder']):
             lib.log(
                 cfg,
                 f"{log_str} qemu_boot skipped (https://github.com/ClangBuiltLinux/linux/issues/1345)"
@@ -52,7 +52,7 @@ def build_defconfigs(self, cfg):
         kmake_cfg['targets'] = ['olddefconfig', 'all']
         return_code, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
-        if self.llvm_version_code >= 1400000:
+        if self.llvm_version >= (14, 0, 0):
             boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0, 'ppc32_mac')
         else:
             lib.log(cfg,
@@ -76,9 +76,9 @@ def build_defconfigs(self, cfg):
     pseries_targets = ['distclean', log_str.split(' ')[1]]
     # https://github.com/ClangBuiltLinux/linux/issues/1292
     wa_cbl_1292 = not has_51696f39cbee5(
-        kmake_cfg['linux_folder']) and self.llvm_version_code >= 1200000
+        kmake_cfg['linux_folder']) and self.llvm_version >= (12, 0, 0)
     # https://github.com/ClangBuiltLinux/linux/issues/1445
-    wa_cbl_1445 = self.linux_version_code >= 518000 and self.llvm_version_code < 1400000
+    wa_cbl_1445 = self.linux_version >= (5, 18, 0) and self.llvm_version < (14, 0, 0)
     if wa_cbl_1292 or wa_cbl_1445:
         if has_dwc(kmake_cfg['linux_folder']):
             pseries_targets += ['disable-werror.config', 'all']
@@ -97,7 +97,7 @@ def build_defconfigs(self, cfg):
 
     log_str = 'powerpc powernv_defconfig'
     powernv_vars = {}
-    if self.llvm_version_code < 1200000 and 'LD' not in self.ppc64le_vars:
+    if self.llvm_version < (12, 0, 0) and 'LD' not in self.ppc64le_vars:
         powernv_vars = {'LD': f"{self.cross_compile}ld"}
     kmake_cfg = {
         'linux_folder': self.linux_folder,
@@ -163,7 +163,7 @@ def build_distroconfigs(self, cfg):
         cfg_basename = f"{cfg_file[1]}.config"
         log_str = f"powerpc {distro} config"
         if distro == 'opensuse':
-            if has_231b232df8f67(self.linux_folder) and self.llvm_version_code <= 1200000:
+            if has_231b232df8f67(self.linux_folder) and self.llvm_version <= (12, 0, 0):
                 lib.log(
                     cfg,
                     f"{log_str} config skipped (https://github.com/ClangBuiltLinux/linux/issues/1160)"
@@ -171,7 +171,7 @@ def build_distroconfigs(self, cfg):
                 continue
         sc_cfg = {
             'linux_folder': self.linux_folder,
-            'linux_version_code': self.linux_version_code,
+            'linux_version': self.linux_version,
             'build_folder': self.build_folder,
             'config_file': self.configs_folder.joinpath(distro, cfg_basename),
         }
@@ -255,8 +255,8 @@ class POWERPC:
         self.configs_present = cfg['configs_present']
         self.cross_compile = get_cross_compile()
         self.linux_folder = cfg['linux_folder']
-        self.linux_version_code = cfg['linux_version_code']
-        self.llvm_version_code = cfg['llvm_version_code']
+        self.linux_version = cfg['linux_version']
+        self.llvm_version = cfg['llvm_version']
         self.log_folder = cfg['log_folder']
         self.make_variables = copy.deepcopy(cfg['make_variables'])
         self.save_objects = cfg['save_objects']
@@ -278,7 +278,7 @@ class POWERPC:
 
         if not has_0355785313e21(self.linux_folder):
             self.ppc64le_vars['LD'] = f"{self.cross_compile}ld"
-        if self.linux_version_code >= 518000 and self.llvm_version_code >= 1400000:
+        if self.linux_version >= (5, 18, 0) and self.llvm_version >= (14, 0, 0):
             self.ppc64le_vars['LLVM_IAS'] = '1'
 
         if 'def' in self.targets_to_build:

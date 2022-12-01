@@ -49,7 +49,7 @@ def build_otherconfigs(self, cfg):
             configs = []
             if 'CONFIG_WERROR' in self.configs_present:
                 configs += ['CONFIG_WERROR']
-            if disable_nf_configs(self.llvm_version_code, self.linux_folder):
+            if disable_nf_configs(self.llvm_version, self.linux_folder):
                 configs += ['CONFIG_IP_NF_TARGET_SYNPROXY']
                 configs += ['CONFIG_IP6_NF_TARGET_SYNPROXY']
                 configs += ['CONFIG_NFT_SYNPROXY']
@@ -80,7 +80,7 @@ def build_distroconfigs(self, cfg):
         log_str = f"i386 {distro} config"
         sc_cfg = {
             'linux_folder': self.linux_folder,
-            'linux_version_code': self.linux_version_code,
+            'linux_version': self.linux_version,
             'build_folder': self.build_folder,
             'config_file': self.configs_folder.joinpath(distro, 'i386.config'),
         }
@@ -92,7 +92,7 @@ def build_distroconfigs(self, cfg):
             'variables': self.make_variables,
         }
         log_str += lib.setup_config(sc_cfg)
-        if disable_nf_configs(self.llvm_version_code, self.linux_folder):
+        if disable_nf_configs(self.llvm_version, self.linux_folder):
             log_str += ' + CONFIG_NETFILTER_SYNPROXY=n (https://github.com/ClangBuiltLinux/linux/issues/1442)'
             sc_args = ['-d', 'IP_NF_TARGET_SYNPROXY']
             sc_args += ['-d', 'IP6_NF_TARGET_SYNPROXY']
@@ -103,8 +103,8 @@ def build_distroconfigs(self, cfg):
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/1442
-def disable_nf_configs(llvm_version_code, linux_folder):
-    return llvm_version_code < 1500000 and fortify_broken(linux_folder)
+def disable_nf_configs(llvm_version, linux_folder):
+    return llvm_version < (15, 0, 0) and fortify_broken(linux_folder)
 
 
 def fortify_broken(linux_folder):
@@ -145,21 +145,21 @@ class I386:
         self.configs_folder = cfg['configs_folder']
         self.configs_present = cfg['configs_present']
         self.linux_folder = cfg['linux_folder']
-        self.linux_version_code = cfg['linux_version_code']
-        self.llvm_version_code = cfg['llvm_version_code']
+        self.linux_version = cfg['linux_version']
+        self.llvm_version = cfg['llvm_version']
         self.log_folder = cfg['log_folder']
         self.make_variables = copy.deepcopy(cfg['make_variables'])
         self.save_objects = cfg['save_objects']
         self.targets_to_build = cfg['targets_to_build']
 
     def build(self, cfg):
-        if self.linux_version_code < 509000:
+        if self.linux_version < (5, 9, 0):
             lib.header('Skipping i386 kernels')
             print('Reason: i386 kernels do not build properly prior to Linux 5.9.')
             print('        https://github.com/ClangBuiltLinux/linux/issues/194')
             lib.log(cfg, 'x86 kernels skipped due to missing 158807de5822')
             return
-        if self.llvm_version_code >= 1200000 and not has_bb73d07148c40(self.linux_folder):
+        if self.llvm_version >= (12, 0, 0) and not has_bb73d07148c40(self.linux_folder):
             lib.header('Skipping i386 kernels')
             print(
                 'Reason: x86 kernels do not build properly with LLVM 12.0.0+ without R_386_PLT32 handling.'

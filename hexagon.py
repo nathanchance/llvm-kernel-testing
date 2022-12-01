@@ -22,7 +22,7 @@ def build_defconfigs(self, cfg):
 
 
 def build_otherconfigs(self, cfg):
-    if has_ffb92ce826fd8(self.linux_folder) and self.llvm_version_code >= 1300000:
+    if has_ffb92ce826fd8(self.linux_folder) and self.llvm_version >= (13, 0, 0):
         log_str = 'hexagon allmodconfig'
         configs = []
         if 'CONFIG_WERROR' in self.configs_present:
@@ -56,7 +56,7 @@ class HEXAGON:
         self.commits_present = cfg['commits_present']
         self.configs_present = cfg['configs_present']
         self.linux_folder = cfg['linux_folder']
-        self.llvm_version_code = cfg['llvm_version_code']
+        self.llvm_version = cfg['llvm_version']
         self.log_folder = cfg['log_folder']
         self.make_variables = copy.deepcopy(cfg['make_variables'])
         self.save_objects = cfg['save_objects']

@@ -134,36 +134,17 @@ def config_val(linux_folder, build_folder, cfg_sym):
                           capture_output=True).strip()
 
 
-def create_version_code(version):
+def create_binutils_version(as_exec):
     """
-    Turns a version list with three values (major, minor, and patch level) into
-    an integer with at least six digits:
-        * major: as is
-        * minor: with a minimum length of two ("1" becomes "01")
-        * patch level: with a minimum length of three ("1" becomes "001")
-
-    Parameters:
-        version (list): A list with three integer values (major, minor, and
-                        patch level).
-
-    Returns:
-        An integer with at least six digits.
-    """
-    major, minor, patch = [int(version[i]) for i in (0, 1, 2)]
-    return int(f"{major:d}{minor:02d}{patch:03d}")
-
-
-def create_binutils_version_code(as_exec):
-    """
-    Turns the version of binutils being used to build the kernel into an
-    integer with at least six digits.
+    Turns the version of binutils being used to build the kernel into a
+    tuple to allow checking against a specific version naturally.
 
     Parameters:
         as_exec (Path): A Path object pointing to the 'as' binary to get the
                         version from.
 
     Returns:
-        An integer with at least six digits.
+        A tuple of major, minor, and patch level.
     """
     as_output = capture_cmd([as_exec, '--version']).split('\n')[0]
     # "GNU assembler (GNU Binutils) 2.39.50.20221024" -> "2.39.50.20221024" -> ['2', '39', '50']
@@ -171,53 +152,53 @@ def create_binutils_version_code(as_exec):
     version_list = as_output.split(' ')[-1].split('-')[0].split('.')[0:3]
     if len(version_list) == 2:
         version_list += ['0']
-    return create_version_code(version_list)
+    return tuple(int(item) for item in version_list)
 
 
-def create_linux_version_code(linux_folder):
+def create_linux_version(linux_folder):
     """
-    Turns the version of the Linux kernel being compiled into an integer with
-    at least six digits.
+    Turns the version of the Linux kernel being compiled into a tuple to allow
+    checking against a specific version naturally.
 
     Parameters:
         linux_folder (Path): A Path object pointing to the Linux kernel source.
 
     Returns:
-        An integer with at least six digits.
+        A tuple of major, minor, and patch level.
     """
     version_list = get_kernelversion(linux_folder).split('-')[0].split('.')
-    return create_version_code(version_list)
+    return tuple(int(item) for item in version_list)
 
 
-def create_llvm_version_code():
+def create_llvm_version():
     """
-    Turns the version of clang being used to compile the kernel into an integer
-    with at least six digits.
+    Turns the version of clang being used to compile the kernel into a tuple to
+    allow checking against a specific version naturally.
 
     Returns:
-        An integer with at least six digits.
+        A tuple of major, minor, and patch level.
     """
     clang_cmd = ['clang', '-E', '-x', 'c', '-']
     clang_input = '__clang_major__ __clang_minor__ __clang_patchlevel__'
     clang_output = capture_cmd(clang_cmd, input=clang_input)
 
     version_list = clang_output.split('\n')[-2].split(' ')
-    return create_version_code(version_list)
+    return tuple(int(item) for item in version_list)
 
 
-def create_qemu_version_code(qemu_exec):
+def create_qemu_version(qemu_exec):
     """
-    Turns the version of QEMU being used to boot test the kernel into an
-    integer with at least six digits.
+    Turns the version of QEMU being used to boot test the kernel into a tuple
+    to allow checking against a specific version naturally.
 
     Parameters:
         qemu_exec (str): The name of the QEMU binary to version check.
 
     Returns:
-        An integer with at least six digits.
+        A tuple of major, minor, and patch level.
     """
-    version_list = get_qemu_version(qemu_exec).split('.')
-    return create_version_code(version_list)
+    version_list = capture_cmd([qemu_exec, '--version']).split('\n')[0].split(' ')[3].split('.')
+    return tuple(int(item) for item in version_list)
 
 
 def gen_allconfig(build_folder, configs):
@@ -313,20 +294,6 @@ def get_linux_version(linux_folder):
     shutil.rmtree(include_config, ignore_errors=True)
 
     return f"Linux {kernelversion}{localversion}"
-
-
-def get_qemu_version(qemu_exec):
-    """
-    Get the QEMU version information from the QEMU version string.
-
-    Parameters:
-        qemu_exec (str): The name of the QEMU binary to version check.
-
-    Returns:
-        The QEMU version number as a string.
-    """
-    qemu_output = capture_cmd([qemu_exec, '--version'])
-    return qemu_output.split('\n')[0].split(' ')[3]
 
 
 def get_time_diff(start_time, end_time):
@@ -669,11 +636,11 @@ def setup_config(sc_cfg):
     Sets up a distribution configuration in the build folder.
 
     Parameters:
-        sc_cfg (dict): A dictionary with 'linux_folder', 'linux_version_code',
+        sc_cfg (dict): A dictionary with 'linux_folder', 'linux_version',
                        'build_folder', and 'config_file' as keys.
     """
     linux_folder = sc_cfg['linux_folder']
-    linux_version_code = sc_cfg['linux_version_code']
+    linux_version = sc_cfg['linux_version']
     build_folder = sc_cfg['build_folder']
     config_file = sc_cfg['config_file']
 
@@ -701,7 +668,7 @@ def setup_config(sc_cfg):
     debug_info_btf = 'DEBUG_INFO_BTF'
     debug_info_btf_y = is_set(linux_folder, build_folder, debug_info_btf)
     pahole_available = shutil.which('pahole')
-    if debug_info_btf_y and not (pahole_available and linux_version_code >= 507000):
+    if debug_info_btf_y and not (pahole_available and linux_version >= (5, 7, 0)):
         log_cfgs += [debug_info_btf]
         sc_args += ['-d', debug_info_btf]
 

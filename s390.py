@@ -9,11 +9,10 @@ import lib
 
 
 def boot_qemu(self, cfg, log_str, build_folder, kernel_available):
-    if self.qemu_version_code < 600000:
-        qemu_ver = lib.get_qemu_version(self.qemu_exec)
+    if self.qemu_version < (6, 0, 0):
         lib.log(
             cfg,
-            f"{log_str} qemu boot skipped due to skipped due to a QEMU binary older than 6.0.0 (found {qemu_ver})"
+            f"{log_str} qemu boot skipped due to skipped due to a QEMU binary older than 6.0.0 (found {'.'.join(self.qemu_version)})"
         )
     lib.boot_qemu(cfg, 's390', log_str, build_folder, kernel_available)
 
@@ -35,7 +34,7 @@ def build_defconfigs(self, cfg):
 def build_otherconfigs(self, cfg):
     other_cfgs = ['allmodconfig']
     skipped_cfgs = []
-    if self.binutils_version_code < 239050 or not is_relocatable_a_choice(self.linux_folder):
+    if self.binutils_version < (2, 39, 50) or not is_relocatable_a_choice(self.linux_folder):
         other_cfgs += ['allnoconfig', 'tinyconfig']
     else:
         skipped_cfgs += ['allnoconfig', 'tinyconfig']
@@ -79,7 +78,7 @@ def build_distroconfigs(self, cfg):
         log_str = f"s390 {distro} config"
         sc_cfg = {
             'linux_folder': self.linux_folder,
-            'linux_version_code': self.linux_version_code,
+            'linux_version': self.linux_version,
             'build_folder': self.build_folder,
             'config_file': self.configs_folder.joinpath(distro, 's390x.config'),
         }
@@ -136,19 +135,19 @@ class S390:
         self.configs_folder = cfg['configs_folder']
         self.configs_present = cfg['configs_present']
         self.cross_compile = 's390x-linux-gnu-'
-        self.binutils_version_code = lib.create_binutils_version_code(f"{self.cross_compile}as")
+        self.binutils_version = lib.create_binutils_version(f"{self.cross_compile}as")
         self.linux_folder = cfg['linux_folder']
-        self.llvm_version_code = cfg['llvm_version_code']
-        self.linux_version_code = cfg['linux_version_code']
+        self.llvm_version = cfg['llvm_version']
+        self.linux_version = cfg['linux_version']
         self.log_folder = cfg['log_folder']
         self.make_variables = copy.deepcopy(cfg['make_variables'])
         self.qemu_exec = 'qemu-system-s390x'
-        self.qemu_version_code = lib.create_qemu_version_code(self.qemu_exec)
+        self.qemu_version = lib.create_qemu_version(self.qemu_exec)
         self.save_objects = cfg['save_objects']
         self.targets_to_build = cfg['targets_to_build']
 
     def build(self, cfg):
-        if self.linux_version_code < 506000:
+        if self.linux_version < (5, 6, 0):
             lib.header('Skipping s390x kernels')
             print('Reason: s390 kernels did not build properly until Linux 5.6')
             print(
@@ -159,14 +158,14 @@ class S390:
                 's390x kernels skipped due to missing fixes from 5.6 (https://lore.kernel.org/r/your-ad-here.call-01580230449-ext-6884@work.hours/)'
             )
             return
-        if self.linux_version_code >= 514000 and self.llvm_version_code < 1300000:
+        if self.linux_version >= (5, 14, 0) and self.llvm_version < (13, 0, 0):
             lib.header('Skipping s390x kernels')
             print('Reason: s390 kernels cannot build with LLVM versions prior to 13.0.0 on 5.14+.')
             print('        https://git.kernel.org/linus/e2bc3e91d91ede6710801fa0737e4e4ed729b19e')
             lib.log(cfg,
                     's390x kernels skipped due to LLVM < 13.0.0 and Linux 5.14+ (e2bc3e91d91ed)')
             return
-        if self.linux_version_code >= 519000 and self.llvm_version_code < 1400000:
+        if self.linux_version >= (5, 19, 0) and self.llvm_version < (14, 0, 0):
             lib.header('Skipping s390x kernels')
             print('Reason: s390 kernels cannot build with LLVM versions prior to 14.0.0 on 5.19+.')
             print('        https://git.kernel.org/linus/8218827b73c6e41029438a2d3cc573286beee914')

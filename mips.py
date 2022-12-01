@@ -72,7 +72,7 @@ def build_defconfigs(self, cfg):
               'mips')
 
     generic_cfgs = ['32r1', '32r1el', '32r2', '32r2el']
-    if self.llvm_version_code >= 1200000:
+    if self.llvm_version >= (12, 0, 0):
         generic_cfgs += ['32r6', '32r6el']
     for generic_cfg in generic_cfgs:
         log_str = f"mips {generic_cfg}_defconfig"
@@ -129,8 +129,8 @@ class MIPS:
     def __init__(self, cfg):
         self.build_folder = cfg['build_folder'].joinpath(self.__class__.__name__.lower())
         self.linux_folder = cfg['linux_folder']
-        self.linux_version_code = cfg['linux_version_code']
-        self.llvm_version_code = cfg['llvm_version_code']
+        self.linux_version = cfg['linux_version']
+        self.llvm_version = cfg['llvm_version']
         self.log_folder = cfg['log_folder']
         self.make_variables = copy.deepcopy(cfg['make_variables'])
         self.save_objects = cfg['save_objects']
@@ -152,7 +152,7 @@ class MIPS:
                 break
         self.cross_compile = cross_compile
 
-        if self.linux_version_code >= 515000:
+        if self.linux_version >= (5, 15, 0):
             self.make_variables['LLVM_IAS'] = '1'
         else:
             self.make_variables['CROSS_COMPILE'] = self.cross_compile
@@ -168,7 +168,7 @@ class MIPS:
             self.sc_args += ['-e', 'BLK_DEV_INITRD']
 
         # https://github.com/ClangBuiltLinux/linux/issues/1025
-        if has_e91946d6d93ef(self.linux_folder) and self.llvm_version_code < 1300000:
+        if has_e91946d6d93ef(self.linux_folder) and self.llvm_version < (13, 0, 0):
             self.ld_bfd = {'LD': f"{self.cross_compile}ld"}
 
         if 'def' in self.targets_to_build:

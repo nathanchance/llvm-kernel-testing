@@ -79,7 +79,7 @@ def build_otherconfigs(self, cfg):
             if 'CONFIG_WERROR' in self.configs_present:
                 configs += ['CONFIG_WERROR']
             if not has_nwfpe_replexitval(self.linux_folder):
-                if self.llvm_version_code >= 1500000:
+                if self.llvm_version >= (15, 0, 0):
                     configs += [
                         'CONFIG_FPE_NWFPE', '(https://github.com/ClangBuiltLinux/linux/issues/1666)'
                     ]
@@ -115,7 +115,7 @@ def build_distroconfigs(self, cfg):
         log_str = f"arm {distro} config"
         sc_cfg = {
             'linux_folder': self.linux_folder,
-            'linux_version_code': self.linux_version_code,
+            'linux_version': self.linux_version,
             'build_folder': self.build_folder,
             'config_file': self.configs_folder.joinpath(distro, cfg_basename),
         }
@@ -141,8 +141,8 @@ class ARM:
         self.configs_folder = cfg['configs_folder']
         self.configs_present = cfg['configs_present']
         self.linux_folder = cfg['linux_folder']
-        self.linux_version_code = cfg['linux_version_code']
-        self.llvm_version_code = cfg['llvm_version_code']
+        self.linux_version = cfg['linux_version']
+        self.llvm_version = cfg['llvm_version']
         self.log_folder = cfg['log_folder']
         self.make_variables = copy.deepcopy(cfg['make_variables'])
         self.save_objects = cfg['save_objects']
@@ -158,7 +158,7 @@ class ARM:
             if shutil.which(gnu_as):
                 break
 
-        if self.llvm_version_code >= 1300000 and self.linux_version_code >= 513000:
+        if self.llvm_version >= (13, 0, 0) and self.linux_version >= (5, 13, 0):
             self.make_variables['LLVM_IAS'] = '1'
             if '6f5b41a2f5a63' not in self.commits_present:
                 self.make_variables['CROSS_COMPILE'] = cross_compile

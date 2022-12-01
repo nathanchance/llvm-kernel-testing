@@ -21,7 +21,7 @@ def build_defconfigs(self, cfg):
         'targets': ['distclean', log_str.split(' ')[1]],
         'variables': self.make_variables,
     }
-    if self.llvm_version_code < 1300000 and has_efi(self.linux_folder):
+    if self.llvm_version < (13, 0, 0) and has_efi(self.linux_folder):
         lib.kmake(kmake_cfg)
         lib.scripts_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], ['-d', 'EFI'])
         kmake_cfg['targets'] = ['olddefconfig', 'all']
@@ -33,7 +33,7 @@ def build_defconfigs(self, cfg):
 
 
 def build_otherconfigs(self, cfg):
-    if self.linux_version_code > 508000 and has_ec3a5cb61146c(self.linux_folder):
+    if self.linux_version > (5, 8, 0) and has_ec3a5cb61146c(self.linux_folder):
         log_str = 'riscv allmodconfig'
         configs = []
         if 'CONFIG_WERROR' in self.configs_present:
@@ -56,14 +56,14 @@ def build_otherconfigs(self, cfg):
 
 
 def build_distroconfigs(self, cfg):
-    if self.linux_version_code > 508000 and has_ec3a5cb61146c(self.linux_folder):
+    if self.linux_version > (5, 8, 0) and has_ec3a5cb61146c(self.linux_folder):
         for cfg_file in [('alpine', 'riscv64'), ('opensuse', 'riscv64')]:
             distro = cfg_file[0]
             cfg_basename = f"{cfg_file[1]}.config"
             log_str = f"riscv {distro} config"
             sc_cfg = {
                 'linux_folder': self.linux_folder,
-                'linux_version_code': self.linux_version_code,
+                'linux_version': self.linux_version,
                 'build_folder': self.build_folder,
                 'config_file': self.configs_folder.joinpath(distro, cfg_basename),
             }
@@ -107,15 +107,15 @@ class RISCV:
         self.configs_folder = cfg['configs_folder']
         self.configs_present = cfg['configs_present']
         self.linux_folder = cfg['linux_folder']
-        self.linux_version_code = cfg['linux_version_code']
-        self.llvm_version_code = cfg['llvm_version_code']
+        self.linux_version = cfg['linux_version']
+        self.llvm_version = cfg['llvm_version']
         self.log_folder = cfg['log_folder']
         self.make_variables = copy.deepcopy(cfg['make_variables'])
         self.save_objects = cfg['save_objects']
         self.targets_to_build = cfg['targets_to_build']
 
     def build(self, cfg):
-        if self.linux_version_code < 507000:
+        if self.linux_version < (5, 7, 0):
             lib.header('Skipping riscv kernels')
             print('Reason: RISC-V needs the following fixes from Linux 5.7 to build properly:\n')
             print('        * https://git.kernel.org/linus/52e7c52d2ded5908e6a4f8a7248e5fa6e0d6809a')
@@ -131,7 +131,7 @@ class RISCV:
         cross_compile = 'riscv64-linux-gnu-'
 
         self.make_variables['ARCH'] = 'riscv'
-        if self.llvm_version_code >= 1300000:
+        if self.llvm_version >= (13, 0, 0):
             lib.header('Building riscv kernels', end='')
 
             self.make_variables['LLVM_IAS'] = '1'
@@ -147,11 +147,11 @@ class RISCV:
             print(f"binutils version: {binutils_version}")
             print(f"binutils location: {binutils_location}")
 
-        if self.llvm_version_code < 1300000 or not has_ec3a5cb61146c(self.linux_folder):
+        if self.llvm_version < (13, 0, 0) or not has_ec3a5cb61146c(self.linux_folder):
             self.make_variables['LD'] = f"{cross_compile}ld"
         else:
             # linux-5.10.y has a build problem with ld.lld
-            if self.linux_version_code <= 510999:
+            if self.linux_version <= (5, 10, 999):
                 self.make_variables['LD'] = f"{cross_compile}ld"
 
         if 'def' in self.targets_to_build:

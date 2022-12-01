@@ -235,8 +235,8 @@ def initial_config_and_setup(args):
 
     # Ensure PATH has been updated with proper folders above before creating
     # these.
-    cfg['linux_version_code'] = lib.create_linux_version_code(linux_folder)
-    cfg['llvm_version_code'] = lib.create_llvm_version_code()
+    cfg['linux_version'] = lib.create_linux_version(linux_folder)
+    cfg['llvm_version'] = lib.create_llvm_version()
 
     boot_utils_folder = pathlib.Path(args.boot_utils_folder)
     if lib.is_relative_to(boot_utils_folder, base_folder):

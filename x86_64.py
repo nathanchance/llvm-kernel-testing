@@ -52,7 +52,7 @@ def build_otherconfigs(self, cfg):
     configs = []
     if 'CONFIG_WERROR' in self.configs_present:
         configs += ['CONFIG_WERROR']
-    if self.linux_version_code < 507000:
+    if self.linux_version < (5, 7, 0):
         configs += [
             'CONFIG_STM', 'CONFIG_TEST_MEMCAT_P',
             '(https://github.com/ClangBuiltLinux/linux/issues/515)'
@@ -77,7 +77,7 @@ def build_otherconfigs(self, cfg):
         log_str = 'x86_64 allmodconfig'
         configs = ['CONFIG_GCOV_KERNEL', 'CONFIG_KASAN', 'CONFIG_LTO_CLANG_THIN=y']
         # https://github.com/ClangBuiltLinux/linux/issues/1704
-        if self.llvm_version_code >= 1600000 and not has_tsan_mem_funcs(self.linux_folder):
+        if self.llvm_version >= (16, 0, 0) and not has_tsan_mem_funcs(self.linux_folder):
             configs += ['CONFIG_KCSAN']
             if should_disable_kmsan(self.linux_folder, self.configs_present):
                 configs += [
@@ -114,7 +114,7 @@ def build_distroconfigs(self, cfg):
         log_str = f"x86_64 {distro} config"
         sc_cfg = {
             'linux_folder': self.linux_folder,
-            'linux_version_code': self.linux_version_code,
+            'linux_version': self.linux_version,
             'build_folder': self.build_folder,
             'config_file': self.configs_folder.joinpath(distro, cfg_basename),
         }
@@ -135,7 +135,7 @@ def build_distroconfigs(self, cfg):
             },
         }
         log_str += lib.setup_config(sc_cfg)
-        if self.linux_version_code < 507000:
+        if self.linux_version < (5, 7, 0):
             sc_args = []
             for cfg_sym in ['STM', 'TEST_MEMCAT_P']:
                 if lib.is_set(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], cfg_sym):
@@ -211,8 +211,8 @@ class X86_64:  # pylint: disable=invalid-name
         self.configs_folder = cfg['configs_folder']
         self.configs_present = cfg['configs_present']
         self.linux_folder = cfg['linux_folder']
-        self.linux_version_code = cfg['linux_version_code']
-        self.llvm_version_code = cfg['llvm_version_code']
+        self.linux_version = cfg['linux_version']
+        self.llvm_version = cfg['llvm_version']
         self.log_folder = cfg['log_folder']
         self.make_variables = copy.deepcopy(cfg['make_variables'])
         self.save_objects = cfg['save_objects']
@@ -236,7 +236,7 @@ class X86_64:  # pylint: disable=invalid-name
 
         lib.header('Building x86_64 kernels', end='')
 
-        if self.linux_version_code >= 510000:
+        if self.linux_version >= (5, 10, 0):
             self.make_variables['LLVM_IAS'] = '1'
             if '6f5b41a2f5a63' not in self.commits_present and self.cross_compile:
                 self.make_variables['CROSS_COMPILE'] = self.cross_compile

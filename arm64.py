@@ -26,7 +26,7 @@ def build_defconfigs(self, cfg):
     lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
     boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0)
 
-    if self.llvm_version_code >= 1300000:
+    if self.llvm_version >= (13, 0, 0):
         log_str = 'arm64 defconfig + CONFIG_CPU_BIG_ENDIAN=y'
         kmake_cfg = {
             'linux_folder': self.linux_folder,
@@ -91,7 +91,7 @@ def build_otherconfigs(self, cfg):
         log_str = 'arm64 allmodconfig'
         configs = ['CONFIG_GCOV_KERNEL', 'CONFIG_KASAN', 'CONFIG_LTO_CLANG_THIN=y']
         # https://github.com/ClangBuiltLinux/linux/issues/1704
-        if self.llvm_version_code >= 1600000 and not has_tsan_mem_funcs(self.linux_folder):
+        if self.llvm_version >= (16, 0, 0) and not has_tsan_mem_funcs(self.linux_folder):
             configs += ['CONFIG_KCSAN']
         if 'CONFIG_WERROR' in self.configs_present:
             configs += ['CONFIG_WERROR']
@@ -137,7 +137,7 @@ def build_distroconfigs(self, cfg):
         log_str = f"arm64 {distro} config"
         sc_cfg = {
             'linux_folder': self.linux_folder,
-            'linux_version_code': self.linux_version_code,
+            'linux_version': self.linux_version,
             'build_folder': self.build_folder,
             'config_file': self.configs_folder.joinpath(distro, cfg_basename),
         }
@@ -149,7 +149,7 @@ def build_distroconfigs(self, cfg):
             'variables': self.make_variables,
         }
         log_str += lib.setup_config(sc_cfg)
-        if distro == 'fedora' and self.linux_version_code < 507000:
+        if distro == 'fedora' and self.linux_version < (5, 7, 0):
             log_str += ' + CONFIG_STM=n (https://github.com/ClangBuiltLinux/linux/issues/515)'
             lib.scripts_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], ['-d', 'STM'])
         return_code, time = lib.kmake(kmake_cfg)
@@ -203,8 +203,8 @@ class ARM64:
         self.configs_folder = cfg['configs_folder']
         self.configs_present = cfg['configs_present']
         self.linux_folder = cfg['linux_folder']
-        self.linux_version_code = cfg['linux_version_code']
-        self.llvm_version_code = cfg['llvm_version_code']
+        self.linux_version = cfg['linux_version']
+        self.llvm_version = cfg['llvm_version']
         self.log_folder = cfg['log_folder']
         self.make_variables = copy.deepcopy(cfg['make_variables'])
         self.save_objects = cfg['save_objects']
@@ -220,7 +220,7 @@ class ARM64:
 
         lib.header('Building arm64 kernels', end='')
 
-        if self.linux_version_code >= 510000:
+        if self.linux_version >= (5, 10, 0):
             self.make_variables['LLVM_IAS'] = '1'
             if '6f5b41a2f5a63' not in self.commits_present and cross_compile:
                 self.make_variables['CROSS_COMPILE'] = cross_compile
