@@ -3,7 +3,7 @@
 import collections
 import datetime
 import os
-import pathlib
+from pathlib import Path
 import re
 import shutil
 import subprocess
@@ -248,7 +248,7 @@ def get_binary_info(binary):
         A tuple of the version string and installation location as strings.
     """
     version = capture_cmd([binary, '--version']).split('\n')[0]
-    location = pathlib.Path(shutil.which(binary)).parent
+    location = Path(shutil.which(binary)).parent
 
     return version, location
 

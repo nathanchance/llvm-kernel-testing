@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import copy
-import pathlib
+from pathlib import Path
 import re
 import shutil
 
@@ -51,7 +51,7 @@ def build_otherconfigs(self, cfg):
         return_code, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, f"{log_str}{config_str}", return_code == 0, time, kmake_cfg['log_file'])
         if config_path:
-            pathlib.Path(config_path).unlink()
+            Path(config_path).unlink()
             del self.make_variables['KCONFIG_ALLCONFIG']
 
 

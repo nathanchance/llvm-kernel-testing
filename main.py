@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-import argparse
+from argparse import ArgumentParser
 import datetime
 import os
-import pathlib
+from pathlib import Path
 import re
 import shutil
 import signal
@@ -23,7 +23,7 @@ from x86_64 import X86_64
 
 import lib
 
-base_folder = pathlib.Path(__file__).resolve().parent
+base_folder = Path(__file__).resolve().parent
 supported_targets = ['def', 'other', 'distro']
 supported_architectures = [
     'arm', 'arm64', 'hexagon', 'i386', 'mips', 'powerpc', 'riscv', 's390', 'x86_64'
@@ -63,7 +63,7 @@ def add_to_path(folder):
                       added to PATH.
     """
     if folder:
-        folder = pathlib.Path(folder)
+        folder = Path(folder)
         if not folder.exists():
             raise FileNotFoundError(f"Supplied folder ('{folder}') does not exist?")
         bin_folder = folder.joinpath('bin')
@@ -174,7 +174,7 @@ def format_logs(cfg):
     logs = cfg['logs']
 
     for _key, log_file in logs.items():
-        if pathlib.Path(log_file).exists():
+        if Path(log_file).exists():
             # Trim trailing new line by truncating by one byte.
             with open(log_file, 'rb+') as file:
                 file.seek(-1, os.SEEK_END)
@@ -200,12 +200,12 @@ def initial_config_and_setup(args):
     Returns:
         cfg (dict): A dictionary of configuration values
     """
-    linux_folder = pathlib.Path(args.linux_folder)
+    linux_folder = Path(args.linux_folder)
     if not linux_folder.exists():
         raise FileNotFoundError(
             f"Supplied Linux source folder ('{linux_folder}') could not be found!")
 
-    log_folder = pathlib.Path(args.log_folder)
+    log_folder = Path(args.log_folder)
 
     # Ensure log folder is created for future writing
     log_folder.mkdir(exist_ok=True, parents=True)
@@ -231,14 +231,14 @@ def initial_config_and_setup(args):
     build_folder = args.build_folder
     if not build_folder:
         build_folder = linux_folder.joinpath('build')
-    cfg['build_folder'] = pathlib.Path(build_folder)
+    cfg['build_folder'] = Path(build_folder)
 
     # Ensure PATH has been updated with proper folders above before creating
     # these.
     cfg['linux_version'] = lib.create_linux_version(linux_folder)
     cfg['llvm_version'] = lib.create_llvm_version()
 
-    boot_utils_folder = pathlib.Path(args.boot_utils_folder)
+    boot_utils_folder = Path(args.boot_utils_folder)
     if lib.is_relative_to(boot_utils_folder, base_folder):
         lib.header('Updating boot-utils')
         clone_update_boot_utils(boot_utils_folder)
@@ -272,7 +272,7 @@ def parse_arguments():
     Returns:
         A Namespace object containing key values from parser.parse_args()
     """
-    parser = argparse.ArgumentParser()
+    parser = ArgumentParser()
 
     parser.add_argument('-a',
                         '--architectures',
