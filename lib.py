@@ -53,8 +53,7 @@ def can_be_modular(kconfig_file, cfg_sym):
         cfg_sym (str): The Kconfig symbol to check.
     """
     if kconfig_file.exists():
-        with open(kconfig_file, encoding='utf-8') as file:
-            return re.search(f"config {cfg_sym}\n\ttristate", file.read())
+        return re.search(f"config {cfg_sym}\n\ttristate", kconfig_file.read_text(encoding='utf-8'))
     return False
 
 
@@ -285,9 +284,7 @@ def get_linux_version(linux_folder):
     include_config = linux_folder.joinpath('include', 'config')
     include_config.mkdir(exist_ok=True, parents=True)
 
-    autoconf = include_config.joinpath('auto.conf')
-    with open(autoconf, 'w', encoding='utf-8') as file:
-        file.write('CONFIG_LOCALVERSION_AUTO=y')
+    include_config.joinpath('auto.conf').write_text('CONFIG_LOCALVERSION_AUTO=y', encoding='utf-8')
 
     localversion = capture_cmd(['scripts/setlocalversion'], cwd=linux_folder)
 
