@@ -814,6 +814,9 @@ def setup_config(sc_cfg):
     # CONFIG_UNICODE as a module is invalid before https://git.kernel.org/linus/5298d4bfe80f6ae6ae2777bcd1357b0022d98573
     cfg_items += [('UNICODE', 'fs/unicode/Kconfig')]
 
+    # CONFIG_VFIO_VIRQFD as a module is invalid after https://git.kernel.org/next/linux-next/c/e2d55709398e62cf53e5c7df3758ae52cc62d63a
+    cfg_items += [('VFIO_VIRQFD', 'drivers/vfio/Kconfig')]
+
     # CONFIG_VIRTIO_IOMMU as a module is invalid before https://git.kernel.org/linus/fa4afd78ea12cf31113f8b146b696c500d6a9dc3
     cfg_items += [('VIRTIO_IOMMU', 'drivers/iommu/Kconfig')]
 
