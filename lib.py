@@ -695,6 +695,15 @@ def setup_config(sc_cfg):
             log_cfgs += [extra_firmware]
             sc_args += ['-u', extra_firmware]
 
+    if 'fedora' in str(config_file):
+        # We cannot cope with CONFIG_EFI_ZBOOT, as it will generate a different
+        # kernel image than boot-utils expects. Disable it so we get the kernel
+        # image that we expect.
+        efi_zboot = 'EFI_ZBOOT'
+        if is_set(linux_folder, build_folder, efi_zboot):
+            log_cfgs += [efi_zboot]
+            sc_args += ['-d', efi_zboot]
+
     # Make sure that certain configuration options do not get disabled across
     # kernel versions. This would not be necessary if we had an individual
     # config for each kernel version that we support but that is a lot more
