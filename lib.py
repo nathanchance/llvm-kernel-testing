@@ -446,7 +446,7 @@ def kmake(kmake_cfg):
 
     make_targets = targets
 
-    make_cmd = ['make'] + make_flags + make_variables + make_targets
+    make_cmd = ['make', *make_flags, *make_variables, *make_targets]
 
     pretty_print_cmd(make_cmd)
     start_time = time.time()
@@ -597,7 +597,7 @@ def process_cfg_item(linux_folder, build_folder, cfg_item):
     sym_cannot_be_m = not can_be_modular(linux_folder.joinpath(file), cfg_sym)
 
     if sym_is_m and sym_cannot_be_m:
-        return sc_action + [cfg_sym]
+        return [*sc_action, cfg_sym]
     return []
 
 
@@ -620,7 +620,7 @@ def scripts_config(linux_folder, build_folder, args, capture_output=False):
     scripts_config_exec = linux_folder.joinpath('scripts', 'config')
     config = build_folder.joinpath('.config')
 
-    cmd = [scripts_config_exec, '--file', config] + args
+    cmd = [scripts_config_exec, '--file', config, *args]
     if capture_output:
         return capture_cmd(cmd)
     pretty_print_cmd(cmd)
@@ -858,7 +858,7 @@ def setup_config(sc_cfg):
                 sc_args += ['-e', usb_fotg_sym]
 
     if sc_args:
-        scripts_config(linux_folder, build_folder, ['-k'] + sc_args)
+        scripts_config(linux_folder, build_folder, ['-k', *sc_args])
 
     log_str = ''
     for log_cfg in log_cfgs:
