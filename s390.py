@@ -135,7 +135,6 @@ class S390:
         self.configs_folder = cfg['configs_folder']
         self.configs_present = cfg['configs_present']
         self.cross_compile = 's390x-linux-gnu-'
-        self.binutils_version = lib.create_binutils_version(f"{self.cross_compile}as")
         self.linux_folder = cfg['linux_folder']
         self.llvm_version = cfg['llvm_version']
         self.linux_version = cfg['linux_version']
@@ -173,6 +172,13 @@ class S390:
                     's390x kernels skipped due to LLVM < 14.0.0 and Linux 5.19+ (8218827b73c6e)')
             return
 
+        lib.header('Building s390 kernels')
+
+        if not lib.check_binutils(cfg, 's390', self.cross_compile):
+            return
+
+        self.binutils_version = lib.create_binutils_version(f"{self.cross_compile}as")
+
         self.make_variables['ARCH'] = 's390'
 
         for variable in ['LD', 'OBJCOPY', 'OBJDUMP']:
@@ -183,10 +189,6 @@ class S390:
         else:
             self.make_variables['CROSS_COMPILE'] = self.cross_compile
 
-        lib.header('Building s390 kernels')
-
-        if not lib.check_binutils(cfg, 's390', self.cross_compile):
-            return
         binutils_version, binutils_location = lib.get_binary_info(f"{self.cross_compile}as")
         print(f"binutils version: {binutils_version}")
         print(f"binutils location: {binutils_location}")
