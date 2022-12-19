@@ -130,6 +130,7 @@ def is_relocatable_a_choice(linux_folder):
 class S390:
 
     def __init__(self, cfg):
+        self.binutils_version = 0
         self.build_folder = cfg['build_folder'].joinpath(self.__class__.__name__.lower())
         self.commits_present = cfg['commits_present']
         self.configs_folder = cfg['configs_folder']
