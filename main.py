@@ -200,10 +200,9 @@ def initial_config_and_setup(args):
     Returns:
         cfg (dict): A dictionary of configuration values
     """
-    linux_folder = Path(args.linux_folder)
-    if not linux_folder.exists():
+    if not (linux_folder := Path(args.linux_folder).resolve()).exists():
         raise FileNotFoundError(
-            f"Supplied Linux source folder ('{linux_folder}') could not be found!")
+            f"Supplied Linux source folder ('{args.linux_folder}') could not be found!")
 
     log_folder = Path(args.log_folder)
 
@@ -228,17 +227,15 @@ def initial_config_and_setup(args):
     for prefix in [args.binutils_prefix, args.llvm_prefix, args.tc_prefix, args.qemu_prefix]:
         add_to_path(prefix)
 
-    build_folder = args.build_folder
-    if not build_folder:
-        build_folder = linux_folder.joinpath('build')
-    cfg['build_folder'] = Path(build_folder)
+    cfg['build_folder'] = Path(
+        args.build_folder).resolve() if args.build_folder else linux_folder.joinpath('build')
 
     # Ensure PATH has been updated with proper folders above before creating
     # these.
     cfg['linux_version'] = lib.create_linux_version(linux_folder)
     cfg['llvm_version'] = lib.create_llvm_version()
 
-    boot_utils_folder = Path(args.boot_utils_folder)
+    boot_utils_folder = Path(args.boot_utils_folder).resolve()
     if lib.is_relative_to(boot_utils_folder, base_folder):
         lib.header('Updating boot-utils')
         clone_update_boot_utils(boot_utils_folder)
