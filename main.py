@@ -4,7 +4,6 @@ from argparse import ArgumentParser
 import datetime
 import os
 from pathlib import Path
-import re
 import shutil
 import signal
 import subprocess
@@ -63,11 +62,9 @@ def add_to_path(folder):
                       added to PATH.
     """
     if folder:
-        folder = Path(folder)
-        if not folder.exists():
+        if not (folder := Path(folder)).exists():
             raise FileNotFoundError(f"Supplied folder ('{folder}') does not exist?")
-        bin_folder = folder.joinpath('bin')
-        if not bin_folder.exists():
+        if not (bin_folder := Path(folder, 'bin')).exists():
             raise FileNotFoundError(
                 f"Supplied folder ('{folder}') does not have a 'bin' folder in it?")
         if not str(bin_folder) in os.environ['PATH']:
@@ -108,7 +105,7 @@ def check_for_commits(linux_folder):
     """
     commits_present = []
 
-    if linux_folder.joinpath('scripts', 'Makefile.clang').exists():
+    if Path(linux_folder, 'scripts/Makefile.clang').exists():
         commits_present += ['6f5b41a2f5a63']
 
     return commits_present
@@ -127,19 +124,17 @@ def check_for_configs(linux_folder):
     """
     configs_present = []
 
-    with open(linux_folder.joinpath('arch', 'Kconfig'), encoding='utf-8') as file:
-        file_text = file.read()
-        for cfg in ['LTO_CLANG_THIN', 'CFI_CLANG']:
-            if re.search(f"config {cfg}", file_text):
-                configs_present += [f"CONFIG_{cfg}"]
+    file_text = lib.get_text(linux_folder, 'arch/Kconfig')
+    for cfg in ['LTO_CLANG_THIN', 'CFI_CLANG']:
+        if f"config {cfg}" in file_text:
+            configs_present += [f"CONFIG_{cfg}"]
 
-    with open(linux_folder.joinpath("init", "Kconfig"), encoding='utf-8') as file:
-        file_text = file.read()
-        for cfg in ['WERROR']:
-            if re.search(f"config {cfg}", file_text):
-                configs_present += [f"CONFIG_{cfg}"]
+    file_text = lib.get_text(linux_folder, 'init/Kconfig')
+    for cfg in ['WERROR']:
+        if f"config {cfg}" in file_text:
+            configs_present += [f"CONFIG_{cfg}"]
 
-    if linux_folder.joinpath('lib', 'Kconfig.kmsan').exists():
+    if Path(linux_folder, 'lib/Kconfig.kmsan').exists():
         configs_present += ['CONFIG_KMSAN']
 
     return configs_present
@@ -174,7 +169,7 @@ def format_logs(cfg):
     logs = cfg['logs']
 
     for _key, log_file in logs.items():
-        if Path(log_file).exists():
+        if log_file.exists():
             # Trim trailing new line by truncating by one byte.
             with open(log_file, 'rb+') as file:
                 file.seek(-1, os.SEEK_END)
@@ -182,11 +177,8 @@ def format_logs(cfg):
 
             # Replace all instances of the Linux source folder with nothing, as
             # if building in tree.
-            with open(log_file, encoding='utf-8') as file:
-                old_log = file.read()
-                new_log = old_log.replace(str_to_remove, '')
-            with open(log_file, 'w', encoding='utf-8') as file:
-                file.write(new_log)
+            new_log = lib.get_text(log_file).replace(str_to_remove, '')
+            log_file.write_text(new_log, encoding='utf-8')
 
 
 def initial_config_and_setup(args):
@@ -204,7 +196,7 @@ def initial_config_and_setup(args):
         raise FileNotFoundError(
             f"Supplied Linux source folder ('{args.linux_folder}') could not be found!")
 
-    log_folder = Path(args.log_folder)
+    log_folder = Path(args.log_folder).resolve()
 
     # Ensure log folder is created for future writing
     log_folder.mkdir(exist_ok=True, parents=True)
@@ -212,7 +204,7 @@ def initial_config_and_setup(args):
     cfg = {
         'architectures': args.architectures,
         'commits_present': check_for_commits(linux_folder),
-        'configs_folder': base_folder.joinpath('configs'),
+        'configs_folder': Path(base_folder, 'configs'),
         'configs_present': check_for_configs(linux_folder),
         'linux_folder': linux_folder,
         'log_folder': log_folder,
@@ -222,13 +214,13 @@ def initial_config_and_setup(args):
     }
 
     for log in ['failed', 'info', 'skipped', 'success']:
-        cfg['logs'][log] = log_folder.joinpath(f"{log}.log")
+        cfg['logs'][log] = Path(log_folder, f"{log}.log")
 
     for prefix in [args.binutils_prefix, args.llvm_prefix, args.tc_prefix, args.qemu_prefix]:
         add_to_path(prefix)
 
-    cfg['build_folder'] = Path(
-        args.build_folder).resolve() if args.build_folder else linux_folder.joinpath('build')
+    cfg['build_folder'] = Path(args.build_folder).resolve() if args.build_folder else Path(
+        linux_folder, 'build')
 
     # Ensure PATH has been updated with proper folders above before creating
     # these.
@@ -289,7 +281,7 @@ def parse_arguments():
         help=  # noqa: E251
         "Path to binutils installation (parent of 'bin' folder, default: Use binutils from PATH).")
     parser.add_argument('--boot-utils-folder',
-                        default=base_folder.joinpath('src', 'boot-utils'),
+                        default=Path(base_folder, 'src/boot-utils'),
                         type=str,
                         help='Path to boot-utils folder (default: %(default)s).')
     parser.add_argument('-l',
@@ -302,9 +294,8 @@ def parse_arguments():
         type=str,
         help="Path to LLVM installation (parent of 'bin' folder, default: Use LLVM from PATH).")
     parser.add_argument('--log-folder',
-                        default=base_folder.joinpath(
-                            'logs',
-                            datetime.datetime.now().strftime('%Y%m%d-%H%M')),
+                        default=Path(base_folder, 'logs',
+                                     datetime.datetime.now().strftime('%Y%m%d-%H%M')),
                         type=str,
                         help='Folder to store log files in (default: %(default)s).')
     parser.add_argument('--save-objects',
@@ -342,11 +333,7 @@ def pretty_print_log(log_file):
     Parameters:
         log_file (Path): A Path object pointing to the log file to print.
     """
-    with open(log_file, encoding='utf-8') as file:
-        for line in file:
-            line = line.strip()
-            if line:
-                print(line)
+    print('\n'.join([item for item in lib.get_text(log_file).splitlines() if item]))
 
 
 def report_results(cfg, start_time):
@@ -369,12 +356,10 @@ def report_results(cfg, start_time):
         'skipped': 'List of skipped tests',
     }
     for key, log_str in header_strs.items():
-        log_file = logs[key]
-        if log_file.exists():
+        if (log_file := logs[key]).exists():
             lib.header(log_str)
             if key == "info":
-                with open(log_file, encoding='utf-8') as file:
-                    print(file.read().strip())
+                print(lib.get_text(log_file), end='')
             else:
                 pretty_print_log(log_file)
 
@@ -396,17 +381,15 @@ def tc_lnx_env_info(cfg):
     linux_version = lib.get_linux_version(linux_location)
     path = os.environ['PATH']
 
-    with open(log_file, 'w', encoding='utf-8') as file:
-        file.write(f"{clang_version}\n")
-        file.write(f"clang location: {clang_location}\n")
-        file.write(f"binutils version: {binutils_version}\n")
-        file.write(f"binutils location: {binutils_location}\n")
-        file.write(f"{linux_version}")
-        file.write(f"Linux source location: {linux_location}\n")
-        file.write(f"PATH: {path}\n\n")
-
-    with open(log_file, encoding='utf-8') as file:
-        print(file.read().strip())
+    info_txt = (f"{clang_version}\n"
+                f"clang location: {clang_location}\n"
+                f"binutils version: {binutils_version}\n"
+                f"binutils location: {binutils_location}\n"
+                f"{linux_version}"
+                f"Linux source location: {linux_location}\n"
+                f"PATH: {path}\n\n")
+    log_file.write_text(info_txt, encoding='utf-8')
+    print(info_txt, end='')
 
 
 if __name__ == '__main__':

@@ -2,7 +2,6 @@
 
 import copy
 from pathlib import Path
-import re
 import shutil
 
 import lib
@@ -45,14 +44,13 @@ def build_otherconfigs(self, cfg):
 
 
 def has_ffb92ce826fd8(linux_folder):
-    with open(linux_folder.joinpath('arch', 'hexagon', 'lib', 'io.c'), encoding='utf-8') as file:
-        return re.search(re.escape('EXPORT_SYMBOL(__raw_readsw)'), file.read())
+    return 'EXPORT_SYMBOL(__raw_readsw)' in lib.get_text(linux_folder, 'arch/hexagon/lib/io.c')
 
 
 class HEXAGON:
 
     def __init__(self, cfg):
-        self.build_folder = cfg['build_folder'].joinpath(self.__class__.__name__.lower())
+        self.build_folder = Path(cfg['build_folder'], self.__class__.__name__.lower())
         self.commits_present = cfg['commits_present']
         self.configs_present = cfg['configs_present']
         self.linux_folder = cfg['linux_folder']
@@ -68,25 +66,23 @@ class HEXAGON:
         if '6f5b41a2f5a63' not in self.commits_present:
             self.make_variables['CROSS_COMPILE'] = 'hexagon-linux-musl-'
 
-        with open(self.linux_folder.joinpath('arch', 'hexagon', 'Makefile'),
-                  encoding='utf-8') as file:
-            has_788dcee0306e1 = re.search(re.escape('KBUILD_CFLAGS += -mlong-calls'), file.read())
-            has_f1f99adf05f21 = self.linux_folder.joinpath('arch', 'hexagon', 'lib',
-                                                           'divsi3.S').exists()
-            if not (has_788dcee0306e1 and has_f1f99adf05f21):
-                lib.header('Skipping hexagon kernels')
-                print('Hexagon needs the following fixes from Linux 5.13 to build properly:\n')
-                print('  * https://git.kernel.org/linus/788dcee0306e1bdbae1a76d1b3478bb899c5838e')
-                print('  * https://git.kernel.org/linus/6fff7410f6befe5744d54f0418d65a6322998c09')
-                print('  * https://git.kernel.org/linus/f1f99adf05f2138ff2646d756d4674e302e8d02d')
-                print(
-                    '\nProvide a kernel tree with Linux 5.13+ or one with these fixes to build Hexagon kernels.'
-                )
-                lib.log(
-                    cfg,
-                    'hexagon kernels skipped due to missing 788dcee0306e, 6fff7410f6be, and/or f1f99adf05f2'
-                )
-                return
+        has_788dcee0306e1 = 'KBUILD_CFLAGS += -mlong-calls' in lib.get_text(
+            self.linux_folder, 'arch/hexagon/Makefile')
+        has_f1f99adf05f21 = Path(self.linux_folder, 'arch/hexagon/lib/divsi3.S').exists()
+        if not (has_788dcee0306e1 and has_f1f99adf05f21):
+            lib.header('Skipping hexagon kernels')
+            print('Hexagon needs the following fixes from Linux 5.13 to build properly:\n')
+            print('  * https://git.kernel.org/linus/788dcee0306e1bdbae1a76d1b3478bb899c5838e')
+            print('  * https://git.kernel.org/linus/6fff7410f6befe5744d54f0418d65a6322998c09')
+            print('  * https://git.kernel.org/linus/f1f99adf05f2138ff2646d756d4674e302e8d02d')
+            print(
+                '\nProvide a kernel tree with Linux 5.13+ or one with these fixes to build Hexagon kernels.'
+            )
+            lib.log(
+                cfg,
+                'hexagon kernels skipped due to missing 788dcee0306e, 6fff7410f6be, and/or f1f99adf05f2'
+            )
+            return
 
         lib.header('Building hexagon kernels', end='')
 

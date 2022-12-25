@@ -3,7 +3,6 @@
 import copy
 from pathlib import Path
 import platform
-import re
 import shutil
 
 import lib
@@ -31,7 +30,7 @@ def build_defconfigs(self, cfg):
         kmake_cfg = {
             'linux_folder': self.linux_folder,
             'build_folder': self.build_folder,
-            'log_file': self.log_folder.joinpath('arm64-defconfig-big-endian.log'),
+            'log_file': Path(self.log_folder, 'arm64-defconfig-big-endian.log'),
             'targets': ['distclean', log_str.split(' ')[1]],
             'variables': self.make_variables,
         }
@@ -47,7 +46,7 @@ def build_defconfigs(self, cfg):
         kmake_cfg = {
             'linux_folder': self.linux_folder,
             'build_folder': self.build_folder,
-            'log_file': self.log_folder.joinpath('arm64-defconfig-lto.log'),
+            'log_file': Path(self.log_folder, 'arm64-defconfig-lto.log'),
             'targets': ['distclean', log_str.split(' ')[1]],
             'variables': self.make_variables,
         }
@@ -102,7 +101,7 @@ def build_otherconfigs(self, cfg):
         kmake_cfg = {
             'linux_folder': self.linux_folder,
             'build_folder': self.build_folder,
-            'log_file': self.log_folder.joinpath('arm64-allmodconfig-thinlto.log'),
+            'log_file': Path(self.log_folder, 'arm64-allmodconfig-thinlto.log'),
             'targets': ['distclean', log_str.split(' ')[1], 'all'],
             'variables': self.make_variables,
         }
@@ -126,11 +125,13 @@ def build_otherconfigs(self, cfg):
 
 
 def build_distroconfigs(self, cfg):
-    cfg_files = [('alpine', 'aarch64')]
-    cfg_files += [('archlinux', 'aarch64')]
-    cfg_files += [('debian', 'arm64')]
-    cfg_files += [('fedora', 'aarch64')]
-    cfg_files += [('opensuse', 'arm64')]
+    cfg_files = [
+        ('alpine', 'aarch64'),
+        ('archlinux', 'aarch64'),
+        ('debian', 'arm64'),
+        ('fedora', 'aarch64'),
+        ('opensuse', 'arm64'),
+    ]
     for cfg_file in cfg_files:
         distro = cfg_file[0]
         cfg_basename = f"{cfg_file[1]}.config"
@@ -139,7 +140,7 @@ def build_distroconfigs(self, cfg):
             'linux_folder': self.linux_folder,
             'linux_version': self.linux_version,
             'build_folder': self.build_folder,
-            'config_file': self.configs_folder.joinpath(distro, cfg_basename),
+            'config_file': Path(self.configs_folder, distro, cfg_basename),
         }
         kmake_cfg = {
             'linux_folder': sc_cfg['linux_folder'],
@@ -167,16 +168,20 @@ def build_cfi_kernel(self, cfg, use_lto=True):
     kmake_cfg = {
         'linux_folder': self.linux_folder,
         'build_folder': self.build_folder,
-        'log_file': self.log_folder.joinpath(log_file),
+        'log_file': Path(self.log_folder, log_file),
         'targets': ['distclean', log_str.split(' ')[1]],
         'variables': self.make_variables,
     }
     lib.kmake(kmake_cfg)
-    sc_args = ['-e', 'CFI_CLANG']
-    sc_args += ['-e', 'SHADOW_CALL_STACK']
+    sc_args = [
+        '-e', 'CFI_CLANG',
+        '-e', 'SHADOW_CALL_STACK',
+    ]  # yapf: disable
     if use_lto:
-        sc_args += ['-d', 'LTO_NONE']
-        sc_args += ['-e', 'LTO_CLANG_THIN']
+        sc_args += [
+            '-d', 'LTO_NONE',
+            '-e', 'LTO_CLANG_THIN',
+        ]  # yapf: disable
     lib.scripts_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], sc_args)
     kmake_cfg['targets'] = ['olddefconfig', 'all']
     return_code, time = lib.kmake(kmake_cfg)
@@ -185,20 +190,18 @@ def build_cfi_kernel(self, cfg, use_lto=True):
 
 
 def has_d8e85e144bbe1(linux_folder):
-    with open(linux_folder.joinpath('arch', 'arm64', 'Kconfig'), encoding='utf-8') as file:
-        return re.search('prompt "Endianness"', file.read())
+    return 'prompt "Endianness"' in lib.get_text(linux_folder, 'arch/arm64/Kconfig')
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/1704
 def has_tsan_mem_funcs(linux_folder):
-    with open(linux_folder.joinpath('kernel', 'kcsan', 'core.c'), encoding='utf-8') as file:
-        return re.search('__tsan_memset', file.read())
+    return '__tsan_memset' in lib.get_text(linux_folder, 'kernel/kcsan/core.c')
 
 
 class ARM64:
 
     def __init__(self, cfg):
-        self.build_folder = cfg['build_folder'].joinpath(self.__class__.__name__.lower())
+        self.build_folder = Path(cfg['build_folder'], self.__class__.__name__.lower())
         self.commits_present = cfg['commits_present']
         self.configs_folder = cfg['configs_folder']
         self.configs_present = cfg['configs_present']

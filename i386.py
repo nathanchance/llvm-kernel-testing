@@ -3,7 +3,6 @@
 import copy
 from pathlib import Path
 import platform
-import re
 import shutil
 
 import lib
@@ -31,7 +30,7 @@ def build_defconfigs(self, cfg):
         kmake_cfg = {
             'linux_folder': self.linux_folder,
             'build_folder': self.build_folder,
-            'log_file': self.log_folder.joinpath('i386-defconfig-lto.log'),
+            'log_file': Path(self.log_folder, 'i386-defconfig-lto.log'),
             'targets': ['distclean', log_str.split(' ')[1]],
             'variables': self.make_variables,
         }
@@ -50,10 +49,12 @@ def build_otherconfigs(self, cfg):
             if 'CONFIG_WERROR' in self.configs_present:
                 configs += ['CONFIG_WERROR']
             if disable_nf_configs(self.llvm_version, self.linux_folder):
-                configs += ['CONFIG_IP_NF_TARGET_SYNPROXY']
-                configs += ['CONFIG_IP6_NF_TARGET_SYNPROXY']
-                configs += ['CONFIG_NFT_SYNPROXY']
-                configs += ['(https://github.com/ClangBuiltLinux/linux/issues/1442)']
+                configs += [
+                    'CONFIG_IP_NF_TARGET_SYNPROXY',
+                    'CONFIG_IP6_NF_TARGET_SYNPROXY',
+                    'CONFIG_NFT_SYNPROXY',
+                    '(https://github.com/ClangBuiltLinux/linux/issues/1442)',
+                ]
             config_path, config_str = lib.gen_allconfig(self.build_folder, configs)
             if config_path:
                 self.make_variables['KCONFIG_ALLCONFIG'] = config_path
@@ -82,7 +83,7 @@ def build_distroconfigs(self, cfg):
             'linux_folder': self.linux_folder,
             'linux_version': self.linux_version,
             'build_folder': self.build_folder,
-            'config_file': self.configs_folder.joinpath(distro, 'i386.config'),
+            'config_file': Path(self.configs_folder, distro, 'i386.config'),
         }
         kmake_cfg = {
             'linux_folder': sc_cfg['linux_folder'],
@@ -108,39 +109,29 @@ def disable_nf_configs(llvm_version, linux_folder):
 
 
 def fortify_broken(linux_folder):
-    with open(linux_folder.joinpath('security', 'Kconfig'), encoding='utf-8') as file:
-        text = file.read()
-        bug_one = re.escape('https://bugs.llvm.org/show_bug.cgi?id=50322')
-        bug_two = re.escape('https://github.com/llvm/llvm-project/issues/53645')
-        return re.search(bug_one, text) or re.search(bug_two, text)
+    text = lib.get_text(linux_folder, 'security/Kconfig')
+    return 'https://bugs.llvm.org/show_bug.cgi?id=50322' in text or 'https://github.com/llvm/llvm-project/issues/53645' in text
 
 
 # https://git.kernel.org/linus/583bfd484bcc85e9371e7205fa9e827c18ae34fb
 def has_583bfd484bcc(linux_folder):
-    with open(linux_folder.joinpath('arch', 'x86', 'Kconfig'), encoding='utf-8') as file:
-        text = file.read()
-        lto = 'select ARCH_SUPPORTS_LTO_CLANG_THIN'
-        lto_x86_64 = 'select ARCH_SUPPORTS_LTO_CLANG_THIN\tif X86_64'
-        return re.search(lto, text) and not re.search(lto_x86_64, text)
+    return 'select ARCH_SUPPORTS_LTO_CLANG_THIN\n' in lib.get_text(linux_folder, 'arch/x86/Kconfig')
 
 
 # https://git.kernel.org/linus/bb73d07148c405c293e576b40af37737faf23a6a
 def has_bb73d07148c40(linux_folder):
-    with open(linux_folder.joinpath('arch', 'x86', 'tools', 'relocs.c'), encoding='utf-8') as file:
-        return re.search('R_386_PLT32:', file.read())
+    return 'R_386_PLT32:' in lib.get_text(linux_folder, 'arch/x86/tools/relocs.c')
 
 
 # https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f
 def has_d5cbd80e302df(linux_folder):
-    with open(linux_folder.joinpath('arch', 'x86', 'boot', 'compressed', 'Makefile'),
-              encoding='utf-8') as file:
-        return re.search('CLANG_FLAGS', file.read())
+    return 'CLANG_FLAGS' in lib.get_text(linux_folder, 'arch/x86/boot/compressed/Makefile')
 
 
 class I386:
 
     def __init__(self, cfg):
-        self.build_folder = cfg['build_folder'].joinpath(self.__class__.__name__.lower())
+        self.build_folder = Path(cfg['build_folder'], self.__class__.__name__.lower())
         self.commits_present = cfg['commits_present']
         self.configs_folder = cfg['configs_folder']
         self.configs_present = cfg['configs_present']

@@ -43,8 +43,10 @@ def build_otherconfigs(self, cfg):
         if other_cfg == 'allmodconfig':
             configs = []
             if has_925d046e7e52(self.linux_folder):
-                configs += ['CONFIG_INFINIBAND_ADDR_TRANS']
-                configs += ['(https://github.com/ClangBuiltLinux/linux/issues/1687)']
+                configs += [
+                    'CONFIG_INFINIBAND_ADDR_TRANS',
+                    '(https://github.com/ClangBuiltLinux/linux/issues/1687)',
+                ]
             if 'CONFIG_WERROR' in self.configs_present:
                 configs += ['CONFIG_WERROR']
             config_path, config_str = lib.gen_allconfig(self.build_folder, configs)
@@ -80,7 +82,7 @@ def build_distroconfigs(self, cfg):
             'linux_folder': self.linux_folder,
             'linux_version': self.linux_version,
             'build_folder': self.build_folder,
-            'config_file': self.configs_folder.joinpath(distro, 's390x.config'),
+            'config_file': Path(self.configs_folder, distro, 's390x.config'),
         }
         kmake_cfg = {
             'linux_folder': sc_cfg['linux_folder'],
@@ -102,36 +104,31 @@ def build_distroconfigs(self, cfg):
 # https://github.com/ClangBuiltLinux/linux/issues/1687
 # https://git.kernel.org/linus/925d046e7e52c71c3531199ce137e141807ef740
 def has_925d046e7e52(linux_folder):
-    with open(linux_folder.joinpath('drivers', 'infiniband', 'core', 'cma.c'),
-              encoding='utf-8') as file:
-        return re.search('static void cma_netevent_work_handler', file.read())
+    return 'static void cma_netevent_work_handler' in lib.get_text(linux_folder,
+                                                                   'drivers/infiniband/core/cma.c')
 
 
 # https://git.kernel.org/linus/efe5e0fea4b24872736c62a0bcfc3f99bebd2005
 def has_efe5e0fea4b24(linux_folder):
-    with open(linux_folder.joinpath('arch', 's390', 'include', 'asm', 'bitops.h'),
-              encoding='utf-8') as file:
-        return not re.search('"(o|n|x)i\t%0,%b1\\\\n"', file.read())
+    text = lib.get_text(linux_folder, 'arch/s390/include/asm/bitops.h')
+    return not re.search('"(o|n|x)i\t%0,%b1\\\\n"', text)
 
 
 def has_integrated_as_support(linux_folder):
-    with open(linux_folder.joinpath('arch', 's390', 'Makefile'), encoding='utf-8') as file:
-        has_bb31074db95f735 = re.search('ifndef CONFIG_AS_IS_LLVM', file.read())
-    with open(linux_folder.joinpath('arch', 's390', 'kernel', 'entry.S'), encoding='utf-8') as file:
-        has_4c25f0ff6336738 = re.search('ifdef CONFIG_AS_IS_LLVM', file.read())
-    return has_bb31074db95f735 and has_4c25f0ff6336738
+    makefile_text = lib.get_text(linux_folder, 'arch/s390/Makefile')
+    entry_text = lib.get_text(linux_folder, 'arch/s390/kernel/entry.S')
+    return 'ifndef CONFIG_AS_IS_LLVM' in makefile_text and 'ifdef CONFIG_AS_IS_LLVM' in entry_text
 
 
 def is_relocatable_a_choice(linux_folder):
-    with open(linux_folder.joinpath('arch', 's390', 'Kconfig'), encoding='utf-8') as file:
-        return re.search('config RELOCATABLE\n\tbool "', file.read())
+    return 'config RELOCATABLE\n\tbool "' in lib.get_text(linux_folder, 'arch/s390/Kconfig')
 
 
 class S390:
 
     def __init__(self, cfg):
         self.binutils_version = 0
-        self.build_folder = cfg['build_folder'].joinpath(self.__class__.__name__.lower())
+        self.build_folder = Path(cfg['build_folder'], self.__class__.__name__.lower())
         self.commits_present = cfg['commits_present']
         self.configs_folder = cfg['configs_folder']
         self.configs_present = cfg['configs_present']

@@ -13,31 +13,29 @@ def boot_qemu(cfg, log_str, build_folder, kernel_available, arch='arm32_v7'):
 
 
 def disable_be(linux_folder):
-    with open(linux_folder.joinpath('arch', 'arm', 'mm', 'Kconfig'), encoding='utf-8') as file:
-        text = file.read()
-        first_pattern = 'bool "Build big-endian kernel"'
-        second_pattern = 'depends on ARCH_SUPPORTS_BIG_ENDIAN'
-        return not re.search(f"({first_pattern}|{second_pattern})\n\tdepends on !LD_IS_LLD", text)
+    text = lib.get_text(linux_folder, 'arch/arm/mm/Kconfig')
+    first_pattern = 'bool "Build big-endian kernel"'
+    second_pattern = 'depends on ARCH_SUPPORTS_BIG_ENDIAN'
+    return not re.search(f"({first_pattern}|{second_pattern})\n\tdepends on !LD_IS_LLD", text)
 
 
 def has_nwfpe_replexitval(linux_folder):
-    with open(linux_folder.joinpath('arch', 'arm', 'nwfpe', 'Makefile'), encoding='utf-8') as file:
-        return re.search('replexitval=never', file.read())
+    return 'replexitval=never' in lib.get_text(linux_folder, 'arch/arm/nwfpe/Makefile')
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/325
 def thumb2_ok(linux_folder):
-    with open(linux_folder.joinpath('arch', 'arm', 'Kconfig'), encoding='utf-8') as file:
-        has_9d417cbe36eee = re.search('select HAVE_FUTEX_CMPXCHG if FUTEX', file.read())
-    with open(linux_folder.joinpath('init', 'Kconfig'), encoding='utf-8') as file:
-        has_3297481d688a5 = not re.search('config HAVE_FUTEX_CMPXCHG', file.read())
-    return has_9d417cbe36eee or has_3297481d688a5
+    arm_kconfig_text = lib.get_text(linux_folder, 'arch/arm/Kconfig')
+    init_kconfig_text = lib.get_text(linux_folder, 'init/Kconfig')
+    return 'select HAVE_FUTEX_CMPXCHG if FUTEX' in arm_kconfig_text or 'config HAVE_FUTEX_CMPXCHG' in init_kconfig_text
 
 
 def build_defconfigs(self, cfg):
-    defconfigs = [('multi_v5_defconfig', 'arm32_v5')]
-    defconfigs += [('aspeed_g5_defconfig', 'arm32_v6')]
-    defconfigs += [('multi_v7_defconfig', 'arm32_v7')]
+    defconfigs = [
+        ('multi_v5_defconfig', 'arm32_v5'),
+        ('aspeed_g5_defconfig', 'arm32_v6'),
+        ('multi_v7_defconfig', 'arm32_v7'),
+    ]
     for defconfig in defconfigs:
         log_str = f"arm {defconfig[0]}"
         kmake_cfg = {
@@ -56,7 +54,7 @@ def build_defconfigs(self, cfg):
         kmake_cfg = {
             'linux_folder': self.linux_folder,
             'build_folder': self.build_folder,
-            'log_file': self.log_folder.joinpath('arm-defconfig-thumb2.log'),
+            'log_file': Path(self.log_folder, 'arm-defconfig-thumb2.log'),
             'targets': ['distclean', log_str.split(' ')[1]],
             'variables': self.make_variables,
         }
@@ -104,11 +102,13 @@ def build_otherconfigs(self, cfg):
 
 
 def build_distroconfigs(self, cfg):
-    cfg_files = [('alpine', 'armv7')]
-    cfg_files += [('archlinux', 'armv7')]
-    cfg_files += [('debian', 'armmp')]
-    cfg_files += [('fedora', 'armv7hl')]
-    cfg_files += [('opensuse', 'armv7hl')]
+    cfg_files = [
+        ('alpine', 'armv7'),
+        ('archlinux', 'armv7'),
+        ('debian', 'armmp'),
+        ('fedora', 'armv7hl'),
+        ('opensuse', 'armv7hl'),
+    ]
     for cfg_file in cfg_files:
         distro = cfg_file[0]
         cfg_basename = f"{cfg_file[1]}.config"
@@ -117,7 +117,7 @@ def build_distroconfigs(self, cfg):
             'linux_folder': self.linux_folder,
             'linux_version': self.linux_version,
             'build_folder': self.build_folder,
-            'config_file': self.configs_folder.joinpath(distro, cfg_basename),
+            'config_file': Path(self.configs_folder, distro, cfg_basename),
         }
         kmake_cfg = {
             'linux_folder': sc_cfg['linux_folder'],
@@ -136,7 +136,7 @@ def build_distroconfigs(self, cfg):
 class ARM:
 
     def __init__(self, cfg):
-        self.build_folder = cfg['build_folder'].joinpath(self.__class__.__name__.lower())
+        self.build_folder = Path(cfg['build_folder'], self.__class__.__name__.lower())
         self.commits_present = cfg['commits_present']
         self.configs_folder = cfg['configs_folder']
         self.configs_present = cfg['configs_present']

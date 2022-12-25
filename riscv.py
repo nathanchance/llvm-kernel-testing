@@ -2,7 +2,6 @@
 
 import copy
 from pathlib import Path
-import re
 import shutil
 
 import lib
@@ -65,7 +64,7 @@ def build_distroconfigs(self, cfg):
                 'linux_folder': self.linux_folder,
                 'linux_version': self.linux_version,
                 'build_folder': self.build_folder,
-                'config_file': self.configs_folder.joinpath(distro, cfg_basename),
+                'config_file': Path(self.configs_folder, distro, cfg_basename),
             }
             kmake_cfg = {
                 'linux_folder': sc_cfg['linux_folder'],
@@ -84,25 +83,22 @@ def build_distroconfigs(self, cfg):
 
 
 def has_ec3a5cb61146c(linux_folder):
-    with open(linux_folder.joinpath('arch', 'riscv', 'Makefile'), encoding='utf-8') as file:
-        return re.search(re.escape('KBUILD_CFLAGS += -mno-relax'), file.read())
+    return 'KBUILD_CFLAGS += -mno-relax' in lib.get_text(linux_folder, 'arch/riscv/Makefile')
 
 
 def has_f2928e224d85e(linux_folder):
-    with open(linux_folder.joinpath('arch', 'riscv', 'kernel', 'reset.c'),
-              encoding='utf-8') as file:
-        return re.search(re.escape('void (*pm_power_off)(void) = NULL;'), file.read())
+    return 'void (*pm_power_off)(void) = NULL;' in lib.get_text(linux_folder,
+                                                                'arch/riscv/kernel/reset.c')
 
 
 def has_efi(linux_folder):
-    with open(linux_folder.joinpath('arch', 'riscv', 'Kconfig'), encoding='utf-8') as file:
-        return re.search('config EFI', file.read())
+    return 'config EFI' in lib.get_text(linux_folder, 'arch/riscv/Kconfig')
 
 
 class RISCV:
 
     def __init__(self, cfg):
-        self.build_folder = cfg['build_folder'].joinpath(self.__class__.__name__.lower())
+        self.build_folder = Path(cfg['build_folder'], self.__class__.__name__.lower())
         self.commits_present = cfg['commits_present']
         self.configs_folder = cfg['configs_folder']
         self.configs_present = cfg['configs_present']

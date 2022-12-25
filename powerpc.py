@@ -2,7 +2,6 @@
 
 import copy
 from pathlib import Path
-import re
 import shutil
 
 import lib
@@ -173,7 +172,7 @@ def build_distroconfigs(self, cfg):
             'linux_folder': self.linux_folder,
             'linux_version': self.linux_version,
             'build_folder': self.build_folder,
-            'config_file': self.configs_folder.joinpath(distro, cfg_basename),
+            'config_file': Path(self.configs_folder, distro, cfg_basename),
         }
         kmake_cfg = {
             'linux_folder': sc_cfg['linux_folder'],
@@ -193,50 +192,41 @@ def build_distroconfigs(self, cfg):
 
 # https://github.com/ClangBuiltLinux/linux/issues/811
 def has_0355785313e21(linux_folder):
-    with open(linux_folder.joinpath('arch', 'powerpc', 'Makefile'), encoding='utf-8') as file:
-        return re.search(re.escape('LDFLAGS_vmlinux-$(CONFIG_RELOCATABLE) += -z notext'),
-                         file.read())
+    text = lib.get_text(linux_folder, 'arch/powerpc/Makefile')
+    return 'LDFLAGS_vmlinux-$(CONFIG_RELOCATABLE) += -z notext' in text
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/1679
 def has_2255411d1d0f0(linux_folder):
-    with open(linux_folder.joinpath('arch', 'powerpc', 'platforms', 'Kconfig.cputype'),
-              encoding='utf-8') as file:
-        pattern = 'config POWERPC_CPU\n\tbool "Generic 32 bits powerpc"\n\tdepends on PPC_BOOK3S_32'
-        return re.search(pattern, file.read())
+    text = lib.get_text(linux_folder, 'arch/powerpc/platforms/Kconfig.cputype')
+    return 'config POWERPC_CPU\n\tbool "Generic 32 bits powerpc"\n\tdepends on PPC_BOOK3S_32' in text
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/1160
 def has_231b232df8f67(linux_folder):
-    with open(linux_folder.joinpath('arch', 'powerpc', 'platforms', 'Kconfig.cputype'),
-              encoding='utf-8') as file:
-        return re.search('depends on PPC32 || COMPAT', file.read())
+    text = lib.get_text(linux_folder, 'arch/powerpc/platforms/Kconfig.cputype')
+    return 'depends on PPC32 || COMPAT' in text
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/563
 def has_297565aa22cfa(linux_folder):
-    with open(linux_folder.joinpath('arch', 'powerpc', 'lib', 'xor_vmx.c'),
-              encoding='utf-8') as file:
-        return re.search('__restrict', file.read())
+    return '__restrict' in lib.get_text(linux_folder, 'arch/powerpc/lib/xor_vmx.c')
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/1345
 def has_48cf12d88969b(linux_folder):
-    with open(linux_folder.joinpath('arch', 'powerpc', 'kernel', 'irq.c'),
-              encoding='utf-8') as file:
-        text = re.escape('static __always_inline void call_do_softirq(const void *sp)')
-        return re.search(text, file.read())
+    text = lib.get_text(linux_folder, 'arch/powerpc/kernel.irq.c')
+    return 'static __always_inline void call_do_softirq(const void *sp)' in text
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/1292
 def has_51696f39cbee5(linux_folder):
-    with open(linux_folder.joinpath('arch', 'powerpc', 'kvm', 'book3s_hv_nested.c'),
-              encoding='utf-8') as file:
-        return re.search('noinline_for_stack void byteswap_pt_regs', file.read())
+    text = lib.get_text(linux_folder, 'arch/powerpc/kvm/book3s_hv_nested.c')
+    return 'noinline_for_stack void byteswap_pt_regs' in text
 
 
 def has_dwc(linux_folder):
-    return linux_folder.joinpath('arch', 'powerpc', 'configs', 'disable-werror.config').exists()
+    return Path(linux_folder, 'arch/powerpc/configs/disable-werror.config').exists()
 
 
 def get_cross_compile():
@@ -250,7 +240,7 @@ def get_cross_compile():
 class POWERPC:
 
     def __init__(self, cfg):
-        self.build_folder = cfg['build_folder'].joinpath(self.__class__.__name__.lower())
+        self.build_folder = Path(cfg['build_folder'], self.__class__.__name__.lower())
         self.configs_folder = cfg['configs_folder']
         self.configs_present = cfg['configs_present']
         self.cross_compile = get_cross_compile()

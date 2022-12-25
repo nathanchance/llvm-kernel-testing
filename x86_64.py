@@ -3,7 +3,6 @@
 import copy
 from pathlib import Path
 import platform
-import re
 import shutil
 
 import lib
@@ -31,7 +30,7 @@ def build_defconfigs(self, cfg):
         kmake_cfg = {
             'linux_folder': self.linux_folder,
             'build_folder': self.build_folder,
-            'log_file': self.log_folder.joinpath('x86_64-defconfig-lto.log'),
+            'log_file': Path(self.log_folder, 'x86_64-defconfig-lto.log'),
             'targets': ['distclean', log_str.split(' ')[1]],
             'variables': self.make_variables,
         }
@@ -91,7 +90,7 @@ def build_otherconfigs(self, cfg):
         kmake_cfg = {
             'linux_folder': self.linux_folder,
             'build_folder': self.build_folder,
-            'log_file': self.log_folder.joinpath('x86_64-allmodconfig-thinlto.log'),
+            'log_file': Path(self.log_folder, 'x86_64-allmodconfig-thinlto.log'),
             'targets': ['distclean', log_str.split(' ')[1], 'all'],
             'variables': self.make_variables,
         }
@@ -103,11 +102,13 @@ def build_otherconfigs(self, cfg):
 
 
 def build_distroconfigs(self, cfg):
-    cfg_files = [('alpine', 'x86_64')]
-    cfg_files += [('archlinux', 'x86_64')]
-    cfg_files += [('debian', 'amd64')]
-    cfg_files += [('fedora', 'x86_64')]
-    cfg_files += [('opensuse', 'x86_64')]
+    cfg_files = [
+        ('alpine', 'x86_64'),
+        ('archlinux', 'x86_64'),
+        ('debian', 'amd64'),
+        ('fedora', 'x86_64'),
+        ('opensuse', 'x86_64'),
+    ]
     for cfg_file in cfg_files:
         distro = cfg_file[0]
         cfg_basename = f"{cfg_file[1]}.config"
@@ -116,7 +117,7 @@ def build_distroconfigs(self, cfg):
             'linux_folder': self.linux_folder,
             'linux_version': self.linux_version,
             'build_folder': self.build_folder,
-            'config_file': self.configs_folder.joinpath(distro, cfg_basename),
+            'config_file': Path(self.configs_folder, distro, cfg_basename),
         }
         has_x32 = lib.is_set(sc_cfg['linux_folder'], sc_cfg['build_folder'], 'X86_X32_ABI')
         need_gnu_objcopy = not has_aaeed6ecc1253(sc_cfg['linux_folder'])
@@ -159,7 +160,7 @@ def build_cfi_kernel(self, cfg, use_lto=False):
     kmake_cfg = {
         'linux_folder': self.linux_folder,
         'build_folder': self.build_folder,
-        'log_file': self.log_folder.joinpath(log_file),
+        'log_file': Path(self.log_folder, log_file),
         'targets': ['distclean', log_str.split(' ')[1]],
         'variables': self.make_variables,
     }
@@ -178,35 +179,31 @@ def build_cfi_kernel(self, cfg, use_lto=False):
 # https://github.com/ClangBuiltLinux/linux/issues/514
 # https://git.kernel.org/linus/aaeed6ecc1253ce1463fa1aca0b70a4ccbc9fa75
 def has_aaeed6ecc1253(linux_folder):
-    with open(linux_folder.joinpath('arch', 'x86', 'Kconfig'), encoding='utf-8') as file:
-        return re.search(re.escape('https://github.com/ClangBuiltLinux/linux/issues/514'),
-                         file.read())
+    text = lib.get_text(linux_folder, 'arch/x86/Kconfig')
+    return 'https://github.com/ClangBuiltLinux/linux/issues/514' in text
 
 
 # https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f
 def has_d5cbd80e302df(linux_folder):
-    with open(linux_folder.joinpath('arch', 'x86', 'boot', 'compressed', 'Makefile'),
-              encoding='utf-8') as file:
-        return re.search('CLANG_FLAGS', file.read())
+    return 'CLANG_FLAGS' in lib.get_text(linux_folder, 'arch/x86/boot/compressed/Makefile')
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/1704
 def has_tsan_mem_funcs(linux_folder):
-    with open(linux_folder.joinpath('kernel', 'kcsan', 'core.c'), encoding='utf-8') as file:
-        return re.search('__tsan_memset', file.read())
+    return '__tsan_memset' in lib.get_text(linux_folder, 'kernel/kcsan/core.c')
 
 
 # https://github.com/ClangBuiltLinux/linux/issues/1741
 def should_disable_kmsan(linux_folder, configs_present):
     if 'CONFIG_KMSAN' in configs_present:
-        return not linux_folder.joinpath('include', 'linux', 'kmsan_string.h').exists()
+        return not Path(linux_folder, 'include/linux/kmsan_string.h').exists()
     return False
 
 
 class X86_64:  # pylint: disable=invalid-name
 
     def __init__(self, cfg):
-        self.build_folder = cfg['build_folder'].joinpath(self.__class__.__name__.lower())
+        self.build_folder = Path(cfg['build_folder'], self.__class__.__name__.lower())
         self.commits_present = cfg['commits_present']
         self.configs_folder = cfg['configs_folder']
         self.configs_present = cfg['configs_present']

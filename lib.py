@@ -25,8 +25,7 @@ def boot_qemu(cfg, arch, log_str, build_folder, kernel_available):
         kernel_available (bool): Whether or not kernel was successfully built.
     """
     if kernel_available:
-        boot_qemu_py = cfg['boot_utils_folder'].joinpath('boot-qemu.py')
-        cmd = [boot_qemu_py, '-a', arch, '-k', build_folder]
+        cmd = [Path(cfg['boot_utils_folder'], 'boot-qemu.py'), '-a', arch, '-k', build_folder]
         pretty_print_cmd(cmd)
         sys.stderr.flush()
         sys.stdout.flush()
@@ -53,7 +52,7 @@ def can_be_modular(kconfig_file, cfg_sym):
         cfg_sym (str): The Kconfig symbol to check.
     """
     if kconfig_file.exists():
-        return re.search(f"config {cfg_sym}\n\ttristate", kconfig_file.read_text(encoding='utf-8'))
+        return f"config {cfg_sym}\n\ttristate" in get_text(kconfig_file)
     return False
 
 
@@ -217,20 +216,16 @@ def gen_allconfig(build_folder, configs):
     log_str = ''
 
     if configs:
-        config_file, config_path = tempfile.mkstemp(dir=build_folder, text=True)
-        with open(config_file, 'w', encoding='utf-8') as file:
-            for item in configs:
-                if 'CONFIG_' in item:
-                    # If item has a value ('=y', '=n', or '=m'), respect it.
-                    if '=' in item:
-                        config = item
-                    # Otherwise, we assume '=n'.
-                    else:
-                        config = f"{item}=n"
-                    file.write(f"{config}\n")
-                    log_str += f" + {config}"
-                else:
-                    log_str += f" {item}"
+        _, config_path = tempfile.mkstemp(dir=build_folder, text=True)
+        config_text = ''
+        for item in configs:
+            if 'CONFIG_' in item:
+                # If item has a value ('=y', '=n', or '=m'), respect it. Otherwise, we assume '=n'.
+                config_text += (config := item if '=' in item else f"{item}=n") + '\n'
+                log_str += f" + {config}"
+            else:
+                log_str += f" {item}"
+        Path(config_path).write_text(config_text, encoding='utf-8')
 
     return config_path, log_str
 
@@ -281,16 +276,21 @@ def get_linux_version(linux_folder):
     """
     kernelversion = get_kernelversion(linux_folder)
 
-    include_config = linux_folder.joinpath('include', 'config')
-    include_config.mkdir(exist_ok=True, parents=True)
+    (include_config := Path(linux_folder, 'include/config')).mkdir(exist_ok=True, parents=True)
 
-    include_config.joinpath('auto.conf').write_text('CONFIG_LOCALVERSION_AUTO=y', encoding='utf-8')
+    Path(include_config, 'auto.conf').write_text('CONFIG_LOCALVERSION_AUTO=y', encoding='utf-8')
 
     localversion = capture_cmd(['scripts/setlocalversion'], cwd=linux_folder)
 
     shutil.rmtree(include_config, ignore_errors=True)
 
     return f"Linux {kernelversion}{localversion}"
+
+
+def get_text(*args):
+    if not (file := Path(*args)).exists():
+        raise Exception(f"Trying to read from non-existent file ('{file}')?")
+    return file.read_text(encoding='utf-8')
 
 
 def get_time_diff(start_time, end_time):
@@ -317,8 +317,7 @@ def has_kcfi(linux_folder):
     Returns:
         True if kCFI is present, false if not.
     """
-    with open(linux_folder.joinpath('arch', 'Kconfig'), encoding='utf-8') as file:
-        return re.search('fsanitize=kcfi', file.read())
+    return 'fsanitize=kcfi' in get_text(linux_folder, 'arch/Kconfig')
 
 
 def header(hdr_str, end='\n'):
@@ -389,8 +388,7 @@ def is_set(linux_folder, build_folder, cfg_sym):
     Returns:
         True if symbol is not 'n' or empty, False if not.
     """
-    val = config_val(linux_folder, build_folder, cfg_sym)
-    return val not in ('', 'n', 'undef')
+    return config_val(linux_folder, build_folder, cfg_sym) not in ('', 'n', 'undef')
 
 
 def kmake(kmake_cfg):
@@ -441,8 +439,7 @@ def kmake(kmake_cfg):
     if variables:
         make_variables_dict.update(variables)
     make_variables_dict = collections.OrderedDict(sorted(make_variables_dict.items()))
-    for key, value in make_variables_dict.items():
-        make_variables += [f"{key}={value}"]
+    make_variables += [f"{key}={value}" for key, value in make_variables_dict.items()]
 
     make_targets = targets
 
@@ -501,7 +498,7 @@ def log_file_from_str(log_folder, log_str):
     Returns:
         A Path object pointing to the log.
     """
-    return log_folder.joinpath(f"{log_str.replace(' ', '-').replace('-config','')}.log")
+    return Path(log_folder, f"{log_str.replace(' ', '-').replace('-config','')}.log")
 
 
 def log_result(cfg, log_str, success, time_str, build_log):
@@ -520,10 +517,9 @@ def log_result(cfg, log_str, success, time_str, build_log):
         log_str += ' config'
     msg = f"{log_str} {result_str} in {time_str}"
     if not success:
-        with open(build_log, encoding='utf-8') as file:
-            for line in file:
-                if re.search('error:|warning:|undefined', line):
-                    msg += f"\n{line.strip()}"
+        for line in get_text(build_log).splitlines():
+            if re.search('error:|warning:|undefined', line):
+                msg += f"\n{line}"
     log(cfg, msg)
 
 
@@ -588,17 +584,12 @@ def process_cfg_item(linux_folder, build_folder, cfg_item):
     """
     cfg_sym = cfg_item[0]
     file = cfg_item[1]
-    if len(cfg_item) == 3:
-        sc_action = cfg_item[2]
-    else:
-        sc_action = ['-e']
+    sc_action = cfg_item[2] if len(cfg_item) == 3 else ['-e']
 
     sym_is_m = is_modular(linux_folder, build_folder, cfg_sym)
-    sym_cannot_be_m = not can_be_modular(linux_folder.joinpath(file), cfg_sym)
+    sym_cannot_be_m = not can_be_modular(Path(linux_folder, file), cfg_sym)
 
-    if sym_is_m and sym_cannot_be_m:
-        return [*sc_action, cfg_sym]
-    return []
+    return [*sc_action, cfg_sym] if sym_is_m and sym_cannot_be_m else []
 
 
 def scripts_config(linux_folder, build_folder, args, capture_output=False):
@@ -617,8 +608,8 @@ def scripts_config(linux_folder, build_folder, args, capture_output=False):
                                          getting the value of configuration
                                          symbols.
     """
-    scripts_config_exec = linux_folder.joinpath('scripts', 'config')
-    config = build_folder.joinpath('.config')
+    scripts_config_exec = Path(linux_folder, 'scripts/config')
+    config = Path(build_folder, '.config')
 
     cmd = [scripts_config_exec, '--file', config, *args]
     if capture_output:
@@ -649,7 +640,7 @@ def setup_config(sc_cfg):
     build_folder.mkdir(parents=True)
 
     # Copy '.config'
-    config_dst = build_folder.joinpath('.config')
+    config_dst = Path(build_folder, '.config')
     pretty_print_cmd(['cp', config_file, config_dst])
     shutil.copyfile(config_file, config_dst)
 
@@ -662,15 +653,13 @@ def setup_config(sc_cfg):
     #
     # If either of those conditions are false, we need to disable this config so
     # that the build does not error.
-    debug_info_btf = 'DEBUG_INFO_BTF'
-    debug_info_btf_y = is_set(linux_folder, build_folder, debug_info_btf)
+    debug_info_btf_y = is_set(linux_folder, build_folder, (debug_info_btf := 'DEBUG_INFO_BTF'))
     pahole_available = shutil.which('pahole')
     if debug_info_btf_y and not (pahole_available and linux_version >= (5, 7, 0)):
         log_cfgs += [debug_info_btf]
         sc_args += ['-d', debug_info_btf]
 
-    bpf_preload = 'BPF_PRELOAD'
-    if is_set(linux_folder, build_folder, bpf_preload):
+    if is_set(linux_folder, build_folder, (bpf_preload := 'BPF_PRELOAD')):
         log_cfgs += [bpf_preload]
         sc_args += ['-d', bpf_preload]
 
@@ -678,8 +667,7 @@ def setup_config(sc_cfg):
     if 'debian' in str(config_file):
         # We are building upstream kernels, which do not have Debian's
         # signing keys in their source.
-        system_trusted_keys = 'SYSTEM_TRUSTED_KEYS'
-        if is_set(linux_folder, build_folder, system_trusted_keys):
+        if is_set(linux_folder, build_folder, (system_trusted_keys := 'SYSTEM_TRUSTED_KEYS')):
             log_cfgs += [system_trusted_keys]
             sc_args += ['-d', system_trusted_keys]
 
@@ -690,8 +678,7 @@ def setup_config(sc_cfg):
 
     if 'archlinux' in str(config_file):
         # These files will not exist in our kernel tree.
-        extra_firmware = 'EXTRA_FIRMWARE'
-        if is_set(linux_folder, build_folder, extra_firmware):
+        if is_set(linux_folder, build_folder, (extra_firmware := 'EXTRA_FIRMWARE')):
             log_cfgs += [extra_firmware]
             sc_args += ['-u', extra_firmware]
 
@@ -699,8 +686,7 @@ def setup_config(sc_cfg):
         # We cannot cope with CONFIG_EFI_ZBOOT, as it will generate a different
         # kernel image than boot-utils expects. Disable it so we get the kernel
         # image that we expect.
-        efi_zboot = 'EFI_ZBOOT'
-        if is_set(linux_folder, build_folder, efi_zboot):
+        if is_set(linux_folder, build_folder, (efi_zboot := 'EFI_ZBOOT')):
             log_cfgs += [efi_zboot]
             sc_args += ['-d', efi_zboot]
 
@@ -840,10 +826,8 @@ def setup_config(sc_cfg):
 
     # CONFIG_MFD_ARIZONA as a module is invalid before https://git.kernel.org/linus/33d550701b915938bd35ca323ee479e52029adf2
     # Done manually because 'tristate'/'bool' is not right after 'config MFD_ARIZONA'...
-    with open(linux_folder.joinpath('drivers', 'mfd', 'Makefile'), encoding='utf-8') as file:
-        has_33d550701b915 = re.search('arizona-objs', file.read())
     mfd_arizona_is_m = is_modular(linux_folder, build_folder, 'MFD_ARIZONA')
-    if mfd_arizona_is_m and not has_33d550701b915:
+    if mfd_arizona_is_m and 'arizona-objs' not in get_text(linux_folder, 'drivers/mfd/Makefile'):
         sc_args += ['-e', 'MFD_ARIZONA']
 
     # CONFIG_USB_FOTG210_{HCD,UDC} as modules is invalid after https://git.kernel.org/gregkh/usb/c/aeffd2c3b09f4f50438ec8960095129798bcb33a
@@ -852,7 +836,7 @@ def setup_config(sc_cfg):
     # the one that changes the symbols from 'tristate' to 'bool'. Due to the
     # nature of the changes, the two patches *should* always be together (i.e.,
     # it is not expected that patch 1 shows up somewhere without patch 2...).
-    if linux_folder.joinpath('drivers', 'usb', 'fotg210', 'Kconfig').exists():
+    if Path(linux_folder, 'drivers/usb/fotg210/Kconfig').exists():
         for usb_fotg_sym in [f"USB_FOTG210_{s}" for s in ['HCD', 'UDC']]:
             if is_modular(linux_folder, build_folder, usb_fotg_sym):
                 sc_args += ['-e', usb_fotg_sym]

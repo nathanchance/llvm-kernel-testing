@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import copy
-import re
+from pathlib import Path
 import shutil
 
 import lib
@@ -33,15 +33,17 @@ def build_defconfigs(self, cfg):
     kmake_cfg = {
         'linux_folder': self.linux_folder,
         'build_folder': self.build_folder,
-        'log_file': self.log_folder.joinpath('mips-malta_defconfig-kaslr.log'),
+        'log_file': Path(self.log_folder, 'mips-malta_defconfig-kaslr.log'),
         'targets': ['distclean', log_str.split(' ')[1]],
         'variables': self.make_variables,
     }
     lib.kmake(kmake_cfg)
-    kaslr_sc_args = copy.deepcopy(self.sc_args)
-    kaslr_sc_args += ['-e', 'RELOCATABLE']
-    kaslr_sc_args += ['--set-val', 'RELOCATION_TABLE_SIZE', '0x00200000']
-    kaslr_sc_args += ['-e', 'RANDOMIZE_BASE']
+    kaslr_sc_args = [
+        *copy.deepcopy(self.sc_args),
+        '-e', 'RELOCATABLE',
+        '--set-val', 'RELOCATION_TABLE_SIZE', '0x00200000',
+        '-e', 'RANDOMIZE_BASE',
+    ]  # yapf: disable
     lib.scripts_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], kaslr_sc_args)
     kmake_cfg['targets'] = ['olddefconfig', 'all']
     return_code, time = lib.kmake(kmake_cfg)
@@ -53,7 +55,7 @@ def build_defconfigs(self, cfg):
     kmake_cfg = {
         'linux_folder': self.linux_folder,
         'build_folder': self.build_folder,
-        'log_file': self.log_folder.joinpath('mips-malta_defconfig-big-endian.log'),
+        'log_file': Path(self.log_folder, 'mips-malta_defconfig-big-endian.log'),
         'targets': ['distclean', log_str.split(' ')[1]],
         'variables': {
             **self.make_variables,
@@ -115,19 +117,18 @@ def build_otherconfigs(self, cfg):
 
 # https://git.kernel.org/mips/c/c47c7ab9b53635860c6b48736efdd22822d726d7
 def has_c47c7ab9b5363(linux_folder):
-    with open(linux_folder.joinpath('arch', 'mips', 'configs', 'malta_defconfig'),
-              encoding='utf-8') as file:
-        return re.search('CONFIG_BLK_DEV_INITRD=y', file.read())
+    return 'CONFIG_BLK_DEV_INITRD=y' in lib.get_text(linux_folder,
+                                                     'arch/mips/configs/malta_defconfig')
 
 
 def has_e91946d6d93ef(linux_folder):
-    return linux_folder.joinpath('arch', 'mips', 'vdso', 'Kconfig').exists()
+    return Path(linux_folder, 'arch/mips/vdso/Kconfig').exists()
 
 
 class MIPS:
 
     def __init__(self, cfg):
-        self.build_folder = cfg['build_folder'].joinpath(self.__class__.__name__.lower())
+        self.build_folder = Path(cfg['build_folder'], self.__class__.__name__.lower())
         self.linux_folder = cfg['linux_folder']
         self.linux_version = cfg['linux_version']
         self.llvm_version = cfg['llvm_version']
