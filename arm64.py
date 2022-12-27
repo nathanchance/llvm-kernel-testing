@@ -216,10 +216,7 @@ class ARM64:
     def build(self, cfg):
         self.make_variables['ARCH'] = 'arm64'
 
-        if platform.machine() == 'aarch64':
-            cross_compile = ''
-        else:
-            cross_compile = 'aarch64-linux-gnu-'
+        cross_compile = '' if platform.machine() == 'aarch64' else 'aarch64-linux-gnu-'
 
         lib.header('Building arm64 kernels', end='')
 
