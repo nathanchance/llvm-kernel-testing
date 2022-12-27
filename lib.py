@@ -690,6 +690,12 @@ def setup_config(sc_cfg):
             log_cfgs += [efi_zboot]
             sc_args += ['-d', efi_zboot]
 
+    if 'riscv' in str(config_file) and linux_version >= (6, 2, 0):
+        # Upstream build issue: https://lore.kernel.org/Y6tAgP7UoP3aYBjq@spud/
+        if is_set(linux_folder, build_folder, (ipmmu_vmsa := 'IPMMU_VMSA')):
+            log_cfgs += [ipmmu_vmsa]
+            sc_args += ['-d', ipmmu_vmsa]
+
     # Make sure that certain configuration options do not get disabled across
     # kernel versions. This would not be necessary if we had an individual
     # config for each kernel version that we support but that is a lot more
