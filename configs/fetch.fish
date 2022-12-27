@@ -94,7 +94,7 @@ for distro in $distros
         case opensuse
             for arch in arm64 armv7hl i386 ppc64le riscv64 s390x x86_64
                 echo "Fetching $distro $arch configuration..."
-                crl -o $dest/$arch.config https://github.com/openSUSE/kernel-source/raw/stable/config/$arch/default; or return
+                crl -o $dest/$arch.config https://github.com/openSUSE/kernel-source/raw/master/config/$arch/default; or return
             end
     end
 end
