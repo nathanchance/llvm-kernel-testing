@@ -83,7 +83,7 @@ def check_binutils(cfg, arch, cross_compile):
     Returns:
         True if binutils is available in PATH, False if not.
     """
-    if cross_compile and shutil.which(f"{cross_compile}as"):
+    if shutil.which(f"{cross_compile}as"):
         return True
 
     msg = f"{arch} kernels skipped due to missing binutils"
