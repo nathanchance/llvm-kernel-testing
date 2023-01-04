@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import collections
-import datetime
 import os
 from pathlib import Path
 import re
@@ -304,7 +303,21 @@ def get_time_diff(start_time, end_time):
     Returns:
         A string with the length of time between the two times.
     """
-    return datetime.timedelta(seconds=int(end_time - start_time))
+    seconds = int(end_time - start_time)
+    days, seconds = divmod(seconds, 60 * 60 * 24)
+    hours, seconds = divmod(seconds, 60 * 60)
+    minutes, seconds = divmod(seconds, 60)
+
+    parts = []
+    if days:
+        parts += [f"{days}d"]
+    if hours:
+        parts += [f"{hours}h"]
+    if minutes:
+        parts += [f"{minutes}m"]
+    parts += [f"{seconds}s"]
+
+    return f"{' '.join(parts)}"
 
 
 def has_kcfi(linux_folder):
