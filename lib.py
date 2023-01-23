@@ -292,17 +292,19 @@ def get_text(*args):
     return file.read_text(encoding='utf-8')
 
 
-def get_time_diff(start_time, end_time):
+def get_time_diff(start_time, end_time=None):
     """
     Prints the difference between start_time and end_time.
 
     Parameters:
         start_time (float): Start time of command.
-        end_time (float): End time of command.
+        end_time (float): End time of command. Can be empty for current time.
 
     Returns:
         A string with the length of time between the two times.
     """
+    if not end_time:
+        end_time = time.time()
     seconds = int(end_time - start_time)
     days, seconds = divmod(seconds, 60 * 60 * 24)
     hours, seconds = divmod(seconds, 60 * 60)
@@ -310,14 +312,14 @@ def get_time_diff(start_time, end_time):
 
     parts = []
     if days:
-        parts += [f"{days}d"]
+        parts.append(f"{days}d")
     if hours:
-        parts += [f"{hours}h"]
+        parts.append(f"{hours}h")
     if minutes:
-        parts += [f"{minutes}m"]
-    parts += [f"{seconds}s"]
+        parts.append(f"{minutes}m")
+    parts.append(f"{seconds}s")
 
-    return f"{' '.join(parts)}"
+    return ' '.join(parts)
 
 
 def has_kcfi(linux_folder):
@@ -473,7 +475,7 @@ def kmake(kmake_cfg):
             else:
                 break
 
-    command_time = get_time_diff(start_time, time.time())
+    command_time = get_time_diff(start_time)
     print(f"\nReal\t{command_time}")
 
     return proc.returncode, command_time

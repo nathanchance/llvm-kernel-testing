@@ -344,7 +344,7 @@ def report_results(cfg, start_time):
         cfg (dict): Global configuration dictionary
         start_time (int): Intial time that the script started running.
     """
-    lib.log(cfg, f"Total script runtime: {lib.get_time_diff(start_time, time.time())}")
+    lib.log(cfg, f"Total script runtime: {lib.get_time_diff(start_time)}")
     format_logs(cfg)
 
     logs = cfg['logs']
