@@ -747,10 +747,11 @@ def setup_config(sc_cfg):
         # These are not user selectable symbols so unset them and let Kconfig set them as necessary.
         cfg_items += [(f"DRM_GEM_{drm_helper}_HELPER", 'drivers/gpu/drm/Kconfig', ['-u'])]
 
+    # CONFIG_GPIO_DAVINCI as a module is invalid before https://git.kernel.org/linus/8dab99c9eab3162bfb4326c35579a3388dbf68f2
     # CONFIG_GPIO_MXC as a module is invalid before https://git.kernel.org/linus/12d16b397ce0a999d13762c4c0cae2fb82eb60ee
     # CONFIG_GPIO_PL061 as a module is invalid before https://git.kernel.org/linus/616844408de7f21546c3c2a71ea7f8d364f45e0d
     # CONFIG_GPIO_TPS68470 as a module is invalid before https://git.kernel.org/linus/a1ce76e89907a69713f729ff21db1efa00f3bb47
-    gpio_suffixes = ['MXC', 'PL061', 'TPS68470']
+    gpio_suffixes = ['DAVINCI', 'MXC', 'PL061', 'TPS68470']
     for gpio_sym in [f"GPIO_{s}" for s in gpio_suffixes]:
         cfg_items += [(gpio_sym, 'drivers/gpio/Kconfig')]
 
@@ -762,6 +763,9 @@ def setup_config(sc_cfg):
 
     # CONFIG_KPROBES_SANITY_TEST as a module is invalid before https://git.kernel.org/linus/e44e81c5b90f698025eadceb7eef8661eda117d5
     cfg_items += [('KPROBES_SANITY_TEST', 'lib/Kconfig.debug')]
+
+    # CONFIG_MFD_PALMAS as a module is invalid before https://git.kernel.org/linus/
+    cfg_items += [('MFD_PALMAS', 'drivers/mfd/Kconfig')]
 
     # CONFIG_PCI_DRA7XX{,_HOST,_EP} as modules is invalid before https://git.kernel.org/linus/3b868d150efd3c586762cee4410cfc75f46d2a07
     # CONFIG_PCI_EXYNOS as a module is invalid before https://git.kernel.org/linus/778f7c194b1dac351d345ce723f8747026092949
