@@ -67,8 +67,13 @@ def capture_cmd(cmd, cwd=None, input=None):  # pylint: disable=redefined-builtin
     Returns:
         Output of cmd
     """
-    return subprocess.run(cmd, capture_output=True, check=True, cwd=cwd, input=input,
-                          text=True).stdout
+    try:
+        return subprocess.run(cmd, capture_output=True, check=True, cwd=cwd, input=input,
+                              text=True).stdout
+    except subprocess.CalledProcessError as err:
+        print(err.stdout)
+        print(err.stderr)
+        raise err
 
 
 def check_binutils(cfg, arch, cross_compile):
@@ -246,6 +251,33 @@ def get_binary_info(binary):
     return version, location
 
 
+def get_kernelrelease(linux_folder):
+    """
+    Gets the version of the Linux kernel being compiled from
+    'make -s kernelrelease'.
+
+    Parameters:
+        linux_folder (Path): A Path object pointing to the Linux kernel source.
+
+    Returns:
+        The output of 'make -s kernelrelease'.
+    """
+    build_folder = Path(linux_folder, '.build')
+    cores = len(os.sched_getaffinity(0))
+    base_make_cmd = ['make', '-C', linux_folder, f"-sj{cores}", f"O={build_folder.name}"]
+    subprocess.run([*base_make_cmd, 'distclean', 'allnoconfig'], check=True)
+    scripts_config(linux_folder, build_folder, ['-e', 'LOCALVERSION_AUTO'], capture_output=True)
+    subprocess.run([*base_make_cmd, 'olddefconfig', 'prepare'], check=True)
+    try:
+        kernelrelease = capture_cmd([*base_make_cmd, 'kernelrelease'])
+    except subprocess.CalledProcessError as err:
+        raise err
+    else:
+        return kernelrelease
+    finally:
+        shutil.rmtree(build_folder)
+
+
 def get_kernelversion(linux_folder):
     """
     Gets the version of the Linux kernel being compiled from
@@ -273,17 +305,19 @@ def get_linux_version(linux_folder):
     Returns:
         A string with the Linux kernel version in a format similar to 'uname -sr'.
     """
-    kernelversion = get_kernelversion(linux_folder)
 
-    (include_config := Path(linux_folder, 'include/config')).mkdir(exist_ok=True, parents=True)
+    # Check if the tree contains https://git.kernel.org/masahiroy/linux-kbuild/c/f3db8be4bf6788fa84c997f63143717138ab6b9f
+    if '- Output the release version string used in the last build (use with make -s)' in \
+       Path(linux_folder, 'Makefile').read_text(encoding='utf-8'):
+        kernelrelease = get_kernelrelease(linux_folder)
+    else:
+        (include_config := Path(linux_folder, 'include/config')).mkdir(exist_ok=True, parents=True)
+        Path(include_config, 'auto.conf').write_text('CONFIG_LOCALVERSION_AUTO=y', encoding='utf-8')
+        kernelrelease = get_kernelversion(linux_folder)
+        kernelrelease += capture_cmd(['scripts/setlocalversion'], cwd=linux_folder)
+        shutil.rmtree(include_config, ignore_errors=True)
 
-    Path(include_config, 'auto.conf').write_text('CONFIG_LOCALVERSION_AUTO=y', encoding='utf-8')
-
-    localversion = capture_cmd(['scripts/setlocalversion'], cwd=linux_folder)
-
-    shutil.rmtree(include_config, ignore_errors=True)
-
-    return f"Linux {kernelversion}{localversion}"
+    return f"Linux {kernelrelease}"
 
 
 def get_text(*args):
