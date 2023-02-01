@@ -50,7 +50,7 @@ class ArchitectureFactory:
             return S390(cfg)
         if arch == 'x86_64':
             return X86_64(cfg)
-        raise Exception(f"No class for {arch}?")
+        raise NotImplementedError(f"No class for {arch}?")
 
 
 def add_to_path(folder):

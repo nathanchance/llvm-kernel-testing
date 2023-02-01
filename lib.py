@@ -322,7 +322,7 @@ def get_linux_version(linux_folder):
 
 def get_text(*args):
     if not (file := Path(*args)).exists():
-        raise Exception(f"Trying to read from non-existent file ('{file}')?")
+        return FileNotFoundError(f"Trying to read from non-existent file ('{file}')?")
     return file.read_text(encoding='utf-8')
 
 
@@ -904,7 +904,7 @@ def setup_config(sc_cfg):
         scripts_config(linux_folder, build_folder, ['-k', *sc_args])
 
     log_str = ''
-    for log_cfg in log_cfgs:
+    for log_cfg in log_cfgs:  # pylint: disable-next=consider-using-join
         log_str += f" + CONFIG_{log_cfg}=n"
 
     return log_str
