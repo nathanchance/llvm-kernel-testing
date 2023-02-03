@@ -262,20 +262,8 @@ def get_kernelrelease(linux_folder):
     Returns:
         The output of 'make -s kernelrelease'.
     """
-    build_folder = Path(linux_folder, '.build')
-    cores = len(os.sched_getaffinity(0))
-    base_make_cmd = ['make', '-C', linux_folder, f"-sj{cores}", f"O={build_folder.name}"]
-    subprocess.run([*base_make_cmd, 'distclean', 'allnoconfig'], check=True)
-    scripts_config(linux_folder, build_folder, ['-e', 'LOCALVERSION_AUTO'], capture_output=True)
-    subprocess.run([*base_make_cmd, 'olddefconfig', 'prepare'], check=True)
-    try:
-        kernelrelease = capture_cmd([*base_make_cmd, 'kernelrelease'])
-    except subprocess.CalledProcessError as err:
-        raise err
-    else:
-        return kernelrelease
-    finally:
-        shutil.rmtree(build_folder)
+    make_cmd = ['make', '-C', linux_folder, '-s', 'kernelrelease']
+    return capture_cmd(make_cmd)
 
 
 def get_kernelversion(linux_folder):
@@ -305,17 +293,18 @@ def get_linux_version(linux_folder):
     Returns:
         A string with the Linux kernel version in a format similar to 'uname -sr'.
     """
+    (include_config := Path(linux_folder, 'include/config')).mkdir(exist_ok=True, parents=True)
+    Path(include_config, 'auto.conf').write_text('CONFIG_LOCALVERSION_AUTO=y', encoding='utf-8')
 
-    # Check if the tree contains https://git.kernel.org/masahiroy/linux-kbuild/c/f3db8be4bf6788fa84c997f63143717138ab6b9f
-    if '- Output the release version string used in the last build (use with make -s)' in \
-       Path(linux_folder, 'Makefile').read_text(encoding='utf-8'):
+    # Check if the tree contains https://git.kernel.org/masahiroy/linux-kbuild/c/dcfbcb1033bbd705ef554daab89bb5fd5484c3e5
+    if 'KERNELVERSION is not set' in Path(linux_folder,
+                                          'scripts/setlocalversion').read_text(encoding='utf-8'):
         kernelrelease = get_kernelrelease(linux_folder)
     else:
-        (include_config := Path(linux_folder, 'include/config')).mkdir(exist_ok=True, parents=True)
-        Path(include_config, 'auto.conf').write_text('CONFIG_LOCALVERSION_AUTO=y', encoding='utf-8')
         kernelrelease = get_kernelversion(linux_folder)
         kernelrelease += capture_cmd(['scripts/setlocalversion'], cwd=linux_folder)
-        shutil.rmtree(include_config, ignore_errors=True)
+
+    shutil.rmtree(include_config, ignore_errors=True)
 
     return f"Linux {kernelrelease}"
 
