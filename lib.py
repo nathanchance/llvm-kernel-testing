@@ -29,9 +29,11 @@ def boot_qemu(cfg, arch, log_str, build_folder, kernel_available):
         sys.stderr.flush()
         sys.stdout.flush()
         try:
-            subprocess.run(cmd, check=True)
-        except subprocess.CalledProcessError:
+            subprocess.run(cmd, capture_output=True, check=True)
+        except subprocess.CalledProcessError as err:
             result_str = 'failed'
+            print(err.stdout)
+            print(err.stderr)
         else:
             result_str = 'successful'
     else:
