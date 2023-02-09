@@ -389,7 +389,7 @@ def tc_lnx_env_info(cfg):
                 f"Linux source location: {linux_location}\n"
                 f"PATH: {path}\n\n")
     log_file.write_text(info_txt, encoding='utf-8')
-    print(info_txt, end='')
+    print(info_txt.strip())
 
 
 if __name__ == '__main__':
