@@ -27,7 +27,11 @@ def has_nwfpe_replexitval(linux_folder):
 def thumb2_ok(linux_folder):
     arm_kconfig_text = lib.get_text(linux_folder, 'arch/arm/Kconfig')
     init_kconfig_text = lib.get_text(linux_folder, 'init/Kconfig')
-    return 'select HAVE_FUTEX_CMPXCHG if FUTEX' in arm_kconfig_text or 'config HAVE_FUTEX_CMPXCHG' in init_kconfig_text
+    # https://git.kernel.org/linus/9d417cbe36eee7afdd85c2e871685f8dab7c2dba
+    has_9d417cbe36eee = 'select HAVE_FUTEX_CMPXCHG if FUTEX' in arm_kconfig_text
+    # https://git.kernel.org/linus/3297481d688a5cc2973ea58bd78e66b8639748b1
+    has_3297481d688a5 = 'config HAVE_FUTEX_CMPXCHG' not in init_kconfig_text
+    return has_9d417cbe36eee or has_3297481d688a5
 
 
 def build_defconfigs(self, cfg):
