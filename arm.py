@@ -37,12 +37,19 @@ def build_defconfigs(self, cfg):
         ('multi_v7_defconfig', 'arm32_v7'),
     ]
     for defconfig in defconfigs:
-        log_str = f"arm {defconfig[0]}"
+        config = defconfig[0]
+        log_str = f"arm {config}"
+        targets = [self.default_target]
+        if self.boot_testing_only:
+            if config == 'multi_v5_defconfig':
+                targets.append('aspeed-bmc-opp-palmetto.dtb')
+            elif config == 'aspeed_g5_defconfig':
+                targets.append('aspeed-bmc-opp-romulus.dtb')
         kmake_cfg = {
             'linux_folder': self.linux_folder,
             'build_folder': self.build_folder,
             'log_file': lib.log_file_from_str(self.log_folder, log_str),
-            'targets': ['distclean', log_str.split(' ')[1], 'all'],
+            'targets': ['distclean', config, *targets],
             'variables': self.make_variables,
         }
         return_code, time = lib.kmake(kmake_cfg)
@@ -61,7 +68,7 @@ def build_defconfigs(self, cfg):
         lib.kmake(kmake_cfg)
         lib.scripts_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'],
                            ['-e', 'THUMB2_KERNEL'])
-        kmake_cfg['targets'] = ['olddefconfig', 'all']
+        kmake_cfg['targets'] = ['olddefconfig', self.default_target]
         return_code, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
         boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0, defconfig[1])
@@ -123,7 +130,7 @@ def build_distroconfigs(self, cfg):
             'linux_folder': sc_cfg['linux_folder'],
             'build_folder': sc_cfg['build_folder'],
             'log_file': lib.log_file_from_str(self.log_folder, log_str),
-            'targets': ['olddefconfig', 'all'],
+            'targets': ['olddefconfig', self.default_target],
             'variables': self.make_variables,
         }
         log_str += lib.setup_config(sc_cfg)
@@ -136,10 +143,12 @@ def build_distroconfigs(self, cfg):
 class ARM:
 
     def __init__(self, cfg):
+        self.boot_testing_only = cfg['boot_testing_only']
         self.build_folder = Path(cfg['build_folder'], self.__class__.__name__.lower())
         self.commits_present = cfg['commits_present']
         self.configs_folder = cfg['configs_folder']
         self.configs_present = cfg['configs_present']
+        self.default_target = 'zImage' if self.boot_testing_only else 'all'
         self.linux_folder = cfg['linux_folder']
         self.linux_version = cfg['linux_version']
         self.llvm_version = cfg['llvm_version']

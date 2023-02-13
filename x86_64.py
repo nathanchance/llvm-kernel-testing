@@ -18,7 +18,7 @@ def build_defconfigs(self, cfg):
         'linux_folder': self.linux_folder,
         'build_folder': self.build_folder,
         'log_file': lib.log_file_from_str(self.log_folder, log_str),
-        'targets': ['distclean', log_str.split(' ')[1], 'all'],
+        'targets': ['distclean', log_str.split(' ')[1], self.default_target],
         'variables': self.make_variables,
     }
     return_code, time = lib.kmake(kmake_cfg)
@@ -36,7 +36,7 @@ def build_defconfigs(self, cfg):
         }
         lib.kmake(kmake_cfg)
         lib.modify_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], 'thinlto')
-        kmake_cfg['targets'] = ['olddefconfig', 'all']
+        kmake_cfg['targets'] = ['olddefconfig', self.default_target]
         return_code, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
         boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0)
@@ -129,7 +129,7 @@ def build_distroconfigs(self, cfg):
             'linux_folder': sc_cfg['linux_folder'],
             'build_folder': sc_cfg['build_folder'],
             'log_file': lib.log_file_from_str(self.log_folder, log_str),
-            'targets': ['olddefconfig', 'all'],
+            'targets': ['olddefconfig', self.default_target],
             'variables': {
                 **self.make_variables,
                 **gnu_objcopy
@@ -170,7 +170,7 @@ def build_cfi_kernel(self, cfg, use_lto=False):
         sc_args += ['-d', 'LTO_NONE']
         sc_args += ['-e', 'LTO_CLANG_THIN']
     lib.scripts_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], sc_args)
-    kmake_cfg['targets'] = ['olddefconfig', 'all']
+    kmake_cfg['targets'] = ['olddefconfig', self.default_target]
     return_code, time = lib.kmake(kmake_cfg)
     lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
     boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0)
@@ -207,6 +207,7 @@ class X86_64:  # pylint: disable=invalid-name
         self.commits_present = cfg['commits_present']
         self.configs_folder = cfg['configs_folder']
         self.configs_present = cfg['configs_present']
+        self.default_target = 'bzImage' if cfg['boot_testing_only'] else 'all'
         self.linux_folder = cfg['linux_folder']
         self.linux_version = cfg['linux_version']
         self.llvm_version = cfg['llvm_version']

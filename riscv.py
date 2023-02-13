@@ -23,9 +23,9 @@ def build_defconfigs(self, cfg):
     if self.llvm_version < (13, 0, 0) and has_efi(self.linux_folder):
         lib.kmake(kmake_cfg)
         lib.scripts_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], ['-d', 'EFI'])
-        kmake_cfg['targets'] = ['olddefconfig', 'all']
+        kmake_cfg['targets'] = ['olddefconfig', self.default_target]
     else:
-        kmake_cfg['targets'] += ['all']
+        kmake_cfg['targets'].append(self.default_target)
     return_code, time = lib.kmake(kmake_cfg)
     lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
     boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0)
@@ -102,6 +102,7 @@ class RISCV:
         self.commits_present = cfg['commits_present']
         self.configs_folder = cfg['configs_folder']
         self.configs_present = cfg['configs_present']
+        self.default_target = 'Image' if cfg['boot_testing_only'] else 'all'
         self.linux_folder = cfg['linux_folder']
         self.linux_version = cfg['linux_version']
         self.llvm_version = cfg['llvm_version']

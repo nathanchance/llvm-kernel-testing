@@ -61,6 +61,12 @@ class HEXAGON:
         self.targets_to_build = cfg['targets_to_build']
 
     def build(self, cfg):
+        if cfg['boot_testing_only']:
+            lib.header('Skipping hexagon kernels')
+            print('Only boot testing was requested')
+            lib.log(cfg, 'hexagon kernels skipped due to boot testing only')
+            return
+
         self.make_variables['ARCH'] = 'hexagon'
         self.make_variables['LLVM_IAS'] = '1'
         if '6f5b41a2f5a63' not in self.commits_present:

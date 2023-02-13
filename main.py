@@ -203,6 +203,7 @@ def initial_config_and_setup(args):
 
     cfg = {
         'architectures': args.architectures,
+        'boot_testing_only': args.boot_testing_only,
         'commits_present': check_for_commits(linux_folder),
         'configs_folder': Path(base_folder, 'configs'),
         'configs_present': check_for_configs(linux_folder),
@@ -212,6 +213,8 @@ def initial_config_and_setup(args):
         'targets_to_build': args.targets_to_build,
         'save_objects': args.save_objects,
     }
+    if args.boot_testing_only and 'other' in cfg['targets_to_build']:
+        cfg['targets_to_build'].remove('other')
 
     for log in ['failed', 'info', 'skipped', 'success']:
         cfg['logs'][log] = Path(log_folder, f"{log}.log")
@@ -280,6 +283,11 @@ def parse_arguments():
         type=str,
         help=  # noqa: E251
         "Path to binutils installation (parent of 'bin' folder, default: Use binutils from PATH).")
+    parser.add_argument(
+        '--boot-testing-only',
+        action='store_true',
+        help=  # noqa: E251
+        'Only build configs that can be booted in QEMU and only build kernel images (no modules)')
     parser.add_argument('--boot-utils-folder',
                         default=Path(base_folder, 'src/boot-utils'),
                         type=str,

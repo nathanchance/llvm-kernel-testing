@@ -23,7 +23,7 @@ def build_defconfigs(self, cfg):
     lib.kmake(kmake_cfg)
     if self.sc_args:
         lib.scripts_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], self.sc_args)
-    kmake_cfg['targets'] = ['olddefconfig', 'all']
+    kmake_cfg['targets'] = ['olddefconfig', self.default_target]
     return_code, time = lib.kmake(kmake_cfg)
     lib.log_result(cfg, f"{log_str}{self.config_str}", return_code == 0, time,
                    kmake_cfg['log_file'])
@@ -45,7 +45,7 @@ def build_defconfigs(self, cfg):
         '-e', 'RANDOMIZE_BASE',
     ]  # yapf: disable
     lib.scripts_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], kaslr_sc_args)
-    kmake_cfg['targets'] = ['olddefconfig', 'all']
+    kmake_cfg['targets'] = ['olddefconfig', self.default_target]
     return_code, time = lib.kmake(kmake_cfg)
     lib.log_result(cfg, f"{log_str}{self.config_str}", return_code == 0, time,
                    kmake_cfg['log_file'])
@@ -66,12 +66,15 @@ def build_defconfigs(self, cfg):
     lib.modify_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], 'big endian')
     if self.sc_args:
         lib.scripts_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], self.sc_args)
-    kmake_cfg['targets'] = ['olddefconfig', 'all']
+    kmake_cfg['targets'] = ['olddefconfig', self.default_target]
     return_code, time = lib.kmake(kmake_cfg)
     lib.log_result(cfg, f"{log_str}{self.config_str}", return_code == 0, time,
                    kmake_cfg['log_file'])
     boot_qemu(cfg, f"{log_str}{self.config_str}", kmake_cfg['build_folder'], return_code == 0,
               'mips')
+
+    if self.boot_testing_only:
+        return
 
     generic_cfgs = ['32r1', '32r1el', '32r2', '32r2el']
     if self.llvm_version >= (12, 0, 0):
@@ -128,10 +131,12 @@ def has_e91946d6d93ef(linux_folder):
 class MIPS:
 
     def __init__(self, cfg):
+        self.boot_testing_only = cfg['boot_testing_only']
         self.build_folder = Path(cfg['build_folder'], self.__class__.__name__.lower())
         self.linux_folder = cfg['linux_folder']
         self.linux_version = cfg['linux_version']
         self.llvm_version = cfg['llvm_version']
+        self.default_target = 'vmlinux' if self.boot_testing_only else 'all'
         self.log_folder = cfg['log_folder']
         self.make_variables = copy.deepcopy(cfg['make_variables'])
         self.save_objects = cfg['save_objects']

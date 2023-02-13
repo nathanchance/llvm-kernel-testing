@@ -23,7 +23,7 @@ def build_defconfigs(self, cfg):
         'linux_folder': self.linux_folder,
         'build_folder': self.build_folder,
         'log_file': lib.log_file_from_str(self.log_folder, log_str),
-        'targets': ['distclean', log_str.split(' ')[1], 'all'],
+        'targets': ['distclean', log_str.split(' ')[1], self.default_target],
         'variables': self.make_variables,
     }
     return_code, time = lib.kmake(kmake_cfg)
@@ -133,6 +133,7 @@ class S390:
         self.configs_folder = cfg['configs_folder']
         self.configs_present = cfg['configs_present']
         self.cross_compile = 's390x-linux-gnu-'
+        self.default_target = 'bzImage' if cfg['boot_testing_only'] else 'all'
         self.linux_folder = cfg['linux_folder']
         self.llvm_version = cfg['llvm_version']
         self.linux_version = cfg['linux_version']

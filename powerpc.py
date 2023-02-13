@@ -19,11 +19,14 @@ def build_defconfigs(self, cfg):
             f"{log_str} skipped due to 2255411d1d0f0 (https://github.com/ClangBuiltLinux/linux/issues/1679)"
         )
     else:
+        targets = ['uImage']
+        if not self.boot_testing_only:
+            targets.insert(0, 'all')
         kmake_cfg = {
             'linux_folder': self.linux_folder,
             'build_folder': self.build_folder,
             'log_file': lib.log_file_from_str(self.log_folder, log_str),
-            'targets': ['distclean', log_str.split(' ')[1], 'all', 'uImage'],
+            'targets': ['distclean', log_str.split(' ')[1], *targets],
             'variables': self.make_variables,
         }
         return_code, time = lib.kmake(kmake_cfg)
@@ -48,7 +51,7 @@ def build_defconfigs(self, cfg):
         lib.kmake(kmake_cfg)
         sc_args = ['-e', 'SERIAL_PMACZILOG', '-e', 'SERIAL_PMACZILOG_CONSOLE']
         lib.scripts_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], sc_args)
-        kmake_cfg['targets'] = ['olddefconfig', 'all']
+        kmake_cfg['targets'] = ['olddefconfig', 'vmlinux' if self.boot_testing_only else 'all']
         return_code, time = lib.kmake(kmake_cfg)
         lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
         if self.llvm_version >= (14, 0, 0):
@@ -78,17 +81,18 @@ def build_defconfigs(self, cfg):
         kmake_cfg['linux_folder']) and self.llvm_version >= (12, 0, 0)
     # https://github.com/ClangBuiltLinux/linux/issues/1445
     wa_cbl_1445 = self.linux_version >= (5, 18, 0) and self.llvm_version < (14, 0, 0)
+    final_target = 'vmlinux' if self.boot_testing_only else 'all'
     if wa_cbl_1292 or wa_cbl_1445:
         if has_dwc(kmake_cfg['linux_folder']):
-            pseries_targets += ['disable-werror.config', 'all']
+            pseries_targets += ['disable-werror.config', final_target]
         else:
             lib.kmake({**kmake_cfg, 'targets': pseries_targets})
             sc_args = ['-e', 'PPC_DISABLE_WERROR']
             lib.scripts_config(kmake_cfg['linux_folder'], kmake_cfg['build_folder'], sc_args)
-            pseries_targets = ['olddefconfig', 'all']
+            pseries_targets = ['olddefconfig', final_target]
         log_str += '+ CONFIG_PPC_DISABLE_WERROR=y'
     else:
-        pseries_targets += ['all']
+        pseries_targets += [final_target]
     kmake_cfg['targets'] = pseries_targets
     return_code, time = lib.kmake(kmake_cfg)
     lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
@@ -98,11 +102,12 @@ def build_defconfigs(self, cfg):
     powernv_vars = {}
     if self.llvm_version < (12, 0, 0) and 'LD' not in self.ppc64le_vars:
         powernv_vars = {'LD': f"{self.cross_compile}ld"}
+    final_target = 'zImage.epapr' if self.boot_testing_only else 'all'
     kmake_cfg = {
         'linux_folder': self.linux_folder,
         'build_folder': self.build_folder,
         'log_file': lib.log_file_from_str(self.log_folder, log_str),
-        'targets': ['distclean', log_str.split(' ')[1], 'all'],
+        'targets': ['distclean', log_str.split(' ')[1], final_target],
         'variables': {
             **self.make_variables,
             **self.ppc64le_vars,
@@ -112,6 +117,9 @@ def build_defconfigs(self, cfg):
     return_code, time = lib.kmake(kmake_cfg)
     lib.log_result(cfg, log_str, return_code == 0, time, kmake_cfg['log_file'])
     boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0)
+
+    if self.boot_testing_only:
+        return
 
     log_str = 'powerpc ppc64le_defconfig'
     kmake_cfg = {
@@ -178,7 +186,7 @@ def build_distroconfigs(self, cfg):
             'linux_folder': sc_cfg['linux_folder'],
             'build_folder': sc_cfg['build_folder'],
             'log_file': lib.log_file_from_str(self.log_folder, log_str),
-            'targets': ['olddefconfig', 'all'],
+            'targets': ['olddefconfig', 'zImage.epapr' if self.boot_testing_only else 'all'],
             'variables': {
                 **self.make_variables,
                 **self.ppc64le_vars
@@ -240,6 +248,7 @@ def get_cross_compile():
 class POWERPC:
 
     def __init__(self, cfg):
+        self.boot_testing_only = cfg['boot_testing_only']
         self.build_folder = Path(cfg['build_folder'], self.__class__.__name__.lower())
         self.configs_folder = cfg['configs_folder']
         self.configs_present = cfg['configs_present']
