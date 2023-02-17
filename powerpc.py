@@ -16,7 +16,7 @@ def build_defconfigs(self, cfg):
     if has_2255411d1d0f0(self.linux_folder):
         lib.log(
             cfg,
-            f"{log_str} skipped due to 2255411d1d0f0 (https://github.com/ClangBuiltLinux/linux/issues/1679)"
+            f"{log_str} skipped due to 2255411d1d0f0 (https://github.com/ClangBuiltLinux/linux/issues/1679)",
         )
     else:
         targets = ['uImage']
@@ -34,7 +34,7 @@ def build_defconfigs(self, cfg):
         if self.llvm_version < (12, 0, 1) and has_48cf12d88969b(kmake_cfg['linux_folder']):
             lib.log(
                 cfg,
-                f"{log_str} qemu_boot skipped (https://github.com/ClangBuiltLinux/linux/issues/1345)"
+                f"{log_str} qemu_boot skipped (https://github.com/ClangBuiltLinux/linux/issues/1345)",
             )
         else:
             boot_qemu(cfg, log_str, kmake_cfg['build_folder'], return_code == 0, 'ppc32')
@@ -62,7 +62,7 @@ def build_defconfigs(self, cfg):
     else:
         lib.log(
             cfg,
-            f"{log_str} skipped due to missing 297565aa22cf (https://github.com/ClangBuiltLinux/linux/issues/563)"
+            f"{log_str} skipped due to missing 297565aa22cf (https://github.com/ClangBuiltLinux/linux/issues/563)",
         )
 
     log_str = 'powerpc pseries_defconfig'
@@ -72,7 +72,8 @@ def build_defconfigs(self, cfg):
         'log_file': lib.log_file_from_str(self.log_folder, log_str),
         # https://github.com/ClangBuiltLinux/linux/issues/602
         'variables': {
-            **self.make_variables, 'LD': f"{self.cross_compile}ld"
+            **self.make_variables,
+            'LD': f"{self.cross_compile}ld",
         },
     }
     pseries_targets = ['distclean', log_str.split(' ')[1]]
@@ -111,7 +112,7 @@ def build_defconfigs(self, cfg):
         'variables': {
             **self.make_variables,
             **self.ppc64le_vars,
-            **powernv_vars
+            **powernv_vars,
         },
     }
     return_code, time = lib.kmake(kmake_cfg)
@@ -129,7 +130,7 @@ def build_defconfigs(self, cfg):
         'targets': ['distclean', log_str.split(' ')[1], 'all'],
         'variables': {
             **self.make_variables,
-            **self.ppc64le_vars
+            **self.ppc64le_vars,
         },
     }
     return_code, time = lib.kmake(kmake_cfg)
@@ -169,11 +170,11 @@ def build_distroconfigs(self, cfg):
         distro = cfg_file[0]
         cfg_basename = f"{cfg_file[1]}.config"
         log_str = f"powerpc {distro} config"
-        if distro == 'opensuse':
+        if distro == 'opensuse':  # noqa: SIM102
             if has_231b232df8f67(self.linux_folder) and self.llvm_version <= (12, 0, 0):
                 lib.log(
                     cfg,
-                    f"{log_str} config skipped (https://github.com/ClangBuiltLinux/linux/issues/1160)"
+                    f"{log_str} config skipped (https://github.com/ClangBuiltLinux/linux/issues/1160)",
                 )
                 continue
         sc_cfg = {
@@ -189,7 +190,7 @@ def build_distroconfigs(self, cfg):
             'targets': ['olddefconfig', 'zImage.epapr' if self.boot_testing_only else 'all'],
             'variables': {
                 **self.make_variables,
-                **self.ppc64le_vars
+                **self.ppc64le_vars,
             },
         }
         log_str += lib.setup_config(sc_cfg)

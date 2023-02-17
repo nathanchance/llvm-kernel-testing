@@ -59,7 +59,7 @@ def build_defconfigs(self, cfg):
         'targets': ['distclean', log_str.split(' ')[1]],
         'variables': {
             **self.make_variables,
-            **self.ld_bfd
+            **self.ld_bfd,
         },
     }
     lib.kmake(kmake_cfg)
@@ -94,7 +94,7 @@ def build_defconfigs(self, cfg):
             'targets': ['distclean', log_str.split(' ')[1], 'all'],
             'variables': {
                 **self.make_variables,
-                **generic_make_variables
+                **generic_make_variables,
             },
         }
         return_code, time = lib.kmake(kmake_cfg)
@@ -111,7 +111,7 @@ def build_otherconfigs(self, cfg):
             'targets': ['distclean', log_str.split(' ')[1], 'all'],
             'variables': {
                 **self.make_variables,
-                **self.ld_bfd
+                **self.ld_bfd,
             },
         }
         return_code, time = lib.kmake(kmake_cfg)

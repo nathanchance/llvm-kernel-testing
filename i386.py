@@ -154,7 +154,7 @@ class I386:
         if self.llvm_version >= (12, 0, 0) and not has_bb73d07148c40(self.linux_folder):
             lib.header('Skipping i386 kernels')
             print(
-                'Reason: x86 kernels do not build properly with LLVM 12.0.0+ without R_386_PLT32 handling.'
+                'Reason: x86 kernels do not build properly with LLVM 12.0.0+ without R_386_PLT32 handling.',
             )
             print('        https://github.com/ClangBuiltLinux/linux/issues/1210')
             lib.log(cfg, 'x86 kernels skipped due to missing bb73d07148c4 with LLVM > 12.0.0')
@@ -168,7 +168,7 @@ class I386:
             if not has_d5cbd80e302df(self.linux_folder):
                 lib.header('Skipping i386 kernels')
                 print(
-                    'i386 kernels do not cross compile without https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f.'
+                    'i386 kernels do not cross compile without https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f.',
                 )
                 lib.log(cfg,
                         'i386 kernels skipped due to missing d5cbd80e302d on a non-x86_64 host')

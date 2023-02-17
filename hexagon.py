@@ -82,11 +82,11 @@ class HEXAGON:
             print('  * https://git.kernel.org/linus/6fff7410f6befe5744d54f0418d65a6322998c09')
             print('  * https://git.kernel.org/linus/f1f99adf05f2138ff2646d756d4674e302e8d02d')
             print(
-                '\nProvide a kernel tree with Linux 5.13+ or one with these fixes to build Hexagon kernels.'
+                '\nProvide a kernel tree with Linux 5.13+ or one with these fixes to build Hexagon kernels.',
             )
             lib.log(
                 cfg,
-                'hexagon kernels skipped due to missing 788dcee0306e, 6fff7410f6be, and/or f1f99adf05f2'
+                'hexagon kernels skipped due to missing 788dcee0306e, 6fff7410f6be, and/or f1f99adf05f2',
             )
             return
 

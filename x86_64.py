@@ -53,8 +53,9 @@ def build_otherconfigs(self, cfg):
         configs += ['CONFIG_WERROR']
     if self.linux_version < (5, 7, 0):
         configs += [
-            'CONFIG_STM', 'CONFIG_TEST_MEMCAT_P',
-            '(https://github.com/ClangBuiltLinux/linux/issues/515)'
+            'CONFIG_STM',
+            'CONFIG_TEST_MEMCAT_P',
+            '(https://github.com/ClangBuiltLinux/linux/issues/515)',
         ]
     config_path, config_str = lib.gen_allconfig(self.build_folder, configs)
     if config_path:
@@ -80,7 +81,8 @@ def build_otherconfigs(self, cfg):
             configs += ['CONFIG_KCSAN']
             if should_disable_kmsan(self.linux_folder, self.configs_present):
                 configs += [
-                    'CONFIG_KMSAN', '(https://github.com/ClangBuiltLinux/linux/issues/1741)'
+                    'CONFIG_KMSAN',
+                    '(https://github.com/ClangBuiltLinux/linux/issues/1741)',
                 ]
         if 'CONFIG_WERROR' in self.configs_present:
             configs += ['CONFIG_WERROR']
@@ -132,7 +134,7 @@ def build_distroconfigs(self, cfg):
             'targets': ['olddefconfig', self.default_target],
             'variables': {
                 **self.make_variables,
-                **gnu_objcopy
+                **gnu_objcopy,
             },
         }
         log_str += lib.setup_config(sc_cfg)
@@ -223,7 +225,7 @@ class X86_64:  # pylint: disable=invalid-name
             if not has_d5cbd80e302df(self.linux_folder):
                 lib.header('Skipping x86_64 kernels')
                 print(
-                    'x86_64 kernels do not cross compile without https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f'
+                    'x86_64 kernels do not cross compile without https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f',
                 )
                 lib.log(cfg,
                         'x86_64 kernels skipped due to missing d5cbd80e302d on a non-x86_64 host')

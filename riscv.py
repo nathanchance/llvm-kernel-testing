@@ -121,7 +121,7 @@ class RISCV:
             print('\nProvide a kernel tree with Linux 5.7 or newer to build RISC-V kernels.')
             lib.log(
                 cfg,
-                'riscv kernels skipped due to missing 52e7c52d2ded, fdff9911f266, and/or abc71bf0a703'
+                'riscv kernels skipped due to missing 52e7c52d2ded, fdff9911f266, and/or abc71bf0a703',
             )
             return
 
@@ -144,12 +144,10 @@ class RISCV:
             print(f"binutils version: {binutils_version}")
             print(f"binutils location: {binutils_location}")
 
-        if self.llvm_version < (13, 0, 0) or not has_ec3a5cb61146c(self.linux_folder):
+        # linux-5.10.y has a build problem with ld.lld
+        if self.llvm_version < (13, 0, 0) or not has_ec3a5cb61146c(
+                self.linux_folder) or self.linux_version <= (5, 10, 999):
             self.make_variables['LD'] = f"{cross_compile}ld"
-        else:
-            # linux-5.10.y has a build problem with ld.lld
-            if self.linux_version <= (5, 10, 999):
-                self.make_variables['LD'] = f"{cross_compile}ld"
 
         if 'def' in self.targets_to_build:
             build_defconfigs(self, cfg)

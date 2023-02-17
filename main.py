@@ -25,7 +25,15 @@ import lib
 base_folder = Path(__file__).resolve().parent
 supported_targets = ['def', 'other', 'distro']
 supported_architectures = [
-    'arm', 'arm64', 'hexagon', 'i386', 'mips', 'powerpc', 'riscv', 's390', 'x86_64'
+    'arm',
+    'arm64',
+    'hexagon',
+    'i386',
+    'mips',
+    'powerpc',
+    'riscv',
+    's390',
+    'x86_64',
 ]
 
 
@@ -67,7 +75,7 @@ def add_to_path(folder):
         if not (bin_folder := Path(folder, 'bin')).exists():
             raise FileNotFoundError(
                 f"Supplied folder ('{folder}') does not have a 'bin' folder in it?")
-        if not str(bin_folder) in os.environ['PATH']:
+        if str(bin_folder) not in os.environ['PATH']:
             os.environ['PATH'] = f"{bin_folder}:{os.environ['PATH']}"
 
 
@@ -150,7 +158,10 @@ def clone_update_boot_utils(boot_utils_folder):
     if not boot_utils_folder.exists():
         boot_utils_folder.parent.mkdir(exist_ok=True, parents=True)
         git_clone = [
-            'git', 'clone', 'https://github.com/ClangBuiltLinux/boot-utils', boot_utils_folder
+            'git',
+            'clone',
+            'https://github.com/ClangBuiltLinux/boot-utils',
+            boot_utils_folder,
         ]
         subprocess.run(git_clone, check=True)
     git_pull = ['git', '-C', boot_utils_folder, 'pull', '--no-edit']
@@ -171,7 +182,7 @@ def format_logs(cfg):
     for _key, log_file in logs.items():
         if log_file.exists():
             # Trim trailing new line by truncating by one byte.
-            with open(log_file, 'rb+') as file:
+            with log_file.open('rb+') as file:
                 file.seek(-1, os.SEEK_END)
                 file.truncate()
 
@@ -281,12 +292,12 @@ def parse_arguments():
     parser.add_argument(
         '--binutils-prefix',
         type=str,
-        help=  # noqa: E251
+        help=
         "Path to binutils installation (parent of 'bin' folder, default: Use binutils from PATH).")
     parser.add_argument(
         '--boot-testing-only',
         action='store_true',
-        help=  # noqa: E251
+        help=
         'Only build configs that can be booted in QEMU and only build kernel images (no modules)')
     parser.add_argument('--boot-utils-folder',
                         default=Path(base_folder, 'src/boot-utils'),
@@ -319,8 +330,8 @@ def parse_arguments():
     parser.add_argument(
         '--tc-prefix',
         type=str,
-        help=  # noqa: E251
-        "Path to toolchain installation (parent of 'bin' folder, default: Use toolchain from PATH)."
+        help=
+        "Path to toolchain installation (parent of 'bin' folder, default: Use toolchain from PATH).",
     )
     parser.add_argument('--use-ccache',
                         action='store_true',
@@ -328,8 +339,7 @@ def parse_arguments():
     parser.add_argument(
         '--qemu-prefix',
         type=str,
-        help=  # noqa: E251
-        "Path to QEMU installation (parent of 'bin' folder, default: Use QEMU from PATH).")
+        help="Path to QEMU installation (parent of 'bin' folder, default: Use QEMU from PATH).")
 
     return parser.parse_args()
 

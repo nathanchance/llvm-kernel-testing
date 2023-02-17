@@ -12,7 +12,7 @@ def boot_qemu(self, cfg, log_str, build_folder, kernel_available):
     if self.qemu_version < (6, 0, 0):
         lib.log(
             cfg,
-            f"{log_str} qemu boot skipped due to skipped due to a QEMU binary older than 6.0.0 (found {'.'.join(self.qemu_version)})"
+            f"{log_str} qemu boot skipped due to skipped due to a QEMU binary older than 6.0.0 (found {'.'.join(self.qemu_version)})",
         )
     lib.boot_qemu(cfg, 's390', log_str, build_folder, kernel_available)
 
@@ -71,7 +71,7 @@ def build_otherconfigs(self, cfg):
         for skipped_cfg in skipped_cfgs:
             lib.log(
                 cfg,
-                f"s390 {skipped_cfg} skipped due to linker error with CONFIG_RELOCATABLE=n (https://github.com/ClangBuiltLinux/linux/issues/1747)"
+                f"s390 {skipped_cfg} skipped due to linker error with CONFIG_RELOCATABLE=n (https://github.com/ClangBuiltLinux/linux/issues/1747)",
             )
 
 
@@ -149,11 +149,11 @@ class S390:
             lib.header('Skipping s390x kernels')
             print('Reason: s390 kernels did not build properly until Linux 5.6')
             print(
-                '        https://lore.kernel.org/lkml/your-ad-here.call-01580230449-ext-6884@work.hours/'
+                '        https://lore.kernel.org/lkml/your-ad-here.call-01580230449-ext-6884@work.hours/',
             )
             lib.log(
                 cfg,
-                's390x kernels skipped due to missing fixes from 5.6 (https://lore.kernel.org/r/your-ad-here.call-01580230449-ext-6884@work.hours/)'
+                's390x kernels skipped due to missing fixes from 5.6 (https://lore.kernel.org/r/your-ad-here.call-01580230449-ext-6884@work.hours/)',
             )
             return
         if self.linux_version >= (5, 14, 0) and self.llvm_version < (13, 0, 0):

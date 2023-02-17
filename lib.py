@@ -59,7 +59,8 @@ def can_be_modular(kconfig_file, cfg_sym):
     return False
 
 
-def capture_cmd(cmd, cwd=None, input=None):  # pylint: disable=redefined-builtin
+# pylint: disable-next=redefined-builtin
+def capture_cmd(cmd, cwd=None, input=None):  # noqa: A002
     """
     Capture the output of a command for further processing.
 
@@ -492,7 +493,7 @@ def kmake(kmake_cfg):
     sys.stderr.flush()
     sys.stdout.flush()
     with subprocess.Popen(make_cmd, stderr=subprocess.STDOUT,
-                          stdout=subprocess.PIPE) as proc, open(log_file, 'bw') as file:
+                          stdout=subprocess.PIPE) as proc, log_file.open('bw') as file:
         while True:
             byte = proc.stdout.read(1)
             if byte:
@@ -517,15 +518,15 @@ def log(cfg, log_str):
         log_str (str): String to write to log.
     """
     if 'failed' in log_str:
-        file = cfg['logs']['failed']
+        log_file = cfg['logs']['failed']
     elif 'skipped' in log_str:
-        file = cfg['logs']['skipped']
+        log_file = cfg['logs']['skipped']
     elif 'success' in log_str:
-        file = cfg['logs']['success']
+        log_file = cfg['logs']['success']
     else:
-        file = cfg['logs']['info']
+        log_file = cfg['logs']['info']
 
-    with open(file, 'a', encoding='utf-8') as file:
+    with log_file.open('a', encoding='utf-8') as file:
         file.write(f"{log_str}\n\n")
 
 
@@ -718,13 +719,13 @@ def setup_config(sc_cfg):
             if is_modular(linux_folder, build_folder, android_cfg):
                 sc_args += ['-e', android_cfg]
 
-    if 'archlinux' in str(config_file):
+    if 'archlinux' in str(config_file):  # noqa: SIM102
         # These files will not exist in our kernel tree.
         if is_set(linux_folder, build_folder, (extra_firmware := 'EXTRA_FIRMWARE')):
             log_cfgs += [extra_firmware]
             sc_args += ['-u', extra_firmware]
 
-    if 'fedora' in str(config_file):
+    if 'fedora' in str(config_file):  # noqa: SIM102
         # We cannot cope with CONFIG_EFI_ZBOOT, as it will generate a different
         # kernel image than boot-utils expects. Disable it so we get the kernel
         # image that we expect.
@@ -732,7 +733,7 @@ def setup_config(sc_cfg):
             log_cfgs += [efi_zboot]
             sc_args += ['-d', efi_zboot]
 
-    if 'riscv' in str(config_file) and linux_version >= (6, 2, 0):
+    if 'riscv' in str(config_file) and linux_version >= (6, 2, 0):  # noqa: SIM102
         # Upstream build issue: https://lore.kernel.org/Y6tAgP7UoP3aYBjq@spud/
         if is_set(linux_folder, build_folder, (ipmmu_vmsa := 'IPMMU_VMSA')):
             log_cfgs += [ipmmu_vmsa]
@@ -752,8 +753,14 @@ def setup_config(sc_cfg):
 
     # CONFIG_CORESIGHT (and all of its drivers) as a module is invalid before https://git.kernel.org/linus/8e264c52e1dab8a7c1e036222ef376c8920c3423
     coresight_suffixes = [
-        '', '_LINKS_AND_SINKS', '_LINK_AND_SINK_TMC', '_CATU', '_SINK_TPIU', '_SINK_ETBV10',
-        '_SOURCE_ETM4X', '_STM'
+        '',
+        '_LINKS_AND_SINKS',
+        '_LINK_AND_SINK_TMC',
+        '_CATU',
+        '_SINK_TPIU',
+        '_SINK_ETBV10',
+        '_SOURCE_ETM4X',
+        '_STM',
     ]
     for coresight_sym in [f"CORESIGHT{s}" for s in coresight_suffixes]:
         cfg_items += [(coresight_sym, 'drivers/hwtracing/coresight/Kconfig')]
