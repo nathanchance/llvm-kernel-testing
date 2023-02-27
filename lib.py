@@ -599,7 +599,7 @@ def pretty_print_cmd(cmd):
     for element in cmd:
         # Explicitly cast element to str(), as it might not be iterable
         # otherwise.
-        element = str(element)
+        element = str(element)  # noqa: PLW2901
         if ' ' in element:
             if '=' in element:
                 var = element.split('=')[0]
