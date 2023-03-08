@@ -9,6 +9,12 @@ import lkt.utils
 class LinuxSourceManager:
 
     def __init__(self, linux_source):
+        # Perform same check as Linux for clean source tree to catch early failures
+        if (Path(linux_source, '.config').is_file()
+                or Path(linux_source, 'include/config').is_dir()
+                or list(linux_source.glob('arch/*/include/generated'))):
+            raise RuntimeError(f"Supplied Linux source ('{linux_source}') is not clean!")
+
         self.commits = []
         self.configs = []
         self.folder = linux_source
