@@ -136,7 +136,7 @@ class LLVMKernelRunner:
             if 'CONFIG_LTO_CLANG_THIN=y' in extra_configs:
                 extra_configs.append('CONFIG_LTO_NONE=n')
             if 'CONFIG_CPU_BIG_ENDIAN=y' in extra_configs:
-                extra_configs.append('CONFIG_CPU_LITLE_ENDIAN=n')
+                extra_configs.append('CONFIG_CPU_LITTLE_ENDIAN=n')
             if 'CONFIG_CPU_LITTLE_ENDIAN=y' in extra_configs:
                 extra_configs.append('CONFIG_CPU_BIG_ENDIAN=n')
 
