@@ -93,7 +93,9 @@ class LLVMKernelRunner:
 
         # Remove LLVM_IAS if the value is the default
         llvm_ias = self.make_vars['LLVM_IAS']
-        llvm_ias_def_on = Path(self.folders.source, 'scripts/Makefile.clang').exists()
+        makefile_clang = Path(self.folders.source, 'scripts/Makefile.clang')
+        llvm_ias_def_on = makefile_clang.exists() and \
+                          'ifeq ($(LLVM_IAS),0)' in makefile_clang.read_text(encoding='utf-8')
         if (llvm_ias_def_on and llvm_ias == 1) or (not llvm_ias_def_on and llvm_ias == 0):
             del self.make_vars['LLVM_IAS']
 
