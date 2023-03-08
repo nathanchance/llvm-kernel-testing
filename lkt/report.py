@@ -19,6 +19,8 @@ def get_cmd_info(cmd):
 def get_linux_version(linux):
     (include_config := Path(linux, 'include/config')).mkdir(exist_ok=True, parents=True)
     Path(include_config, 'auto.conf').write_text('CONFIG_LOCALVERSION_AUTO=y\n', encoding='utf-8')
+    (include_generated := Path(linux, 'include/generated')).mkdir(exist_ok=True, parents=True)
+    Path(include_generated, 'autoconf.h').touch(exist_ok=True)
 
     base_make_cmd = ['make', '-C', linux, '-s']
     setlocalver = Path(linux, 'scripts/setlocalversion')
@@ -29,6 +31,7 @@ def get_linux_version(linux):
         kernelrelease.append(lkt.utils.chronic(setlocalver, cwd=linux).stdout.strip())
 
     shutil.rmtree(include_config, ignore_errors=True)
+    shutil.rmtree(include_generated, ignore_errors=True)
 
     return f"Linux {''.join(kernelrelease)}"
 
