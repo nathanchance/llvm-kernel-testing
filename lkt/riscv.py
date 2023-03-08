@@ -53,6 +53,8 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
         for distro, config_name in configs:
             runner = RISCVLLVMKernelRunner()
             runner.bootable = 'f2928e224d85e' in self.lsm.commits
+            if not runner.bootable:
+                runner.result['boot'] = 'skipped due to lack of f2928e224d85e'
             runner.configs = [Path(self.folders.configs, distro, f"{config_name}.config")]
             runner.lsm = self.lsm
             self._runners.append(runner)
