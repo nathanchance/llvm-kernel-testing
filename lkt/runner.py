@@ -333,6 +333,8 @@ class LLVMKernelRunner:
         self._config = Path(self.folders.build, '.config')
 
         if isinstance(self.configs[0], Path):
+            if not self.lsm:
+                raise RuntimeError('No source manager with distro configuration?')
             configs = [f"{self.configs[0].parts[-2]} config"]
             self._initial_distro_prep()
             if len(self.configs) > 1:
