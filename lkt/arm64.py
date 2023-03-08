@@ -31,6 +31,11 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
     def _add_defconfig_runners(self):
         runners = []
 
+        if Path(self.folders.source, 'arch/arm64/configs/virt.config').exists():
+            runner = Arm64LLVMKernelRunner()
+            runner.configs = ['virtconfig']
+            runners.append(runner)
+
         runner = Arm64LLVMKernelRunner()
         runner.configs = ['defconfig']
         runners.append(runner)
