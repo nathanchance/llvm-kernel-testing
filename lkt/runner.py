@@ -82,13 +82,16 @@ class LLVMKernelRunner:
         self.make_args += ['-C', self.folders.source]
         self.make_vars.update(self.override_make_vars)
 
+        # Clean up build folder if it exists
         if self.folders.build.exists():
             shutil.rmtree(self.folders.build)
 
+        # Adjust O relative to source folder if possible
         self.make_vars['O'] = self.folders.build
         with contextlib.suppress(ValueError):
             self.make_vars['O'] = self.folders.build.relative_to(self.folders.source)
 
+        # Remove LLVM_IAS if the value is the default
         llvm_ias = self.make_vars['LLVM_IAS']
         llvm_ias_def_on = Path(self.folders.source, 'scripts/Makefile.clang').exists()
         if (llvm_ias_def_on and llvm_ias == 1) or (not llvm_ias_def_on and llvm_ias == 0):
@@ -100,6 +103,9 @@ class LLVMKernelRunner:
             *[f"{var}={self.make_vars[var]}" for var in sorted(self.make_vars)],
         ]
 
+        ##########################
+        # configuration handling #
+        ##########################
         base_config = self.configs[0]
         extra_configs = self.configs[1:]
         need_olddefconfig = False
@@ -161,6 +167,7 @@ class LLVMKernelRunner:
         base_make_cmd.append(self.image_target if self.only_test_boot else 'all')
         base_make_cmd += self.make_targets
 
+        # Actually build kernel
         lkt.utils.show_cmd(base_make_cmd)
         start_time = time.time()
         sys.stderr.flush()
@@ -332,6 +339,9 @@ class LLVMKernelRunner:
 
         self._config = Path(self.folders.build, '.config')
 
+        # Handle distribution configurations that need to disable
+        # configurations to build properly, as those configuration
+        # changes should be visible in the log.
         if isinstance(self.configs[0], Path):
             if not self.lsm:
                 raise RuntimeError('No source manager with distro configuration?')
