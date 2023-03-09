@@ -93,11 +93,16 @@ class S390LKTRunner(lkt.runner.LKTRunner):
                 's390 kernels cannot build with LLVM versions prior to 13.0.0 on 5.14+.\n'
                 '        https://git.kernel.org/linus/e2bc3e91d91ede6710801fa0737e4e4ed729b19e')
             return self._skip('LLVM < 13.0.0 and Linux 5.14+ (e2bc3e91d91ed)', print_text)
-        if self.lsm.version >= (5, 14, 0) and self._llvm_version < (13, 0, 0):
+        if self.lsm.version >= (5, 19, 0) and self._llvm_version < (14, 0, 0):
             print_text = (
                 's390 kernels cannot build with LLVM versions prior to 14.0.0 on 5.19+.\n'
                 '        https://git.kernel.org/linus/8218827b73c6e41029438a2d3cc573286beee914')
             return self._skip('LLVM < 14.0.0 and Linux 5.19+ (8218827b73c6e)', print_text)
+        if self.lsm.version >= (6, 1, 0) and self._llvm_version < (15, 0, 0):
+            print_text = (
+                's390 kernels cannot build with LLVM versions prior to 15.0.0 on 6.1+.\n'
+                '        https://git.kernel.org/linus/30d17fac6aaedb40d111bb159f4b35525637ea78')
+            return self._skip('LLVM < 15.0.0 and Linux 6.1+ (30d17fac6aaed)', print_text)
 
         if self.lsm.version >= (5, 19, 0):
             self.make_vars['LLVM_IAS'] = 1
