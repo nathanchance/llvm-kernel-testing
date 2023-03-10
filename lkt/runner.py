@@ -261,6 +261,10 @@ class LLVMKernelRunner:
             ('SND_SOC_SOF_HDA_PROBES', 'sound/soc/sof/intel/Kconfig'),
             # CONFIG_SND_SOC_SPRD_MCDT as a module is invalid before https://git.kernel.org/linus/fd357ec595d36676c239d8d16706a270a961ac32
             ('SND_SOC_SPRD_MCDT', 'sound/soc/sprd/Kconfig'),
+            # CONFIG_SUNXI_CCU as a module is invalid before https://git.kernel.org/linus/91389c390521a02ecfb91270f5b9d7fae4312ae5
+            ('SUNXI_CCU', 'drivers/clk/sunxi-ng/Kconfig'),
+            # CONFIG_SUN8I_DE2_CCU as a module is invalid before https://git.kernel.org/linus/c8c525b06f532923d21d99811a7b80bf18ffd2be
+            ('SUN8I_DE2_CCU', 'drivers/clk/sunxi-ng/Kconfig'),
             # CONFIG_SYSCTL_KUNIT_TEST as a module is invalid before https://git.kernel.org/linus/c475c77d5b56398303e726969e81208196b3aab3
             ('SYSCTL_KUNIT_TEST', 'lib/Kconfig.debug'),
             # CONFIG_TEGRA124_EMC as a module is invalid before https://git.kernel.org/linus/281462e593483350d8072a118c6e072c550a80fa
