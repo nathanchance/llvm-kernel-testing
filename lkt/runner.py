@@ -378,7 +378,7 @@ class LKTRunner:
         self.make_vars = {}
         self.only_test_boot = False
         self.targets = []
-        self.save_objects = True
+        self.save_objects = False
 
         clang_proc = lkt.utils.chronic(['clang', '-E', '-P', '-x', 'c', '-'],
                                        input='__clang_major__ __clang_minor__ __clang_patchlevel__')

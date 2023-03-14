@@ -200,6 +200,7 @@ if __name__ == '__main__':
         runner.lsm = lsm
         runner.make_vars.update(make_vars)
         runner.only_test_boot = args.only_test_boot
+        runner.save_objects = args.save_objects
         runner.targets = args.targets_to_build
         results += runner.run()
 
