@@ -89,8 +89,12 @@ class S390LKTRunner(lkt.runner.LKTRunner):
                 'missing fixes from 5.6 (https://lore.kernel.org/r/your-ad-here.call-01580230449-ext-6884@work.hours/)',
                 print_text)
         version_checks = [
+            # While the change that raised the minimum version of LLVM for s390
+            # did not land in Linux until 5.14, backports to earlier versions
+            # may use the assembly constructs that caused the minimum version
+            # to be bumped in the first place.
             {
-                'linux': (5, 14, 0),
+                'linux': (5, 6, 0),
                 'llvm': (13, 0, 0),
                 'sha': 'e2bc3e91d91ede6710801fa0737e4e4ed729b19e',
             },
