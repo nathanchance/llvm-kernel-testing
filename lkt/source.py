@@ -38,6 +38,11 @@ class LinuxSourceManager:
         # First appeared: v5.12-rc1-dontuse~70^2~15
         self._add_config('CONFIG_LTO_CLANG_THIN', 'arch/Kconfig')
 
+        # Introduced by: powerpc/64: Option to build big-endian with ELFv2 ABI
+        # Link: https://git.kernel.org/linus/5017b45946722bdd20ac255c9ae7273b78d1f12e
+        # First appeared: v6.2-rc1~52^2~57
+        self._add_config('CONFIG_PPC64_BIG_ENDIAN_ELF_ABI_V2', 'arch/powerpc/Kconfig')
+
         # Introduced by: scs: Add support for Clang's Shadow Call Stack (SCS)
         # Link: https://git.kernel.org/linus/d08b9f0ca6605e13dcb48f04e55a30545b3c71eb
         # First appeared: v5.8-rc1~213^2^2~18
