@@ -40,11 +40,11 @@ class S390LKTRunner(lkt.runner.LKTRunner):
         self._runners.append(runner)
 
     def _add_otherconfig_runners(self):
-        other_cfgs = ['allmodconfig']
-        skipped_cfgs = []
-        (other_cfgs if self._binutils_version <
-         (2, 39, 50) or '80ddf5ce1c929' in self.lsm.commits else skipped_cfgs).extend(
-             ['allnoconfig', 'tinyconfig'])
+        other_cfgs = [
+            'allmodconfig',
+            'allnoconfig',
+            'tinyconfig',
+        ]
         for config_target in other_cfgs:
             runner = S390LLVMKernelRunner()
             runner.configs = [config_target]
@@ -54,15 +54,6 @@ class S390LKTRunner(lkt.runner.LKTRunner):
                 if 'CONFIG_WERROR' in self.lsm.configs:
                     runner.configs.append('CONFIG_WERROR=n')
             self._runners.append(runner)
-        for skipped_cfg in skipped_cfgs:
-            self._results.append({
-                'name':
-                f"{KERNEL_ARCH} {skipped_cfg}",
-                'build':
-                'skipped',
-                'reason':
-                'linker error with CONFIG_RELOCATABLE=n (https://github.com/ClangBuiltLinux/linux/issues/1747)',
-            })
 
     def _add_distroconfig_runners(self):
         distros = [
@@ -87,6 +78,13 @@ class S390LKTRunner(lkt.runner.LKTRunner):
             )
             return self._skip(
                 'missing fixes from 5.6 (https://lore.kernel.org/r/your-ad-here.call-01580230449-ext-6884@work.hours/)',
+                print_text)
+        if self._binutils_version >= (2, 39, 50) and '80ddf5ce1c929' not in self.lsm.commits:
+            print_text = (
+                's390 kernels may fail to link with binutils 2.40+ and CONFIG_RELOCATABLE=n\n'
+                '        https://github.com/ClangBuiltLinux/linux/issues/1747')
+            return self._skip(
+                'linker error with CONFIG_RELOCATABLE=n (https://github.com/ClangBuiltLinux/linux/issues/1747)',
                 print_text)
         version_checks = [
             # While the change that raised the minimum version of LLVM for s390
