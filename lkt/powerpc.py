@@ -45,23 +45,40 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         self._ppc64le_vars = {}
 
     def _add_defconfig_runners(self):
-        if '2255411d1d0f0' in self.lsm.commits:
+        kconfig_text = Path(self.folders.source,
+                            'arch/powerpc/platforms/Kconfig.cputype').read_text(encoding='utf-8')
+        has_44x_hack = '"440 (44x family)"\n\tdepends on 44x\n\tdepends on !CC_IS_CLANG' in kconfig_text
+
+        cbl_1814 = '2255411d1d0f0' in self.lsm.commits and not has_44x_hack
+        cbl_1679 = self._llvm_version < (16, 0, 0) and cbl_1814
+
+        if cbl_1679:
             self._results.append({
                 'name':
                 'powerpc ppc44x_defconfig',
                 'build':
                 'skipped',
                 'reason':
-                '2255411d1d0f0 (https://github.com/ClangBuiltLinux/linux/issues/1679)',
+                'LLVM < 16.x and 2255411d1d0f0 (https://github.com/ClangBuiltLinux/linux/issues/1679)',
             })
         else:
             runner = PowerPCLLVMKernelRunner()
             runner.boot_arch = 'ppc32'
-            runner.bootable = self._llvm_version >= (12, 0,
-                                                     1) or '48cf12d88969b' not in self.lsm.commits
+            cbl_1345 = self._llvm_version < (12, 0, 1) and '48cf12d88969b' in self.lsm.commits
+            runner.bootable = not (cbl_1345 or cbl_1814)
             if not runner.bootable:
-                runner.result[
-                    'boot'] = 'skipped (https://github.com/ClangBuiltLinux/linux/issues/1345)'
+                parts = ['skipped']
+                if cbl_1345:
+                    parts += [
+                        'due to lr save/restore',
+                        '(https://github.com/ClangBuiltLinux/linux/issues/1345)',
+                    ]
+                elif cbl_1814:
+                    parts += [
+                        'due to "-mcpu=440"',
+                        '(https://github.com/ClangBuiltLinux/linux/issues/1814)',
+                    ]
+                runner.result['boot'] = ' '.join(parts)
             runner.configs = ['ppc44x_defconfig']
             runner.image_target = 'uImage'
             if not self.only_test_boot:
