@@ -198,6 +198,12 @@ class LLVMKernelRunner:
                 if lkt.utils.is_modular(self.folders.source, self.folders.build, android_cfg):
                     configs.append(f"CONFIG_{android_cfg}=y")
 
+        if 'ppc64le' in config.name or 'powerpc64le' in config.name:
+            text = Path(self.folders.source, 'arch/powerpc/Kconfig').read_text(encoding='utf-8')
+            search = ('int "Order of maximal physically contiguous allocations"\n'
+                      '\tdefault "8" if PPC64 && PPC_64K_PAGES')
+            configs.append(f"CONFIG_ARCH_FORCE_MAX_ORDER={8 if search in text else 9}")
+
         compat_changes = [
             # CONFIG_BCM7120_L2_IRQ as a module is invalid before https://git.kernel.org/linus/3ac268d5ed2233d4a2db541d8fd744ccc13f46b0
             ('BCM7120_L2_IRQ', 'drivers/irqchip/Kconfig'),
