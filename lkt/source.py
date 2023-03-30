@@ -38,6 +38,11 @@ class LinuxSourceManager:
         # First appeared: v5.12-rc1-dontuse~70^2~15
         self._add_config('CONFIG_LTO_CLANG_THIN', 'arch/Kconfig')
 
+        # Removed by: kbuild: link symbol CRCs at final link, removing CONFIG_MODULE_REL_CRCS
+        # Link: https://git.kernel.org/linus/7b4537199a4a8480b8c3ba37a2d44765ce76cd9b
+        # Removed in: v5.19-rc1~139^2~2
+        self._add_config('CONFIG_MODULE_REL_CRCS', 'init/Kconfig')
+
         # Introduced by: powerpc/64: Option to build big-endian with ELFv2 ABI
         # Link: https://git.kernel.org/linus/5017b45946722bdd20ac255c9ae7273b78d1f12e
         # First appeared: v6.2-rc1~52^2~57

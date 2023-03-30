@@ -177,8 +177,25 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
                 })
                 continue
             runner = PowerPCLLVMKernelRunner()
-            runner.bootable = True
             runner.configs = [Path(self.folders.configs, distro, f"{config_name}.config")]
+            # There is a boot failure with LLVM 11.1.0 (which does not have
+            # https://github.com/llvm/llvm-project/commit/2fc704a0a529dd7eba7566a293f981a86bfa5c3e)
+            # when CONFIG_RELOCATABLE is enabled on kernels prior to 5.19,
+            # which do not have commit 7b4537199a4a ("kbuild: link symbol CRCs
+            # at final link, removing CONFIG_MODULE_REL_CRCS"). Just skip boot
+            # testing in this case.
+            runner.bootable = not ('LD' not in self._ppc64le_vars and self._llvm_version <
+                                   (12, 0, 0) and 'CONFIG_MODULE_REL_CRCS' in self.lsm.configs
+                                   and lkt.utils.is_set(self.folders.source, runner.configs[0],
+                                                        'RELOCATABLE'))
+            if not runner.bootable:
+                parts = [
+                    'skipped due to',
+                    'CONFIG_RELOCATABLE=y,',
+                    'LLVM < 12.0.0 (2fc704a0a529d),',
+                    'and Linux < 5.19 (7b4537199a4a)',
+                ]
+                runner.result['boot'] = ' '.join(parts)
             runner.lsm = self.lsm
             runner.make_vars.update(self._ppc64le_vars)
             self._runners.append(runner)
