@@ -127,6 +127,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         runner.bootable = True
         runner.configs = ['powernv_defconfig']
         runner.make_vars.update(self._ppc64le_vars)
+        # https://github.com/ClangBuiltLinux/linux/issues/1260
         if self._llvm_version < (12, 0, 0) and 'LD' not in self.make_vars:
             runner.make_vars['LD'] = f"{self.make_vars['CROSS_COMPILE']}ld"
         runner.only_test_boot = self.only_test_boot
