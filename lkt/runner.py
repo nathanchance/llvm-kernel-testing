@@ -279,6 +279,8 @@ class LLVMKernelRunner:
             *[(f"TEGRA{ver}_EMC", 'drivers/memory/tegra/Kconfig') for ver in ['124', '20', '30']],
             # CONFIG_TI_CPTS as a module is invalid before https://git.kernel.org/linus/92db978f0d686468e527d49268e7c7e8d97d334b
             ('TI_CPTS', 'drivers/net/ethernet/ti/Kconfig'),
+            # CONFIG_TI_K3_UDMA and CONFIG_TI_K3_UDMA_GLUE_LAYER as modules is invalid before https://git.kernel.org/linus/56b0a668cb35c5f04ef98ffc22b297f116fe7108
+            *[(f"TI_K3_UDMA{suffix}", 'drivers/dma/ti/Kconfig') for suffix in ['', '_GLUE_LAYER']],
             # CONFIG_UNICODE as a module is invalid before https://git.kernel.org/linus/5298d4bfe80f6ae6ae2777bcd1357b0022d98573
             ('UNICODE', 'fs/unicode/Kconfig'),
             # CONFIG_VFIO_VIRQFD as a module is invalid after https://git.kernel.org/next/linux-next/c/e2d55709398e62cf53e5c7df3758ae52cc62d63a
