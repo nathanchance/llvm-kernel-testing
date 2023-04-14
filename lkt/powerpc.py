@@ -155,6 +155,11 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
             return
 
         runner = PowerPCLLVMKernelRunner()
+        runner.configs = ['ppc64_defconfig']
+        runner.make_vars['LD'] = f"{self.make_vars['CROSS_COMPILE']}ld"
+        self._runners.append(runner)
+
+        runner = PowerPCLLVMKernelRunner()
         runner.configs = ['ppc64le_defconfig']
         runner.make_vars.update(self._ppc64le_vars)
         self._runners.append(runner)
