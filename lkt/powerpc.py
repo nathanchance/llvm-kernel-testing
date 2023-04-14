@@ -133,6 +133,24 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         runner.only_test_boot = self.only_test_boot
         self._runners.append(runner)
 
+        runner = PowerPCLLVMKernelRunner()
+        # See comment in _add_distroconfig_runners(), RELOCATABLE is always set
+        # for this configuration.
+        runner.bootable = 'LD' in self._ppc64le_vars or self._llvm_version >= (
+            12, 0, 0) or 'CONFIG_MODULE_REL_CRCS' not in self.lsm.configs
+        if not runner.bootable:
+            parts = [
+                'skipped due to',
+                'CONFIG_RELOCATABLE=y,',
+                'LLVM < 12.0.0 (2fc704a0a529d),',
+                'and Linux < 5.19 (7b4537199a4a)',
+            ]
+            runner.result['boot'] = ' '.join(parts)
+        runner.configs = ['ppc64le_guest_defconfig']
+        runner.make_vars.update(self._ppc64le_vars)
+        runner.only_test_boot = self.only_test_boot
+        self._runners.append(runner)
+
         if self.only_test_boot:
             return
 
