@@ -113,7 +113,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         runner = PowerPCLLVMKernelRunner()
         runner.boot_arch = 'ppc64'
         runner.bootable = True
-        runner.configs = ['pseries_defconfig']
+        runner.configs = ['ppc64_guest_defconfig']
         wa_cbl_1292 = '51696f39cbee5' not in self.lsm.commits and self._llvm_version >= (12, 0, 0)
         wa_cbl_1445 = self.lsm.version >= (5, 18, 0) and self._llvm_version < (14, 0, 0)
         if wa_cbl_1292 or wa_cbl_1445:
