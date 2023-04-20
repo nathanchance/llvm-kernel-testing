@@ -188,8 +188,8 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         ]
         for distro, config_name in configs:
             if (distro == 'opensuse' and '231b232df8f67' in self.lsm.commits
-                    and '6fcb574125e67' not in self.lsm.commits and self._llvm_version <=
-                (12, 0, 0)):
+                    and '6fcb574125e67' not in self.lsm.commits
+                    and self._llvm_version <= (12, 0, 0)):
                 self._results.append({
                     'name':
                     f"{self.make_vars['ARCH']} {distro} config",
@@ -207,10 +207,10 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
             # which do not have commit 7b4537199a4a ("kbuild: link symbol CRCs
             # at final link, removing CONFIG_MODULE_REL_CRCS"). Just skip boot
             # testing in this case.
-            runner.bootable = not ('LD' not in self._ppc64le_vars and self._llvm_version <
-                                   (12, 0, 0) and 'CONFIG_MODULE_REL_CRCS' in self.lsm.configs
-                                   and lkt.utils.is_set(self.folders.source, runner.configs[0],
-                                                        'RELOCATABLE'))
+            runner.bootable = not (
+                'LD' not in self._ppc64le_vars and self._llvm_version < (12, 0, 0)
+                and 'CONFIG_MODULE_REL_CRCS' in self.lsm.configs
+                and lkt.utils.is_set(self.folders.source, runner.configs[0], 'RELOCATABLE'))
             if not runner.bootable:
                 parts = [
                     'skipped due to',
