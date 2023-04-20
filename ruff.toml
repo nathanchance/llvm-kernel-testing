@@ -24,5 +24,6 @@ ignore = [
     'PLR0913', # too-many-arguments
     'PLR0915', # too-many-statements
     'PLR2004', # magic-value-comparison
+    'S603', # subprocess-without-shell-equals-true
 ]
 target-version = 'py38'
