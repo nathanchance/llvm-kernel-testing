@@ -9,15 +9,6 @@ KERNEL_ARCH = 'powerpc'
 CLANG_TARGET = 'powerpc-linux-gnu'
 
 
-# Move this to source.py once the series is in mainline
-def has_big_endian_elf_v2(lsm):
-    if 'CONFIG_PPC64_BIG_ENDIAN_ELF_ABI_V2' not in lsm.configs:
-        return False
-
-    kconfig_text = Path(lsm.folder, 'arch/powerpc/Kconfig').read_text(encoding='utf-8')
-    return 'depends on CC_HAS_ELFV2\n\tdepends on LD_IS_BFD' not in kconfig_text
-
-
 class PowerPCLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 
     def __init__(self):
@@ -165,7 +156,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         self._runners.append(runner)
 
     def _add_otherconfig_runners(self):
-        if has_big_endian_elf_v2(self.lsm):
+        if 'a11334d8327b' in self.lsm.commits:
             runner = PowerPCLLVMKernelRunner()
             runner.configs = [
                 'allmodconfig',
