@@ -147,6 +147,8 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
 
         runner = PowerPCLLVMKernelRunner()
         runner.configs = ['ppc64_defconfig']
+        if wa_cbl_1292 or wa_cbl_1445:
+            runner.configs.append('CONFIG_PPC_DISABLE_WERROR=y')
         runner.make_vars['LD'] = f"{self.make_vars['CROSS_COMPILE']}ld"
         self._runners.append(runner)
 
