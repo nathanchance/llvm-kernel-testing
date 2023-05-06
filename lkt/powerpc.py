@@ -9,6 +9,26 @@ KERNEL_ARCH = 'powerpc'
 CLANG_TARGET = 'powerpc-linux-gnu'
 
 
+def ppc64_be_defaults_to_elfv2(lsm):
+    # If CONFIG_PPC64_BIG_ENDIAN_ELF_ABI_V2 does not exist in the current tree,
+    # the meaning changes depending on the Linux version. If the tree is newer
+    # than 6.2.0 (which first shipped CONFIG_PPC64_BIG_ENDIAN_ELF_ABI_V2), it
+    # means that [1] has been merged, which means that ELFv2 is the only ABI
+    # supported internally by the kernel. If it is not newer than 6.2.0, it
+    # means ELFv1 is the only option for the internal kernel ABI.
+    #
+    # [1]: https://lore.kernel.org/20230505071850.228734-5-npiggin@gmail.com/
+    if 'CONFIG_PPC64_BIG_ENDIAN_ELF_ABI_V2' not in lsm.configs:
+        return lsm.version >= (6, 2, 0)
+
+    kconfig_text = Path(lsm.folder, 'arch/powerpc/Kconfig').read_text(encoding='utf-8')
+    # https://lore.kernel.org/20230505071850.228734-2-npiggin@gmail.com/
+    patch_1_state = '"Build big-endian kernel using ELF ABI V2 (EXPERIMENTAL)" if LD_IS_BFD'
+    # https://lore.kernel.org/20230505071850.228734-3-npiggin@gmail.com/
+    patch_2_state = '"Build big-endian kernel using ELF ABI V2" if LD_IS_BFD && EXPERT'
+    return patch_1_state in kconfig_text or patch_2_state in kconfig_text
+
+
 class PowerPCLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 
     def __init__(self):
@@ -33,9 +53,13 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
                 break
 
         self._clang_target = CLANG_TARGET
+        self._ppc64_vars = {}
         self._ppc64le_vars = {}
 
     def _add_defconfig_runners(self):
+        ##########
+        # 32-bit #
+        ##########
         kconfig_text = Path(self.folders.source,
                             'arch/powerpc/platforms/Kconfig.cputype').read_text(encoding='utf-8')
         has_44x_hack = '"440 (44x family)"\n\tdepends on 44x\n\tdepends on !CC_IS_CLANG' in kconfig_text
@@ -101,6 +125,11 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
                 'missing 297565aa22cfa (https://github.com/ClangBuiltLinux/linux/issues/563)',
             })
 
+        #####################
+        # 64-bit big endian #
+        #####################
+        no_elfv2 = not ppc64_be_defaults_to_elfv2(self.lsm)
+
         runner = PowerPCLLVMKernelRunner()
         runner.boot_arch = 'ppc64'
         runner.bootable = True
@@ -110,10 +139,15 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         if wa_cbl_1292 or wa_cbl_1445:
             runner.configs.append('CONFIG_PPC_DISABLE_WERROR=y')
         runner.image_target = 'vmlinux'
-        runner.make_vars['LD'] = f"{self.make_vars['CROSS_COMPILE']}ld"
+        if no_elfv2:
+            runner.make_vars['LD'] = f"{self.make_vars['CROSS_COMPILE']}ld"
+        runner.make_vars.update(self._ppc64_vars)
         runner.only_test_boot = self.only_test_boot
         self._runners.append(runner)
 
+        ########################
+        # 64-bit little endian #
+        ########################
         runner = PowerPCLLVMKernelRunner()
         runner.bootable = True
         runner.configs = ['powernv_defconfig']
@@ -145,11 +179,16 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         if self.only_test_boot:
             return
 
+        #######################
+        # Non-boot defconfigs #
+        #######################
         runner = PowerPCLLVMKernelRunner()
         runner.configs = ['ppc64_defconfig']
         if wa_cbl_1292 or wa_cbl_1445:
             runner.configs.append('CONFIG_PPC_DISABLE_WERROR=y')
-        runner.make_vars['LD'] = f"{self.make_vars['CROSS_COMPILE']}ld"
+        if no_elfv2:
+            runner.make_vars['LD'] = f"{self.make_vars['CROSS_COMPILE']}ld"
+        runner.make_vars.update(self._ppc64_vars)
         self._runners.append(runner)
 
         runner = PowerPCLLVMKernelRunner()
@@ -158,14 +197,17 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         self._runners.append(runner)
 
     def _add_otherconfig_runners(self):
-        if 'a11334d8327b' in self.lsm.commits:
+        can_select_elfv2 = 'a11334d8327b' in self.lsm.commits and self._llvm_version >= (15, 0, 0)
+        elfv2_on_by_default = ppc64_be_defaults_to_elfv2(self.lsm)
+        if can_select_elfv2 or elfv2_on_by_default:
             runner = PowerPCLLVMKernelRunner()
             runner.configs = [
                 'allmodconfig',
-                'CONFIG_PPC64_BIG_ENDIAN_ELF_ABI_V2=y',
                 'CONFIG_WERROR=n',
             ]
-            runner.make_vars.update(self._ppc64le_vars)
+            if not elfv2_on_by_default:
+                runner.configs.append('CONFIG_PPC64_BIG_ENDIAN_ELF_ABI_V2=y')
+            runner.make_vars.update(self._ppc64_vars)
             self._runners.append(runner)
 
         for cfg_target in ['allnoconfig', 'tinyconfig']:
@@ -220,6 +262,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         if '0355785313e21' not in self.lsm.commits and 'CROSS_COMPILE' in self.make_vars:
             self._ppc64le_vars['LD'] = f"{self.make_vars['CROSS_COMPILE']}ld"
         if self.lsm.version >= (5, 18, 0) and self._llvm_version >= (14, 0, 0):
+            self._ppc64_vars['LLVM_IAS'] = 1
             self._ppc64le_vars['LLVM_IAS'] = 1
 
         if 'def' in self.targets:
