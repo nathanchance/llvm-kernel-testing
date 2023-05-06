@@ -134,9 +134,10 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         runner.boot_arch = 'ppc64'
         runner.bootable = True
         runner.configs = ['ppc64_guest_defconfig']
+        wa_cbl_668 = '9451c79bc39e' not in self.lsm.commits
         wa_cbl_1292 = '51696f39cbee5' not in self.lsm.commits and self._llvm_version >= (12, 0, 0)
         wa_cbl_1445 = self.lsm.version >= (5, 18, 0) and self._llvm_version < (14, 0, 0)
-        if wa_cbl_1292 or wa_cbl_1445:
+        if wa_cbl_668 or wa_cbl_1292 or wa_cbl_1445:
             runner.configs.append('CONFIG_PPC_DISABLE_WERROR=y')
         runner.image_target = 'vmlinux'
         if no_elfv2:
@@ -184,7 +185,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         #######################
         runner = PowerPCLLVMKernelRunner()
         runner.configs = ['ppc64_defconfig']
-        if wa_cbl_1292 or wa_cbl_1445:
+        if wa_cbl_668 or wa_cbl_1292 or wa_cbl_1445:
             runner.configs.append('CONFIG_PPC_DISABLE_WERROR=y')
         if no_elfv2:
             runner.make_vars['LD'] = f"{self.make_vars['CROSS_COMPILE']}ld"
