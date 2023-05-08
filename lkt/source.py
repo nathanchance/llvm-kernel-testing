@@ -183,7 +183,7 @@ class LinuxSourceManager:
         if 'CONFIG_PPC64_BIG_ENDIAN_ELF_ABI_V2' in self.configs:
             self._add_commit(
                 'a11334d8327b',
-                'depends on CC_HAS_ELFV2\n\tdepends on LD_VERSION >= 22400 || LLD_VERSION >= 150000',
+                r'depends on CC_HAS_ELFV2\n\tdepends on LD_VERSION >= 22400 \|\| LLD_VERSION >= 150000',
                 'arch/powerpc/Kconfig')
 
         # Commit: x86/Kconfig: Do not allow CONFIG_X86_X32_ABI=y with llvm-objcopy
