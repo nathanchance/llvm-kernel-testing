@@ -40,7 +40,7 @@ for distro in $distros
 
             for arch in amd64 arm64 armmp i386 powerpc64le s390x
                 set package_version_signed 6.3.0-0
-                set kernel_version_signed 6.3.2-1~exp1
+                set kernel_version_signed 6.3.4-1~exp1
                 set package_version_unsigned $package_version_signed
                 set kernel_version_unsigned $kernel_version_signed
 
