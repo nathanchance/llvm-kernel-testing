@@ -27,7 +27,7 @@ for distro in $distros
         case archlinux
             for arch in armv7 aarch64 x86_64
                 if test "$arch" = x86_64
-                    set url https://github.com/archlinux/svntogit-packages/raw/packages/linux/trunk/config
+                    set url https://gitlab.archlinux.org/archlinux/packaging/packages/linux/-/raw/main/config
                 else
                     set url https://github.com/archlinuxarm/PKGBUILDs/raw/master/core/linux-$arch/config
                 end
