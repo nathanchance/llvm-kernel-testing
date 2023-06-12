@@ -247,6 +247,8 @@ class LLVMKernelRunner:
             ('POWER_RESET_SC27XX', 'drivers/power/reset/Kconfig'),
             # CONFIG_PROC_THERMAL_MMIO_RAPL as a module is invalid before https://git.kernel.org/linus/a5923b6c3137b9d4fc2ea1c997f6e4d51ac5d774
             ('PROC_THERMAL_MMIO_RAPL', 'drivers/thermal/intel/int340x_thermal/Kconfig'),
+            # CONFIG_QCOM_IPCC as a module is invalid before https://git.kernel.org/linus/8d7e5908c0bcf8a0abc437385e58e49abab11a93
+            ('QCOM_IPCC', 'drivers/mailbox/Kconfig'),
             # CONFIG_QCOM_RPMPD as a module is invalid before https://git.kernel.org/linus/f29808b2fb85a7ff2d4830aa1cb736c8c9b986f4
             # CONFIG_QCOM_RPMHPD as a module is invalid before https://git.kernel.org/linus/d4889ec1fc6ac6321cc1e8b35bb656f970926a09
             *[(f"QCOM_RPM{val}PD", 'drivers/soc/qcom/Kconfig') for val in ['', 'H']],
