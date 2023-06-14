@@ -236,6 +236,8 @@ class LLVMKernelRunner:
             ('KPROBES_SANITY_TEST', 'lib/Kconfig.debug'),
             # CONFIG_MFD_PALMAS as a module is invalid before https://git.kernel.org/linus/d4b15e447c352ae74b18261bdaf0023fa9a7d1bd
             ('MFD_PALMAS', 'drivers/mfd/Kconfig'),
+            # CONFIG_MTK_MMSYS as a module is invalid before https://git.kernel.org/linus/a7596e62dac7318456c1aa9af5bfccf0f8e6ad7e
+            ('MTK_MMSYS', 'drivers/soc/mediatek/Kconfig'),
             # CONFIG_PCI_DRA7XX{,_HOST,_EP} as modules is invalid before https://git.kernel.org/linus/3b868d150efd3c586762cee4410cfc75f46d2a07
             # CONFIG_PCI_EXYNOS as a module is invalid before https://git.kernel.org/linus/778f7c194b1dac351d345ce723f8747026092949
             # CONFIG_PCI_MESON as a module is invalid before https://git.kernel.org/linus/a98d2187efd9e6d554efb50e3ed3a2983d340fe5
