@@ -141,6 +141,11 @@ class LinuxSourceManager:
         self._add_commit('788dcee0306e1', r"KBUILD_CFLAGS \+= -mlong-calls",
                          'arch/hexagon/Makefile')
 
+        # Commit: Makefile: Add loongarch target flag for Clang compilation
+        # Link: https://git.kernel.org/linus/65b66f3531c2756356534b4927ba2d4fbbef603f
+        # First appeared: v6.5-rc1
+        self._add_commit('65b66f3531c2', 'loongarch64-linux-gnusf', 'scripts/Makefile.clang')
+
         # Commit: s390: always build relocatable kernel
         # Link: https://git.kernel.org/linus/80ddf5ce1c9291cb175d52ed1227134ad48c47ee
         # First appeared: v6.1-rc5~10^2~1

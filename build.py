@@ -17,6 +17,7 @@ import lkt.arm
 import lkt.arm64
 import lkt.hexagon
 import lkt.i386
+import lkt.loongarch
 import lkt.mips
 import lkt.powerpc
 import lkt.riscv
@@ -40,6 +41,9 @@ SUPPORTED_ARCHITECTURES = [
     's390',
     'x86_64',
 ]
+EXPERIMENTAL_ARCHITECTURES = [
+    'loongarch',
+]
 
 
 def parse_arguments():
@@ -47,7 +51,7 @@ def parse_arguments():
 
     parser.add_argument('-a',
                         '--architectures',
-                        choices=SUPPORTED_ARCHITECTURES,
+                        choices=[*SUPPORTED_ARCHITECTURES, *EXPERIMENTAL_ARCHITECTURES],
                         default=SUPPORTED_ARCHITECTURES,
                         metavar='ARCH',
                         nargs='+',
@@ -183,6 +187,7 @@ if __name__ == '__main__':
         'arm64': lkt.arm64.Arm64LKTRunner,
         'hexagon': lkt.hexagon.HexagonLKTRunner,
         'i386': lkt.i386.I386LKTRunner,
+        'loongarch': lkt.loongarch.LoongArchLKTRunner,
         'mips': lkt.mips.MipsLKTRunner,
         'powerpc': lkt.powerpc.PowerPCLKTRunner,
         'riscv': lkt.riscv.RISCVLKTRunner,
