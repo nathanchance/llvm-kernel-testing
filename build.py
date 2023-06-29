@@ -154,6 +154,24 @@ if __name__ == '__main__':
     else:
         log_folder = Path(REPO, 'logs', datetime.datetime.now().strftime('%Y%m%d-%H%M'))
 
+    (boot_utils_json := Path(log_folder, '.boot-utils.json')).parent.mkdir(exist_ok=True,
+                                                                           parents=True)
+
+    boot_utils_json_cmd = [
+        'curl',
+        '-LSs',
+        '-o',
+        boot_utils_json,
+        'https://api.github.com/repos/ClangBuiltLinux/boot-utils/releases/latest',
+    ]
+    try:
+        subprocess.run(boot_utils_json_cmd, check=True)
+    except subprocess.CalledProcessError as err:
+        if not boot_utils_json.exists():
+            raise FileNotFoundError(
+                f"{boot_utils_json} failed to download and a previous copy is not available!",
+            ) from err
+
     # Add prefixes to PATH if they exist
     path = os.environ['PATH'].split(':')
     prefixes = [args.binutils_prefix, args.llvm_prefix, args.tc_prefix, args.qemu_prefix]

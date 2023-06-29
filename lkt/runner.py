@@ -64,6 +64,8 @@ class LLVMKernelRunner:
             '-k',
             self.folders.build,
         ]
+        if (boot_utils_json := Path(self.folders.log, '.boot-utils.json')).exists():
+            boot_utils_cmd += ['--gh-json-file', boot_utils_json]
         lkt.utils.show_cmd(boot_utils_cmd)
         sys.stderr.flush()
         sys.stdout.flush()
