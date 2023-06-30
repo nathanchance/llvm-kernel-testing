@@ -47,10 +47,13 @@ class ArmLKTRunner(lkt.runner.LKTRunner):
             runner.boot_arch = boot_arch
             runner.configs = [config_target]
             if self.only_test_boot:
+                # https://git.kernel.org/linus/724ba6751532055db75992fc6ae21c3e322e94a7
+                dtb_prefix = 'aspeed/' if Path(self.folders.source,
+                                               'arch/arm/boot/dts/aspeed').is_dir() else ''
                 if config_target == 'multi_v5_defconfig':
-                    runner.make_targets.append('aspeed-bmc-opp-palmetto.dtb')
+                    runner.make_targets.append(f"{dtb_prefix}aspeed-bmc-opp-palmetto.dtb")
                 elif config_target == 'aspeed_g5_defconfig':
-                    runner.make_targets.append('aspeed-bmc-opp-romulus.dtb')
+                    runner.make_targets.append(f"{dtb_prefix}aspeed-bmc-opp-romulus.dtb")
             runners.append(runner)
 
         # https://github.com/ClangBuiltLinux/linux/issues/325
