@@ -71,15 +71,15 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
                 'LLVM < 17.0.0',
                 'LoongArch requires LLVM 17.0.0 or newer to build properly with LLVM=1')
 
-        if '65b66f3531c2' not in self.lsm.commits:
+        if '65eea6b44a5dd' not in self.lsm.commits:
             print_text = (
                 'LoongArch needs the following series from Linux 6.5 to build properly:\n'
                 '\n'
-                '  * https://git.kernel.org/torvalds/l/65b66f3531c2756356534b4927ba2d4fbbef603f\n'
+                '  * https://git.kernel.org/torvalds/l/65eea6b44a5dd332c50390fdaeda7e197802c484\n'
                 '\n'
                 'Provide a kernel tree with Linux 6.5+ or one with this series to build LoongArch kernels.'
             )
-            return self._skip('missing 65b66f3531c2', print_text)
+            return self._skip('missing 65eea6b44a5dd', print_text)
 
         if 'def' in self.targets:
             self._add_defconfig_runners()
