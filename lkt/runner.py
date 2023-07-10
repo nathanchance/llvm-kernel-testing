@@ -223,6 +223,8 @@ class LLVMKernelRunner:
                 '_SOURCE_ETM4X',
                 '_STM',
             ]],
+            # CONFIG_CPUFREQ_DT_PLATDEV as a module is invalid before https://git.kernel.org/linus/3b062a086984d35a3c6d3a1c7841d0aa73aa76af
+            ('CPUFREQ_DT_PLATDEV', 'drivers/cpufreq/Kconfig'),
             # CONFIG_CS89x0_PLATFORM as a module is invalid before https://git.kernel.org/linus/47fd22f2b84765a2f7e3f150282497b902624547
             ('CS89x0_PLATFORM', 'drivers/net/ethernet/cirrus/Kconfig'),
             # CONFIG_DRM_GEM_{CMA,SHMEM}_HELPER as modules is invalid before https://git.kernel.org/linus/4b2b5e142ff499a2bef2b8db0272bbda1088a3fe
