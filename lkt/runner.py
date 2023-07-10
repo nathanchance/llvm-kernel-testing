@@ -219,6 +219,7 @@ class LLVMKernelRunner:
                 '_CATU',
                 '_SINK_TPIU',
                 '_SINK_ETBV10',
+                '_SOURCE_ETM3X',
                 '_SOURCE_ETM4X',
                 '_STM',
             ]],
