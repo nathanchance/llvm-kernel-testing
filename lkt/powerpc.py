@@ -140,9 +140,21 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         if wa_cbl_668 or wa_cbl_1292 or wa_cbl_1445:
             runner.configs.append('CONFIG_PPC_DISABLE_WERROR=y')
         runner.image_target = 'vmlinux'
-        if no_elfv2:
-            runner.make_vars['LD'] = f"{self.make_vars['CROSS_COMPILE']}ld"
+        # This needs to happen before the LLVM_IAS assignment below.
         runner.make_vars.update(self._ppc64_vars)
+        if no_elfv2:
+            # https://github.com/ClangBuiltLinux/linux/issues/602
+            runner.make_vars['LD'] = f"{self.make_vars['CROSS_COMPILE']}ld"
+            # The PowerPC vDSO at the time of this comment (6.5-rc3) uses $(CC)
+            # to link, not $(LD) like the rest of the kernel. When using the
+            # integrated assembler, '--prefix' is not added to CLANG_FLAGS
+            # (https://git.kernel.org/linus/eec08090bcc113643522d4272dc0b945045aba74),
+            # meaning that clang attempts to use the host's GNU ld in clang
+            # versions that contain
+            # https://github.com/llvm/llvm-project/commit/3452a0d8c17f7166f479706b293caf6ac76ffd90.
+            # Just use GNU as in this case, as that is how this configuration
+            # has been built until recently.
+            runner.make_vars['LLVM_IAS'] = 0
         runner.only_test_boot = self.only_test_boot
         self._runners.append(runner)
 
@@ -187,9 +199,13 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         runner.configs = ['ppc64_defconfig']
         if wa_cbl_668 or wa_cbl_1292 or wa_cbl_1445:
             runner.configs.append('CONFIG_PPC_DISABLE_WERROR=y')
-        if no_elfv2:
-            runner.make_vars['LD'] = f"{self.make_vars['CROSS_COMPILE']}ld"
+        # This needs to happen before the LLVM_IAS assignment below.
         runner.make_vars.update(self._ppc64_vars)
+        if no_elfv2:
+            # https://github.com/ClangBuiltLinux/linux/issues/602
+            runner.make_vars['LD'] = f"{self.make_vars['CROSS_COMPILE']}ld"
+            # See comment in ppc64_guest_defconfig
+            runner.make_vars['LLVM_IAS'] = 0
         self._runners.append(runner)
 
         runner = PowerPCLLVMKernelRunner()
