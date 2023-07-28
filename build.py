@@ -35,15 +35,14 @@ SUPPORTED_ARCHITECTURES = [
     'arm64',
     'hexagon',
     'i386',
+    'loongarch',
     'mips',
     'powerpc',
     'riscv',
     's390',
     'x86_64',
 ]
-EXPERIMENTAL_ARCHITECTURES = [
-    'loongarch',
-]
+EXPERIMENTAL_ARCHITECTURES = []
 
 
 def parse_arguments():
