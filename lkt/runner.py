@@ -69,16 +69,18 @@ class LLVMKernelRunner:
         lkt.utils.show_cmd(boot_utils_cmd)
         sys.stderr.flush()
         sys.stdout.flush()
-        try:
-            subprocess.run(boot_utils_cmd, capture_output=True, check=True, text=True)
-        except subprocess.CalledProcessError as err:
-            self.result['boot'] = 'failed'
-            if err.stderr:
-                print(err.stderr, end='')
-            if err.stdout:
-                print(err.stdout, end='')
-        else:
-            self.result['boot'] = 'successful'
+        with self.result['log'].open('a') as file:
+            proc = subprocess.run(boot_utils_cmd,
+                                  check=False,
+                                  stderr=subprocess.STDOUT,
+                                  stdout=subprocess.PIPE,
+                                  text=True)
+            file.write(proc.stdout)
+            if proc.returncode == 0:
+                self.result['boot'] = 'successful'
+            else:
+                self.result['boot'] = 'failed'
+                print(proc.stdout, end='')
 
     def _build_kernel(self):
         self.make_args += ['-C', self.folders.source]
