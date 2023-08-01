@@ -33,6 +33,7 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
         self.make_vars['LLVM_IAS'] = 1
 
         self._clang_target = CLANG_TARGET
+        self._qemu_version = lkt.utils.create_qemu_version(f"qemu-system-{QEMU_ARCH}")
 
     def _add_defconfig_runners(self):
         runner = LoongArchLLVMKernelRunner()
@@ -88,5 +89,15 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
 
         if not self.only_test_boot and 'other' in self.targets:
             self._add_otherconfig_runners()
+
+        # QEMU older than 8.0.0 hits an assert in Loongson's EDK2 firmware:
+        # ASSERT [VirtNorFlashDxe] .../Platform/Loongson/LoongArchQemuPkg/Library/NorFlashQemuLib/NorFlashQemuLib.c(56): !(((INTN)(RETURN_STATUS)(FindNodeStatus)) < 0)
+        if self._qemu_version < (8, 0, 0):
+            found_ver = '.'.join(str(val) for val in self._qemu_version)
+            for runner in self._runners:
+                if runner.bootable:
+                    runner.bootable = False
+                    runner.result[
+                        'boot'] = f"skipped due to qemu older than 8.0.0 (found {found_ver})"
 
         return super().run()
