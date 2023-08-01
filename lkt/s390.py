@@ -32,7 +32,7 @@ class S390LKTRunner(lkt.runner.LKTRunner):
 
         self._binutils_version = lkt.utils.create_binutils_version(f"{CROSS_COMPILE}as")
         self._clang_target = CLANG_TARGET
-        self._qemu_version = lkt.utils.create_qemu_version('qemu-system-s390x')
+        self._qemu_version = lkt.utils.create_qemu_version(f"qemu-system-{QEMU_ARCH}")
 
     def _add_defconfig_runners(self):
         runner = S390LLVMKernelRunner()
@@ -136,7 +136,9 @@ class S390LKTRunner(lkt.runner.LKTRunner):
         if self._qemu_version < (6, 0, 0):
             found_ver = '.'.join(str(val) for val in self._qemu_version)
             for runner in self._runners:
-                runner.bootable = False
-                runner.result['boot'] = f"skipped due to qemu older than 6.0.0 (found {found_ver})"
+                if runner.bootable:
+                    runner.bootable = False
+                    runner.result[
+                        'boot'] = f"skipped due to qemu older than 6.0.0 (found {found_ver})"
 
         return super().run()
