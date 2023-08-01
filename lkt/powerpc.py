@@ -36,6 +36,7 @@ class PowerPCLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 
         self.boot_arch = 'ppc64le'
         self.image_target = 'zImage.epapr'
+        self.qemu_arch = 'ppc64'
 
 
 class PowerPCLKTRunner(lkt.runner.LKTRunner):
@@ -99,6 +100,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
             if not self.only_test_boot:
                 runner.make_targets.append(runner.image_target)
             runner.only_test_boot = self.only_test_boot
+            runner.qemu_arch = 'ppc'
             self._runners.append(runner)
 
         if '297565aa22cfa' in self.lsm.commits:
@@ -114,6 +116,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
             ]
             runner.image_target = 'vmlinux'
             runner.only_test_boot = self.only_test_boot
+            runner.qemu_arch = 'ppc'
             self._runners.append(runner)
         else:
             self._results.append({

@@ -8,6 +8,7 @@ import lkt.runner
 
 KERNEL_ARCH = 'arm'
 CLANG_TARGET = 'arm-linux-gnueabi'
+QEMU_ARCH = 'arm'
 
 
 def disable_be(linux):
@@ -24,6 +25,7 @@ class ArmLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 
         self.boot_arch = 'arm32_v7'
         self.image_target = 'zImage'
+        self.qemu_arch = QEMU_ARCH
 
 
 class ArmLKTRunner(lkt.runner.LKTRunner):

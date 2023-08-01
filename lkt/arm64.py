@@ -8,6 +8,7 @@ import lkt.runner
 KERNEL_ARCH = 'arm64'
 CLANG_TARGET = 'aarch64-linux-gnu'
 CROSS_COMPILE = f"{CLANG_TARGET}-"
+QEMU_ARCH = 'aarch64'
 
 
 class Arm64LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
@@ -17,6 +18,7 @@ class Arm64LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 
         self.boot_arch = KERNEL_ARCH
         self.image_target = 'Image.gz'
+        self.qemu_arch = QEMU_ARCH
 
 
 class Arm64LKTRunner(lkt.runner.LKTRunner):

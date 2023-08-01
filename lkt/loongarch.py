@@ -4,6 +4,7 @@ import lkt.runner
 
 KERNEL_ARCH = 'loongarch'
 CLANG_TARGET = 'loongarch64-linux-gnusf'
+QEMU_ARCH = 'loongarch64'
 
 # See https://github.com/ClangBuiltLinux/linux/issues/1787#issuecomment-1603764274 for more info
 BROKEN_CONFIGS = [
@@ -20,6 +21,7 @@ class LoongArchLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 
         self.boot_arch = KERNEL_ARCH
         self.image_target = 'vmlinuz.efi'
+        self.qemu_arch = QEMU_ARCH
 
 
 class LoongArchLKTRunner(lkt.runner.LKTRunner):

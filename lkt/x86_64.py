@@ -9,6 +9,7 @@ import lkt.utils
 KERNEL_ARCH = 'x86_64'
 CLANG_TARGET = 'x86_64-linux-gnu'
 CROSS_COMPILE = f"{CLANG_TARGET}-"
+QEMU_ARCH = 'x86_64'
 
 
 class X8664LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
@@ -18,6 +19,7 @@ class X8664LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 
         self.boot_arch = KERNEL_ARCH
         self.image_target = 'bzImage'
+        self.qemu_arch = QEMU_ARCH
 
 
 class X8664LKTRunner(lkt.runner.LKTRunner):

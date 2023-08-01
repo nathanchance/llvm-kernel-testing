@@ -8,6 +8,7 @@ import lkt.runner
 KERNEL_ARCH = 'i386'
 CLANG_TARGET = 'i386-linux-gnu'
 CROSS_COMPILE = 'x86_64-linux-gnu-'
+QEMU_ARCH = 'i386'
 
 
 class I386LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
@@ -17,6 +18,7 @@ class I386LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 
         self.boot_arch = 'x86'
         self.image_target = 'bzImage'
+        self.qemu_arch = QEMU_ARCH
 
 
 class I386LKTRunner(lkt.runner.LKTRunner):

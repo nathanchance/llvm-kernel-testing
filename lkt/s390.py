@@ -8,6 +8,7 @@ import lkt.utils
 KERNEL_ARCH = 's390'
 CLANG_TARGET = 's390x-linux-gnu'
 CROSS_COMPILE = f"{CLANG_TARGET}-"
+QEMU_ARCH = 's390x'
 
 
 class S390LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
@@ -17,6 +18,7 @@ class S390LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 
         self.boot_arch = KERNEL_ARCH
         self.image_target = 'bzImage'
+        self.qemu_arch = QEMU_ARCH
 
 
 class S390LKTRunner(lkt.runner.LKTRunner):

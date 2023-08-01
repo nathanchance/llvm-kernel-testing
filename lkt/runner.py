@@ -41,6 +41,7 @@ class LLVMKernelRunner:
         }
         self.only_test_boot = False
         self.override_make_vars = {}
+        self.qemu_arch = ''
         self.result = {}
 
         self._config = None
@@ -53,6 +54,11 @@ class LLVMKernelRunner:
             return
         if not self.boot_arch:
             raise RuntimeError('No boot-utils architecture set?')
+        if not self.qemu_arch:
+            raise RuntimeError('No QEMU architecture set?')
+        if not shutil.which(qemu_bin := f"qemu-system-{self.qemu_arch}"):
+            self.result['boot'] = f"skipped due to missing {qemu_bin}"
+            return
         if not self.folders.boot_utils.exists():
             raise RuntimeError('boot-utils could not be found?')
         if not (boot_qemu := Path(self.folders.boot_utils, 'boot-qemu.py')).exists():

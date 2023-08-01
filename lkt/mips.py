@@ -15,6 +15,7 @@ class MipsLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 
         self.boot_arch = 'mipsel'
         self.image_target = 'vmlinux'
+        self.qemu_arch = 'mipsel'
 
 
 class MipsLKTRunner(lkt.runner.LKTRunner):
@@ -61,6 +62,7 @@ class MipsLKTRunner(lkt.runner.LKTRunner):
             *extra_configs,
         ]
         runner.make_vars.update(self._be_vars)
+        runner.qemu_arch = 'mips'
         runners.append(runner)
 
         for runner in runners:

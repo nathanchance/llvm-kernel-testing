@@ -7,6 +7,7 @@ import lkt.runner
 KERNEL_ARCH = 'riscv'
 CLANG_TARGET = 'riscv64-linux-gnu'
 CROSS_COMPILE = f"{CLANG_TARGET}-"
+QEMU_ARCH = 'riscv64'
 
 
 class RISCVLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
@@ -16,6 +17,7 @@ class RISCVLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 
         self.boot_arch = 'riscv'
         self.image_target = 'Image'
+        self.qemu_arch = QEMU_ARCH
 
 
 class RISCVLKTRunner(lkt.runner.LKTRunner):
