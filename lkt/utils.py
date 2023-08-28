@@ -95,7 +95,7 @@ def header(hdr_str, end='\n'):
     Parameters:
         hdr_str (str): String to print inside the header.
     """
-    border = ''.join(['=' for _x in range(0, len(hdr_str) + 6)])
+    border = ''.join(['=' for _x in range(len(hdr_str) + 6)])
     print(f"\n\033[1m{border}\n== {hdr_str} ==\n{border}\n\033[0m", end=end, flush=True)
 
 
