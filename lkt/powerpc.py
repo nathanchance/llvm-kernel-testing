@@ -109,11 +109,12 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
             runner.bootable = self._llvm_version >= (14, 0, 0)
             if not runner.bootable:
                 runner.result['boot'] = 'skipped due to LLVM < 14.0.0 (lack of 1e3c6fc7cb9d2)'
-            runner.configs = [
-                'pmac32_defconfig',
-                'CONFIG_SERIAL_PMACZILOG=y',
-                'CONFIG_SERIAL_PMACZILOG_CONSOLE=y',
-            ]
+            runner.configs = ['pmac32_defconfig']
+            if '0b5e06e9cb156' not in self.lsm.commits:
+                runner.configs += [
+                    'CONFIG_SERIAL_PMACZILOG=y',
+                    'CONFIG_SERIAL_PMACZILOG_CONSOLE=y',
+                ]
             runner.image_target = 'vmlinux'
             runner.only_test_boot = self.only_test_boot
             runner.qemu_arch = 'ppc'

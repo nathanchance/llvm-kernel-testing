@@ -88,6 +88,12 @@ class LinuxSourceManager:
         self._add_commit('0355785313e21', r"LDFLAGS_vmlinux-\$\(CONFIG_RELOCATABLE\) \+= -z notext",
                          'arch/powerpc/Makefile')
 
+        # Introduced by: powerpc/pmac32: enable serial options by default in defconfig
+        # Link: https://git.kernel.org/linus/0b5e06e9cb156e7e97bfb4e1ebf6acd62497eaf5
+        # First appeared: next-20230815~142^2~5
+        self._add_commit('0b5e06e9cb156', 'CONFIG_SERIAL_PMACZILOG_CONSOLE=y',
+                         'arch/powerpc/configs/pmac32_defconfig')
+
         # Introduced by: powerpc/64: Make VDSO32 track COMPAT on 64-bit
         # Link: https://git.kernel.org/linus/231b232df8f67e7d37af01259c21f2a131c3911e
         # First appeared: v5.10-rc1~105^2~141
