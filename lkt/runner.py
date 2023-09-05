@@ -258,6 +258,8 @@ class LLVMKernelRunner:
             # CONFIG_PCI_MESON as a module is invalid before https://git.kernel.org/linus/a98d2187efd9e6d554efb50e3ed3a2983d340fe5
             *[(f"PCI_{val}", 'drivers/pci/controller/dwc/Kconfig')
               for val in ['DRA7XX', 'DRA7XX_EP', 'DRA7XX_HOST', 'EXYNOS', 'MESON']],
+            # CONFIG_PCI_MVEBU as a module is invalid before https://git.kernel.org/linus/0746ae1be12177ebda0666eefa82583cbaeeefd6
+            ('PCI_MVEBU', 'drivers/pci/controller/Kconfig'),
             # CONFIG_PINCTRL_ROCKCHIP as a module is invalid before https://git.kernel.org/linus/be786ac5a6c4bf4ef3e4c569a045d302c1e60fe6
             ('PINCTRL_ROCKCHIP', 'drivers/pinctrl/Kconfig'),
             # CONFIG_POWER_RESET_SC27XX as a module is invalid before https://git.kernel.org/linus/f78c55e3b4806974f7d590b2aab8683232b7bd25
