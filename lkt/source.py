@@ -149,7 +149,7 @@ class LinuxSourceManager:
 
         # Commit: Makefile: Add loongarch target flag for Clang compilation
         # Link: https://git.kernel.org/linus/65eea6b44a5dd332c50390fdaeda7e197802c484
-        # First appeared: v6.5-rc1
+        # First appeared: v6.5-rc1~123^2~15
         if '6f5b41a2f5a63' in self.commits:
             self._add_commit('65eea6b44a5dd', 'loongarch64-linux-gnusf', 'scripts/Makefile.clang')
 
@@ -191,7 +191,7 @@ class LinuxSourceManager:
 
         # Introduced by: powerpc: Allow CONFIG_PPC64_BIG_ENDIAN_ELF_ABI_V2 with ld.lld 15+
         # Link: https://git.kernel.org/linus/a11334d8327b3fd7987cbfb38e956a44c722d88f
-        # First appeared: v6.4-rc1
+        # First appeared: v6.4-rc1~90^2~139
         if 'CONFIG_PPC64_BIG_ENDIAN_ELF_ABI_V2' in self.configs:
             self._add_commit(
                 'a11334d8327b',
