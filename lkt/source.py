@@ -248,13 +248,17 @@ class LinuxSourceManager:
         if not re.search('"(o|n|x)i\t%0,%b1\\\\n"', text):
             self.commits.append('efe5e0fea4b24')
 
-    def _add_commit(self, commit, regex, file):
-        file_text = Path(self.folder, file).read_text(encoding='utf-8')
+    def _add_commit(self, commit, regex, file_path):
+        if not (file := Path(self.folder, file_path)).exists():
+            return
+        file_text = file.read_text(encoding='utf-8')
         if re.search(regex, file_text):
             self.commits.append(commit)
 
-    def _add_config(self, config, file):
+    def _add_config(self, config, file_path):
+        if not (file := Path(self.folder, file_path)).exists():
+            return
         definition = config.replace('CONFIG_', 'config ')
-        file_text = Path(self.folder, file).read_text(encoding='utf-8')
+        file_text = file.read_text(encoding='utf-8')
         if definition in file_text:
             self.configs.append(config)
