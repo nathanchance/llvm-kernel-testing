@@ -109,6 +109,11 @@ class LinuxSourceManager:
             'config POWERPC_CPU\n\tbool "Generic 32 bits powerpc"\n\tdepends on PPC_BOOK3S_32',
             'arch/powerpc/platforms/Kconfig.cputype')
 
+        # Commit: LoongArch: Allow building with kcov coverage
+        # Link: https://git.kernel.org/linus/2363088eba2ecccfb643725e4864af73c4226a04
+        # First appeared: v6.6-rc1~25^2~9
+        self._add_commit('2363088eba2ec', 'select ARCH_HAS_KCOV', 'arch/loongarch/Kconfig')
+
         # Commit: lib/xor: make xor prototypes more friendly to compiler vectorization
         # Link: https://git.kernel.org/linus/297565aa22cfa80ab0f88c3569693aea0b6afb6d
         # First appeared: v5.18-rc1~199^2~76
