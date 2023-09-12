@@ -363,7 +363,12 @@ class LLVMKernelRunner:
                                                    'SYSTEM_TRUSTED_KEYS'):
             self.configs.append('CONFIG_SYSTEM_TRUSTED_KEYS=n')
 
-        if distro == 'fedora' and config.stem == 'aarch64':
+        # Nothing is explicitly wrong with this configuration option but
+        # CONFIG_EFI_ZBOOT changes the default image target, which boot-utils
+        # does not expect, so undo it to get the expected image for boot
+        # testing.
+        if config.stem in ('aarch64', 'arm64') and lkt.utils.is_set(self.folders.source, config,
+                                                                    'EFI_ZBOOT'):
             self.configs.append('CONFIG_EFI_ZBOOT=n')
 
     def run(self):
