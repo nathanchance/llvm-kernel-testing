@@ -3,6 +3,7 @@
 import contextlib
 import os
 from pathlib import Path
+import platform
 import shutil
 import subprocess
 import sys
@@ -10,6 +11,8 @@ import tempfile
 import time
 
 import lkt.utils
+
+HAVE_DEV_KVM_ACCESS = os.access('/dev/kvm', os.R_OK | os.W_OK)
 
 
 class Folders:
@@ -72,6 +75,20 @@ class LLVMKernelRunner:
         ]
         if (boot_utils_json := Path(self.folders.log, '.boot-utils.json')).exists():
             boot_utils_cmd += ['--gh-json-file', boot_utils_json]
+        # This hardcodes some internal boot-utils logic but that's fine since I
+        # help maintain that tool :)
+        using_kvm = False
+        if (machine := platform.machine()) == 'aarch64':
+            if self.boot_arch == 'arm32_v7':
+                proc = subprocess.run(Path(boot_qemu.parent, 'utils/aarch64_32_bit_el1_supported'),
+                                      check=False)
+                using_kvm = proc.returncode == 0 and HAVE_DEV_KVM_ACCESS
+            else:
+                using_kvm = self.boot_arch in ('arm64', 'arm64be') and HAVE_DEV_KVM_ACCESS
+        elif machine == 'x86_64':
+            using_kvm = self.boot_arch in ('x86', 'x86_64') and HAVE_DEV_KVM_ACCESS
+        if using_kvm:
+            boot_utils_cmd += ['-m', '2G']
         lkt.utils.show_cmd(boot_utils_cmd)
         sys.stderr.flush()
         sys.stdout.flush()
