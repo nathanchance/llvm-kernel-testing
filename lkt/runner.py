@@ -368,7 +368,7 @@ class LLVMKernelRunner:
         if debug_info_btf_y and not (pahole_available and self.lsm.version >= (5, 7, 0)):
             self.configs.append('CONFIG_DEBUG_INFO_BTF=n')
 
-        if 'CONFIG_BPF_PRELOAD' in self.lsm.configs and lkt.utils.is_set(
+        if 'e96f2d64c812d' not in self.lsm.commits and 'CONFIG_BPF_PRELOAD' in self.lsm.configs and lkt.utils.is_set(
                 self.folders.source, config, 'BPF_PRELOAD'):
             self.configs.append('CONFIG_BPF_PRELOAD=n')
 

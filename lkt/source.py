@@ -230,6 +230,13 @@ class LinuxSourceManager:
         # First appeared: v5.5-rc1~189^2
         self._add_commit('d8e85e144bbe1', 'prompt "Endianness"', 'arch/arm64/Kconfig')
 
+        # Commit: bpf: Drop libbpf, libelf, libz dependency from bpf preload.
+        # Link: https://git.kernel.org/linus/e96f2d64c812d9c20adea38a9b5e08feaa21fcf5
+        # First appeared: v5.18-rc1~136^2~392^2~36
+        if (preload_make := Path(self.folder, 'kernel/bpf/preload/Makefile')
+            ).exists() and 'LIBBPF_OUT' not in preload_make.read_text(encoding='utf-8'):
+            self.commits.append('e96f2d64c812d')
+
         # Commit: riscv: Use -mno-relax when using lld linker
         # Link: https://git.kernel.org/linus/ec3a5cb61146c91f0f7dcec8b7e7157a4879a9ee
         # First appeared: v5.13-rc5~8^2~3
