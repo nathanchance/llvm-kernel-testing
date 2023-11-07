@@ -252,6 +252,8 @@ class LLVMKernelRunner:
             ('CPUFREQ_DT_PLATDEV', 'drivers/cpufreq/Kconfig'),
             # CONFIG_CS89x0_PLATFORM as a module is invalid before https://git.kernel.org/linus/47fd22f2b84765a2f7e3f150282497b902624547
             ('CS89x0_PLATFORM', 'drivers/net/ethernet/cirrus/Kconfig'),
+            # CONFIG_DRIVER_PE_KUNIT_TEST as a module is invalid before https://git.kernel.org/linus/98ad1dd06a02096fff6c65703a85b9f3c3de1a7d
+            ('DRIVER_PE_KUNIT_TEST', 'drivers/base/test/Kconfig'),
             # CONFIG_DRM_GEM_{CMA,SHMEM}_HELPER as modules is invalid before https://git.kernel.org/linus/4b2b5e142ff499a2bef2b8db0272bbda1088a3fe
             *[(f"DRM_GEM_{val}_HELPER", 'drivers/gpu/drm/Kconfig') for val in ['CMA', 'SHMEM']],
             # CONFIG_GPIO_DAVINCI as a module is invalid before https://git.kernel.org/linus/8dab99c9eab3162bfb4326c35579a3388dbf68f2
