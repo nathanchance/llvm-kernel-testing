@@ -270,6 +270,8 @@ class LLVMKernelRunner:
             ('MFD_PALMAS', 'drivers/mfd/Kconfig'),
             # CONFIG_MTK_MMSYS as a module is invalid before https://git.kernel.org/linus/a7596e62dac7318456c1aa9af5bfccf0f8e6ad7e
             ('MTK_MMSYS', 'drivers/soc/mediatek/Kconfig'),
+            # CONFIG_NVME_AUTH as a module is invalid before https://git.kernel.org/linus/6affe08aea5f3b630565676e227b41d55a6f009c
+            ('NVME_AUTH', 'drivers/nvme/common/Kconfig'),
             # CONFIG_NVMEM_ZYNQMP as a module is invalid before https://git.kernel.org/linus/bcd1fe07def0f070eb5f31594620aaee6f81d31a
             ('NVMEM_ZYNQMP', 'drivers/nvmem/Kconfig'),
             # CONFIG_PCI_DRA7XX{,_HOST,_EP} as modules is invalid before https://git.kernel.org/linus/3b868d150efd3c586762cee4410cfc75f46d2a07
