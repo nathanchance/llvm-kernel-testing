@@ -1,17 +1,11 @@
 #!/usr/bin/env python3
 
+from pathlib import Path
 import lkt.runner
 
 KERNEL_ARCH = 'loongarch'
 CLANG_TARGET = 'loongarch64-linux-gnusf'
 QEMU_ARCH = 'loongarch64'
-
-# See https://github.com/ClangBuiltLinux/linux/issues/1787#issuecomment-1603764274 for more info
-BROKEN_CONFIGS = [
-    'CONFIG_MODULES=n',  # need __attribute__((model("extreme"))) in clang
-    'CONFIG_CRASH_DUMP=n',  # selects RELOCATABLE
-    'CONFIG_RELOCATABLE=n',  # ld.lld prepopulates GOT?
-]
 
 
 class LoongArchLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
@@ -32,26 +26,30 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
         self.make_vars['ARCH'] = KERNEL_ARCH
         self.make_vars['LLVM_IAS'] = 1
 
+        # See https://github.com/ClangBuiltLinux/linux/issues/1787#issuecomment-1603764274 for more info
+        self._broken_configs = [
+            'CONFIG_MODULES=n',  # need __attribute__((model("extreme"))) in clang
+        ]
         self._clang_target = CLANG_TARGET
         self._qemu_version = lkt.utils.create_qemu_version(f"qemu-system-{QEMU_ARCH}")
 
     def _add_defconfig_runners(self):
         runner = LoongArchLLVMKernelRunner()
         runner.bootable = True
-        runner.configs = ['defconfig', *BROKEN_CONFIGS]
+        runner.configs = ['defconfig', *self._broken_configs]
         runner.only_test_boot = self.only_test_boot
         self._runners.append(runner)
 
         runner = LoongArchLLVMKernelRunner()
         runner.bootable = True
-        runner.configs = ['defconfig', *BROKEN_CONFIGS, 'CONFIG_LTO_CLANG_THIN=y']
+        runner.configs = ['defconfig', *self._broken_configs, 'CONFIG_LTO_CLANG_THIN=y']
         runner.only_test_boot = self.only_test_boot
         self._runners.append(runner)
 
     def _add_otherconfig_runners(self):
         runner = LoongArchLLVMKernelRunner()
         # Eventually, allmodconfig instead
-        runner.configs = ['allyesconfig', *BROKEN_CONFIGS]
+        runner.configs = ['allyesconfig', *self._broken_configs]
         # https://github.com/ClangBuiltLinux/linux/issues/1895
         if '2363088eba2ec' in self.lsm.commits:
             runner.configs.append('CONFIG_KCOV=n')
@@ -62,7 +60,7 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
         runner = LoongArchLLVMKernelRunner()
         runner.configs = [
             'allyesconfig',
-            *BROKEN_CONFIGS,
+            *self._broken_configs,
             'CONFIG_FTRACE=n',
             'CONFIG_GCOV_KERNEL=n',
             'CONFIG_LTO_CLANG_THIN=y',
@@ -89,6 +87,14 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
                 'Provide a kernel tree with Linux 6.5+ or one with this series to build LoongArch kernels.'
             )
             return self._skip('missing 65eea6b44a5dd', print_text)
+
+        loongarch_makefile_text = Path(self.lsm.folder,
+                                       'arch/loongarch/Makefile').read_text(encoding='utf-8')
+        if '--apply-dynamic-relocs' not in loongarch_makefile_text:
+            self._broken_configs += [
+                'CONFIG_CRASH_DUMP=n',  # selects RELOCATABLE
+                'CONFIG_RELOCATABLE=n',  # ld.lld prepopulates GOT?
+            ]
 
         if 'def' in self.targets:
             self._add_defconfig_runners()
