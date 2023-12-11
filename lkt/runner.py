@@ -354,8 +354,8 @@ class LLVMKernelRunner:
             sym_is_m = lkt.utils.is_modular(self.folders.source, self.folders.build, config_sym)
             can_be_m = False
             if (kconfig_file := Path(self.folders.source, file)).exists():
-                kconfig_text = kconfig_file.read_text(encoding='utf-8')
-                if f"config {config_sym}\ntristate" in kconfig_text:
+                kconfig_text = ''.join(kconfig_file.read_text(encoding='utf-8').split())
+                if f"config{config_sym}tristate" in kconfig_text:
                     can_be_m = True
             if sym_is_m and not can_be_m:
                 configs.append(f"CONFIG_{config_sym}=y")
