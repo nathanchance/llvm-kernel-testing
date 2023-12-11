@@ -39,8 +39,8 @@ for distro in $distros
             set tmp_dir (mktemp -d -p $dest)
 
             for arch in amd64 arm64 armmp i386 powerpc64le s390x
-                set package_version_signed 6.5.0-5
-                set kernel_version_signed 6.5.13-1
+                set package_version_signed 6.6
+                set kernel_version_signed 6.6.4-1~exp1
                 set package_version_unsigned $package_version_signed
                 set kernel_version_unsigned $kernel_version_signed
 
