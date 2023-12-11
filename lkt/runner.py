@@ -236,6 +236,24 @@ class LLVMKernelRunner:
             ('BCM7120_L2_IRQ', 'drivers/irqchip/Kconfig'),
             # CONFIG_CHELSIO_IPSEC_INLINE as a module is invalid before https://git.kernel.org/linus/1b77be463929e6d3cefbc929f710305714a89723
             ('CHELSIO_IPSEC_INLINE', 'drivers/crypto/chelsio/Kconfig'),
+            # CONFIG_COMMON_CLK_MT8173 and CONFIG_COMMON_CLK_MT8173_MMSYS as modules is invalid before https://git.kernel.org/linus/4c02c9af3cb9449cd176300b288e8addb5083934
+            *[(f"COMMON_CLK_MT8173{val}", 'drivers/clk/mediatek/Kconfig')
+              for val in ['', '_MMSYS']],
+            # CONFIG_COMMON_CLK_MT8183 and all its subdrivers as modules is invalid before https://git.kernel.org/linus/95ffe65437b239db3f5a570b31cd79629c851743
+            *[(f"COMMON_CLK_MT8183{val}", 'drivers/clk/mediatek/Kconfig') for val in [
+                '',
+                '_AUDIOSYS',
+                '_CAMSYS',
+                '_IMGSYS',
+                '_IPU_CORE0',
+                '_IPU_CORE1',
+                '_IPU_ADL',
+                '_IPU_CONN',
+                '_MFGCFG',
+                '_MMSYS',
+                '_VDECSYS',
+                '_VENCSYS',
+            ]],
             # CONFIG_CORESIGHT (and all of its drivers) as a module is invalid before https://git.kernel.org/linus/8e264c52e1dab8a7c1e036222ef376c8920c3423
             *[(f"CORESIGHT{val}", 'drivers/hwtracing/coresight/Kconfig') for val in [
                 '',
