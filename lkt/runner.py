@@ -286,8 +286,12 @@ class LLVMKernelRunner:
             ('KPROBES_SANITY_TEST', 'lib/Kconfig.debug'),
             # CONFIG_MFD_PALMAS as a module is invalid before https://git.kernel.org/linus/d4b15e447c352ae74b18261bdaf0023fa9a7d1bd
             ('MFD_PALMAS', 'drivers/mfd/Kconfig'),
+            # CONFIG_MTK_IOMMU as a module is invalid before https://git.kernel.org/linus/18d8c74ec5987a78bd1e9c1c629dfdd04a151a89
+            ('MTK_IOMMU', 'drivers/iommu/Kconfig'),
             # CONFIG_MTK_MMSYS as a module is invalid before https://git.kernel.org/linus/a7596e62dac7318456c1aa9af5bfccf0f8e6ad7e
             ('MTK_MMSYS', 'drivers/soc/mediatek/Kconfig'),
+            # CONFIG_MTK_SMI as a module is invalid before https://git.kernel.org/linus/50fc8d9232cdc64b9e9d1b9488452f153de52b69
+            ('MTK_SMI', 'drivers/memory/Kconfig'),
             # CONFIG_NVME_AUTH as a module is invalid before https://git.kernel.org/linus/6affe08aea5f3b630565676e227b41d55a6f009c
             ('NVME_AUTH', 'drivers/nvme/common/Kconfig'),
             # CONFIG_NVMEM_ZYNQMP as a module is invalid before https://git.kernel.org/linus/bcd1fe07def0f070eb5f31594620aaee6f81d31a
