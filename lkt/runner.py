@@ -274,6 +274,12 @@ class LLVMKernelRunner:
             ('DRIVER_PE_KUNIT_TEST', 'drivers/base/test/Kconfig'),
             # CONFIG_DRM_GEM_{CMA,SHMEM}_HELPER as modules is invalid before https://git.kernel.org/linus/4b2b5e142ff499a2bef2b8db0272bbda1088a3fe
             *[(f"DRM_GEM_{val}_HELPER", 'drivers/gpu/drm/Kconfig') for val in ['CMA', 'SHMEM']],
+            # CONFIG_FSCACHE as a module is invalid after https://git.kernel.org/next/linux-next/c/9896c4f367fcc44213d15fe7210e9305df8063f2
+            # While the new configuration location is fs/netfs/Kconfig, we
+            # check for whether or not FSCACHE can be a module in
+            # fs/fscache/Kconfig; if it does not exist, we know it cannot be
+            # 'm' due to the change above.
+            ('FSCACHE', 'fs/fscache/Kconfig'),
             # CONFIG_GPIO_DAVINCI as a module is invalid before https://git.kernel.org/linus/8dab99c9eab3162bfb4326c35579a3388dbf68f2
             # CONFIG_GPIO_MXC as a module is invalid before https://git.kernel.org/linus/12d16b397ce0a999d13762c4c0cae2fb82eb60ee
             # CONFIG_GPIO_PL061 as a module is invalid before https://git.kernel.org/linus/616844408de7f21546c3c2a71ea7f8d364f45e0d
