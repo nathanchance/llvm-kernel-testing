@@ -37,10 +37,17 @@ for distro in $distros
 
         case debian
             set tmp_dir (mktemp -d -p $dest)
+            set deb_arches \
+                amd64 \
+                arm64 \
+                armmp \
+                # no 6.6.8 for i386 right now?
+                powerpc64le \
+                s390x
 
-            for arch in amd64 arm64 armmp i386 powerpc64le s390x
-                set package_version_signed 6.6
-                set kernel_version_signed 6.6.4-1~exp1
+            for arch in $deb_arches
+                set package_version_signed 6.6.8
+                set kernel_version_signed 6.6.8-1
                 set package_version_unsigned $package_version_signed
                 set kernel_version_unsigned $kernel_version_signed
 
