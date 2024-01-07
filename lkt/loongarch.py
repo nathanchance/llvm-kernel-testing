@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
+import subprocess
 import lkt.runner
 
 KERNEL_ARCH = 'loongarch'
@@ -26,10 +27,7 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
         self.make_vars['ARCH'] = KERNEL_ARCH
         self.make_vars['LLVM_IAS'] = 1
 
-        # See https://github.com/ClangBuiltLinux/linux/issues/1787#issuecomment-1603764274 for more info
-        self._broken_configs = [
-            'CONFIG_MODULES=n',  # need __attribute__((model("extreme"))) in clang
-        ]
+        self._broken_configs = []
         self._clang_target = CLANG_TARGET
         self._qemu_version = lkt.utils.create_qemu_version(f"qemu-system-{QEMU_ARCH}")
 
@@ -95,6 +93,22 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
                 'CONFIG_CRASH_DUMP=n',  # selects RELOCATABLE
                 'CONFIG_RELOCATABLE=n',  # ld.lld prepopulates GOT?
             ]
+
+        # https://github.com/ClangBuiltLinux/linux/issues/1884
+        clang_prog = 'int g __attribute((model("extreme")));'
+        clang_cmd = [
+            'clang',
+            '--target=loongarch64',
+            '-Werror=unknown-attributes',
+            '-x',
+            'c',
+            '-fsyntax-only',
+            '-',
+        ]
+        try:
+            subprocess.run(clang_cmd, capture_output=True, check=True, input=clang_prog, text=True)
+        except subprocess.CalledProcessError:
+            self._broken_configs.append('CONFIG_MODULES=n')
 
         if 'def' in self.targets:
             self._add_defconfig_runners()
