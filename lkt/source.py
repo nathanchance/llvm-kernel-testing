@@ -23,6 +23,11 @@ class LinuxSourceManager:
                                     'kernelversion']).stdout.strip()
         self.version = tuple(int(item) for item in output.split('-', 1)[0].split('.'))
 
+        # Introduced by: bcachefs: Initial commit
+        # Link: https://git.kernel.org/linus/1c6fdbd8f2465ddfb73a01ec620cbf3d14044e1a
+        # First appeared: v6.7-rc1~201^2~2764
+        self._add_config('CONFIG_BCACHEFS_FS', 'fs/bcachefs/Kconfig')
+
         # Introduced by: add support for Clang CFI
         # Link: https://git.kernel.org/linus/cf68fffb66d60d96209446bfc4a15291dc5a5d41
         # First appeared: v5.13-rc1~145^2~17

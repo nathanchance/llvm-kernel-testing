@@ -68,17 +68,27 @@ class I386LKTRunner(lkt.runner.LKTRunner):
 
     # https://github.com/ClangBuiltLinux/linux/issues/1442
     def _disable_broken_configs_with_fortify(self):
+        broken_configs = []
+
         sec_kconf_text = Path(self.folders.source, 'security/Kconfig').read_text(encoding='utf-8')
         fortify_broken = 'https://bugs.llvm.org/show_bug.cgi?id=50322' in sec_kconf_text or \
+                         'https://llvm.org/pr50322' in sec_kconf_text or \
                          'https://github.com/llvm/llvm-project/issues/53645' in sec_kconf_text
-        if self._llvm_version < (15, 0, 0) and fortify_broken:
-            return [
-                'CONFIG_IP_NF_TARGET_SYNPROXY=n',
-                'CONFIG_IP6_NF_TARGET_SYNPROXY=n',
-                'CONFIG_NFT_SYNPROXY=n',
-            ]
 
-        return []
+        if fortify_broken:
+            # https://github.com/ClangBuiltLinux/linux/issues/1932
+            if 'CONFIG_BCACHEFS_FS' in self.lsm.configs:
+                broken_configs.append('CONFIG_BCACHEFS_FS=n')
+
+            # https://github.com/ClangBuiltLinux/linux/issues/1442
+            if self._llvm_version < (15, 0, 0):
+                broken_configs += [
+                    'CONFIG_IP_NF_TARGET_SYNPROXY=n',
+                    'CONFIG_IP6_NF_TARGET_SYNPROXY=n',
+                    'CONFIG_NFT_SYNPROXY=n',
+                ]
+
+        return broken_configs
 
     def run(self):
         if self.lsm.version < (5, 9, 0):
