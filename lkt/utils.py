@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
-import re
 import shlex
-import shutil
 import subprocess
 import time
 
@@ -21,29 +19,6 @@ def clang_supports_target(target):
     clang_cmd = ['clang', f"--target={target}", '-c', '-x', 'c', '-o', '/dev/null', '/dev/null']
     clang_proc = subprocess.run(clang_cmd, capture_output=True, check=False)
     return clang_proc.returncode == 0
-
-
-def create_binutils_version(gnu_as):
-    if not shutil.which(gnu_as):
-        return (0, 0, 0)
-
-    as_output = chronic([gnu_as, '--version']).stdout.splitlines()[0]
-    # "GNU assembler (GNU Binutils) 2.39.50.20221024" -> "2.39.50.20221024" -> ['2', '39', '50']
-    # "GNU assembler version 2.39-3.fc38" -> "2.39-3.fc38" -> ['2.39'] -> ['2', '39'] -> ['2', '39', '0']
-    version_list = as_output.split(' ')[-1].split('-')[0].split('.')[0:3]
-    if len(version_list) == 2:
-        version_list += ['0']
-    return tuple(int(item) for item in version_list)
-
-
-def create_qemu_version(qemu):
-    if not shutil.which(qemu):
-        return (0, 0, 0)
-
-    qemu_ver = chronic([qemu, '--version']).stdout.splitlines()[0]
-    if not (match := re.search(r'version (\d+\.\d+.\d+)', qemu_ver)):
-        raise RuntimeError('Could not find QEMU version?')
-    return tuple(int(x) for x in match.groups()[0].split('.'))
 
 
 def get_config_val(linux, path, config):

@@ -2,7 +2,9 @@
 
 from pathlib import Path
 import subprocess
+
 import lkt.runner
+import lkt.version
 
 KERNEL_ARCH = 'loongarch'
 CLANG_TARGET = 'loongarch64-linux-gnusf'
@@ -29,7 +31,7 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
 
         self._broken_configs = []
         self._clang_target = CLANG_TARGET
-        self._qemu_version = lkt.utils.create_qemu_version(f"qemu-system-{QEMU_ARCH}")
+        self._qemu_version = lkt.version.QemuVersion(arch=QEMU_ARCH)
 
     def _add_defconfig_runners(self):
         runner = LoongArchLLVMKernelRunner()
@@ -72,10 +74,16 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
         self._runners.append(runner)
 
     def run(self):
-        if self._llvm_version < (17, 0, 0):
-            return self._skip(
-                'LLVM < 17.0.0',
-                'LoongArch requires LLVM 17.0.0 or newer to build properly with LLVM=1')
+        hard_min_llvm_ver = lkt.version.Version(17, 0, 0)
+        if (min_llvm_ver := self.lsm.get_min_llvm_ver(KERNEL_ARCH)) < hard_min_llvm_ver:
+            min_llvm_ver = hard_min_llvm_ver
+            reason = 'to build properly with LLVM=1'
+        else:
+            reason = 'because of scripts/min-tool-version.sh for supplied tree'
+
+        if self._llvm_version < min_llvm_ver:
+            return self._skip(f"LLVM < {min_llvm_ver}",
+                              f"LoongArch requires LLVM {min_llvm_ver} or newer {reason}")
 
         if '65eea6b44a5dd' not in self.lsm.commits:
             print_text = (
@@ -119,12 +127,11 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
 
         # QEMU older than 8.0.0 hits an assert in Loongson's EDK2 firmware:
         # ASSERT [VirtNorFlashDxe] .../Platform/Loongson/LoongArchQemuPkg/Library/NorFlashQemuLib/NorFlashQemuLib.c(56): !(((INTN)(RETURN_STATUS)(FindNodeStatus)) < 0)
-        if self._qemu_version < (8, 0, 0):
-            found_ver = '.'.join(str(val) for val in self._qemu_version)
+        if self._qemu_version < (min_qemu_ver := lkt.version.Version(8, 0, 0)):
             for runner in self._runners:
                 if runner.bootable:
                     runner.bootable = False
                     runner.result[
-                        'boot'] = f"skipped due to qemu older than 8.0.0 (found {found_ver})"
+                        'boot'] = f"skipped due to qemu older than {min_qemu_ver} (found {self._qemu_version})"
 
         return super().run()

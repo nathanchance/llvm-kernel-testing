@@ -12,6 +12,7 @@ import sys
 import lkt.report
 import lkt.source
 import lkt.utils
+import lkt.version
 
 import lkt.arm
 import lkt.arm64
@@ -190,40 +191,52 @@ if __name__ == '__main__':
     report.folders.source = linux_folder
     report.show_env_info()
 
-    make_vars = {}
-    if args.use_ccache and shutil.which('ccache'):
-        make_vars['CC'] = 'ccache clang'
-        make_vars['HOSTCC'] = 'ccache clang'
-    if shutil.which('pbzip2'):
-        make_vars['KBZIP2'] = 'pbzip2'
-    if shutil.which('pigz'):
-        make_vars['KGZIP'] = 'pigz'
-
-    lkt_runners = {
-        'arm': lkt.arm.ArmLKTRunner,
-        'arm64': lkt.arm64.Arm64LKTRunner,
-        'hexagon': lkt.hexagon.HexagonLKTRunner,
-        'i386': lkt.i386.I386LKTRunner,
-        'loongarch': lkt.loongarch.LoongArchLKTRunner,
-        'mips': lkt.mips.MipsLKTRunner,
-        'powerpc': lkt.powerpc.PowerPCLKTRunner,
-        'riscv': lkt.riscv.RISCVLKTRunner,
-        's390': lkt.s390.S390LKTRunner,
-        'x86_64': lkt.x86_64.X8664LKTRunner,
-    }
     results = []
-    for arch in sorted(args.architectures):
-        runner = lkt_runners[arch]()
-        runner.folders.boot_utils = boot_utils_folder
-        runner.folders.build = build_folder
-        runner.folders.configs = Path(REPO, 'configs')
-        runner.folders.log = log_folder
-        runner.folders.source = linux_folder
-        runner.lsm = lsm
-        runner.make_vars.update(make_vars)
-        runner.only_test_boot = args.only_test_boot
-        runner.save_objects = args.save_objects
-        runner.targets = args.targets_to_build
-        results += runner.run()
+
+    min_llvm_ver = lsm.get_min_llvm_ver()
+    llvm_ver = lkt.version.ClangVersion()
+    if llvm_ver < min_llvm_ver:
+        result = {
+            'name': 'build matrix',
+            'build': 'skipped',
+            'reason': f"found LLVM version ('{llvm_ver}') less than minimum LLVM version ('{min_llvm_ver}') for supplied tree",
+        }  # yapf: disable
+        results.append(result)
+
+    if len(results) == 0:
+        make_vars = {}
+        if args.use_ccache and shutil.which('ccache'):
+            make_vars['CC'] = 'ccache clang'
+            make_vars['HOSTCC'] = 'ccache clang'
+        if shutil.which('pbzip2'):
+            make_vars['KBZIP2'] = 'pbzip2'
+        if shutil.which('pigz'):
+            make_vars['KGZIP'] = 'pigz'
+
+        lkt_runners = {
+            'arm': lkt.arm.ArmLKTRunner,
+            'arm64': lkt.arm64.Arm64LKTRunner,
+            'hexagon': lkt.hexagon.HexagonLKTRunner,
+            'i386': lkt.i386.I386LKTRunner,
+            'loongarch': lkt.loongarch.LoongArchLKTRunner,
+            'mips': lkt.mips.MipsLKTRunner,
+            'powerpc': lkt.powerpc.PowerPCLKTRunner,
+            'riscv': lkt.riscv.RISCVLKTRunner,
+            's390': lkt.s390.S390LKTRunner,
+            'x86_64': lkt.x86_64.X8664LKTRunner,
+        }
+        for arch in sorted(args.architectures):
+            runner = lkt_runners[arch]()
+            runner.folders.boot_utils = boot_utils_folder
+            runner.folders.build = build_folder
+            runner.folders.configs = Path(REPO, 'configs')
+            runner.folders.log = log_folder
+            runner.folders.source = linux_folder
+            runner.lsm = lsm
+            runner.make_vars.update(make_vars)
+            runner.only_test_boot = args.only_test_boot
+            runner.save_objects = args.save_objects
+            runner.targets = args.targets_to_build
+            results += runner.run()
 
     report.generate_report(results)

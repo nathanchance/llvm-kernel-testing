@@ -3,7 +3,7 @@
 from pathlib import Path
 import re
 
-import lkt.utils
+import lkt.version
 
 
 class LinuxSourceManager:
@@ -19,9 +19,7 @@ class LinuxSourceManager:
         self.configs = []
         self.folder = linux_source
 
-        output = lkt.utils.chronic(['make', '-C', self.folder, '-s',
-                                    'kernelversion']).stdout.strip()
-        self.version = tuple(int(item) for item in output.split('-', 1)[0].split('.'))
+        self.version = lkt.version.LinuxVersion(folder=linux_source)
 
         # Introduced by: bcachefs: Initial commit
         # Link: https://git.kernel.org/linus/1c6fdbd8f2465ddfb73a01ec620cbf3d14044e1a
@@ -279,3 +277,6 @@ class LinuxSourceManager:
         file_text = file.read_text(encoding='utf-8')
         if definition in file_text:
             self.configs.append(config)
+
+    def get_min_llvm_ver(self, arch=None):
+        return lkt.version.MinToolVersion(folder=self.folder, arch=arch, tool='llvm')

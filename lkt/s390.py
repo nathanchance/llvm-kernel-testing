@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import lkt.runner
-import lkt.utils
+import lkt.version
 
 KERNEL_ARCH = 's390'
 CLANG_TARGET = 's390x-linux-gnu'
@@ -30,9 +30,9 @@ class S390LKTRunner(lkt.runner.LKTRunner):
         for variable in ['LD', 'OBJCOPY', 'OBJDUMP']:
             self.make_vars[variable] = f"{CROSS_COMPILE}{variable.lower()}"
 
-        self._binutils_version = lkt.utils.create_binutils_version(f"{CROSS_COMPILE}as")
+        self._binutils_version = lkt.version.BinutilsVersion(binary=f"{CROSS_COMPILE}as")
         self._clang_target = CLANG_TARGET
-        self._qemu_version = lkt.utils.create_qemu_version(f"qemu-system-{QEMU_ARCH}")
+        self._qemu_version = lkt.version.QemuVersion(arch=QEMU_ARCH)
 
     def _add_defconfig_runners(self):
         runner = S390LLVMKernelRunner()
@@ -88,36 +88,21 @@ class S390LKTRunner(lkt.runner.LKTRunner):
             return self._skip(
                 'linker error with CONFIG_RELOCATABLE=n (https://github.com/ClangBuiltLinux/linux/issues/1747)',
                 print_text)
-        version_checks = [
-            # While the change that raised the minimum version of LLVM for s390
-            # did not land in Linux until 5.14, backports to earlier versions
-            # may use the assembly constructs that caused the minimum version
-            # to be bumped in the first place.
-            {
-                'linux': (5, 6, 0),
-                'llvm': (13, 0, 0),
-                'sha': 'e2bc3e91d91ede6710801fa0737e4e4ed729b19e',
-            },
-            {
-                'linux': (5, 19, 0),
-                'llvm': (14, 0, 0),
-                'sha': '8218827b73c6e41029438a2d3cc573286beee914',
-            },
-            {
-                'linux': (6, 1, 0),
-                'llvm': (15, 0, 0),
-                'sha': '30d17fac6aaedb40d111bb159f4b35525637ea78',
-            },
-        ]
-        for item in version_checks:
-            if self.lsm.version >= item['linux'] and self._llvm_version < item['llvm']:
-                linux_ver = '.'.join(str(item) for item in item['linux'])
-                llvm_ver = '.'.join(str(item) for item in item['llvm'])
-                print_text = (
-                    f"s390 kernels cannot build with LLVM versions prior to {llvm_ver} on {linux_ver}+\n"
-                    f"        https://git.kernel.org/linus/{item['sha']}")
-                return self._skip(f"LLVM < {llvm_ver} and Linux {linux_ver}+ ({item['sha'][0:13]})",
-                                  print_text)
+
+        # While the change that raised the minimum version of LLVM for s390 did
+        # not land in Linux until 5.14, backports to earlier versions may use
+        # the assembly constructs that caused the minimum version to be bumped
+        # in the first place
+        hard_min_llvm_ver = lkt.version.Version(13, 0, 0)
+        if (min_llvm_ver := self.lsm.get_min_llvm_ver(KERNEL_ARCH)) < hard_min_llvm_ver:
+            min_llvm_ver = hard_min_llvm_ver
+            reason = 'to avoid build failures from backports of commits that came after minimum version change in 5.14'
+        else:
+            reason = 'because of scripts/min-tool-version.sh for supplied tree'
+
+        if self._llvm_version < min_llvm_ver:
+            return self._skip(f"LLVM < {min_llvm_ver}",
+                              f"s390 requires LLVM {min_llvm_ver} or newer {reason}")
 
         if self.lsm.version >= (5, 19, 0):
             self.make_vars['LLVM_IAS'] = 1
@@ -133,12 +118,11 @@ class S390LKTRunner(lkt.runner.LKTRunner):
             if 'distro' in self.targets:
                 self._add_distroconfig_runners()
 
-        if self._qemu_version < (6, 0, 0):
-            found_ver = '.'.join(str(val) for val in self._qemu_version)
+        if self._qemu_version < (min_qemu_ver := lkt.version.Version(6, 0, 0)):
             for runner in self._runners:
                 if runner.bootable:
                     runner.bootable = False
                     runner.result[
-                        'boot'] = f"skipped due to qemu older than 6.0.0 (found {found_ver})"
+                        'boot'] = f"skipped due to qemu older than {min_qemu_ver} (found {self._qemu_version})"
 
         return super().run()
