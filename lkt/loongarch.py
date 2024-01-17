@@ -47,30 +47,27 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
         self._runners.append(runner)
 
     def _add_otherconfig_runners(self):
-        base_cfg = 'allyesconfig' if 'CONFIG_MODULES' in self._broken_configs else 'allmodconfig'
-        runner = LoongArchLLVMKernelRunner()
-        # Eventually, allmodconfig instead
-        runner.configs = [base_cfg, *self._broken_configs]
+        base_all_cfgs = [
+            'allyesconfig' if 'CONFIG_MODULES' in self._broken_configs else 'allmodconfig',
+            *self._broken_configs,
+        ]
         # https://github.com/ClangBuiltLinux/linux/issues/1895
-        if '2363088eba2ec' in self.lsm.commits:
-            runner.configs.append('CONFIG_KCOV=n')
+        if '2363088eba2ec' in self.lsm.commits and base_all_cfgs[0] == 'allyesconfig':
+            base_all_cfgs.append('CONFIG_KCOV=n')
         if 'CONFIG_WERROR' in self.lsm.configs:
-            runner.configs.append('CONFIG_WERROR=n')
+            base_all_cfgs.append('CONFIG_WERROR=n')
+
+        runner = LoongArchLLVMKernelRunner()
+        runner.configs = base_all_cfgs.copy()
         self._runners.append(runner)
 
         runner = LoongArchLLVMKernelRunner()
         runner.configs = [
-            base_cfg,
-            *self._broken_configs,
+            *base_all_cfgs,
             'CONFIG_FTRACE=n',
             'CONFIG_GCOV_KERNEL=n',
             'CONFIG_LTO_CLANG_THIN=y',
         ]
-        # https://github.com/ClangBuiltLinux/linux/issues/1895
-        if '2363088eba2ec' in self.lsm.commits:
-            runner.configs.append('CONFIG_KCOV=n')
-        if 'CONFIG_WERROR' in self.lsm.configs:
-            runner.configs.append('CONFIG_WERROR=n')
         self._runners.append(runner)
 
     def run(self):
