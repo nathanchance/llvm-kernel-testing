@@ -78,7 +78,11 @@ class I386LKTRunner(lkt.runner.LKTRunner):
         if fortify_broken:
             # https://github.com/ClangBuiltLinux/linux/issues/1932
             if 'CONFIG_BCACHEFS_FS' in self.lsm.configs:
-                broken_configs.append('CONFIG_BCACHEFS_FS=n')
+                replicas_text = Path(self.folders.source,
+                                     'fs/bcachefs/replicas.c').read_text(encoding='utf-8')
+                # https://git.kernel.org/next/linux-next/c/00593c344bf3eda115c3bdbc712ba2038747c8cf
+                if 'bch2_memcmp' not in replicas_text:
+                    broken_configs.append('CONFIG_BCACHEFS_FS=n')
 
             # https://github.com/ClangBuiltLinux/linux/issues/1442
             if self._llvm_version < (15, 0, 0):
