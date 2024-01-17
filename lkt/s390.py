@@ -10,6 +10,16 @@ CLANG_TARGET = 's390x-linux-gnu'
 CROSS_COMPILE = f"{CLANG_TARGET}-"
 QEMU_ARCH = 's390x'
 
+# While the change that raised the minimum version of LLVM for s390 did
+# not land in Linux until 5.14, backports to earlier versions may use
+# the assembly constructs that caused the minimum version to be bumped
+# in the first place
+HARD_MIN_LLVM_VER = lkt.version.ClangVersion(13, 0, 0)
+
+# QEMU needs to contain at least https://gitlab.com/qemu-project/qemu/-/commit/c23908305b3ce7a547b0981eae549f36f756b950
+# which comes from this series: https://lore.kernel.org/all/20210108132049.8501-1-david@redhat.com/
+MIN_QEMU_VER = lkt.version.QemuVersion(6, 0, 0)
+
 
 class S390LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 
@@ -89,13 +99,8 @@ class S390LKTRunner(lkt.runner.LKTRunner):
                 'linker error with CONFIG_RELOCATABLE=n (https://github.com/ClangBuiltLinux/linux/issues/1747)',
                 print_text)
 
-        # While the change that raised the minimum version of LLVM for s390 did
-        # not land in Linux until 5.14, backports to earlier versions may use
-        # the assembly constructs that caused the minimum version to be bumped
-        # in the first place
-        hard_min_llvm_ver = lkt.version.Version(13, 0, 0)
-        if (min_llvm_ver := self.lsm.get_min_llvm_ver(KERNEL_ARCH)) < hard_min_llvm_ver:
-            min_llvm_ver = hard_min_llvm_ver
+        if (min_llvm_ver := self.lsm.get_min_llvm_ver(KERNEL_ARCH)) < HARD_MIN_LLVM_VER:
+            min_llvm_ver = HARD_MIN_LLVM_VER
             reason = 'to avoid build failures from backports of commits that came after minimum version change in 5.14'
         else:
             reason = 'because of scripts/min-tool-version.sh for supplied tree'
@@ -118,11 +123,11 @@ class S390LKTRunner(lkt.runner.LKTRunner):
             if 'distro' in self.targets:
                 self._add_distroconfig_runners()
 
-        if self._qemu_version < (min_qemu_ver := lkt.version.Version(6, 0, 0)):
+        if self._qemu_version < MIN_QEMU_VER:
             for runner in self._runners:
                 if runner.bootable:
                     runner.bootable = False
                     runner.result[
-                        'boot'] = f"skipped due to qemu older than {min_qemu_ver} (found {self._qemu_version})"
+                        'boot'] = f"skipped due to qemu older than {MIN_QEMU_VER} (found {self._qemu_version})"
 
         return super().run()
