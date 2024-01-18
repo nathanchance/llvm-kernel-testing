@@ -97,6 +97,14 @@ class LinuxSourceManager:
         self._add_commit('0b5e06e9cb156', 'CONFIG_SERIAL_PMACZILOG_CONSOLE=y',
                          'arch/powerpc/configs/pmac32_defconfig')
 
+        # Introduced by: arm64: Restrict CPU_BIG_ENDIAN to GNU as or LLVM IAS 15.x or newer
+        # Link: https://git.kernel.org/linus/146a15b873353f8ac28dc281c139ff611a3c4848
+        # First appeared: v6.7-rc1~144^2~4^5
+        self._add_commit(
+            '146a15b873353',
+            'https://github.com/llvm/llvm-project/commit/1379b150991f70a5782e9a143c2ba5308da1161c',
+            'arch/arm64/Kconfig')
+
         # Introduced by: powerpc/64: Make VDSO32 track COMPAT on 64-bit
         # Link: https://git.kernel.org/linus/231b232df8f67e7d37af01259c21f2a131c3911e
         # First appeared: v5.10-rc1~105^2~141

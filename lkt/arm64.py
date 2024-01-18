@@ -42,7 +42,9 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
         runner.configs = ['defconfig']
         runners.append(runner)
 
-        if self._llvm_version >= (13, 0, 0):
+        # LLVM 15: https://git.kernel.org/linus/146a15b873353f8ac28dc281c139ff611a3c4848
+        # LLVM 13: https://git.kernel.org/linus/e9c6deee00e9197e75cd6aa0d265d3d45bd7cc28
+        if self._llvm_version >= (15 if '146a15b873353' in self.lsm.commits else 13, 0, 0):
             runner = Arm64LLVMKernelRunner()
             runner.boot_arch = 'arm64be'
             runner.configs = ['defconfig', 'CONFIG_CPU_BIG_ENDIAN=y']
