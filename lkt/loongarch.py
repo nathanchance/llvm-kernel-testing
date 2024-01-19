@@ -56,7 +56,7 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
 
     def _add_otherconfig_runners(self):
         base_all_cfgs = [
-            'allyesconfig' if 'CONFIG_MODULES' in self._broken_configs else 'allmodconfig',
+            'allyesconfig' if 'CONFIG_MODULES=n' in self._broken_configs else 'allmodconfig',
             *self._broken_configs,
         ]
         # https://github.com/ClangBuiltLinux/linux/issues/1895
