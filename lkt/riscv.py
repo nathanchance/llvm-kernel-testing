@@ -3,11 +3,17 @@
 from pathlib import Path
 
 import lkt.runner
+import lkt.version
 
 KERNEL_ARCH = 'riscv'
 CLANG_TARGET = 'riscv64-linux-gnu'
 CROSS_COMPILE = f"{CLANG_TARGET}-"
 QEMU_ARCH = 'riscv64'
+
+# https://git.kernel.org/linus/7f7d3ea6eb000bd329a6f2fe3f1c7596c4e783e1
+MIN_LLVM_VER_CFI = lkt.version.ClangVersion(17, 0, 0)
+# https://git.kernel.org/riscv/c/021d23428bdbae032294e8f4a29cb53cb50ae71c
+MIN_LLVM_VER_LTO = lkt.version.ClangVersion(14, 0, 0)
 
 
 class RISCVLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
@@ -29,23 +35,77 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
 
         self._clang_target = CLANG_TARGET
 
+        self._has_cfi = False
+        self._has_lto = False
+
     def _add_defconfig_runners(self):
+        runners = []
+
         runner = RISCVLLVMKernelRunner()
-        runner.bootable = True
         runner.configs = ['defconfig']
         if self._llvm_version < (13, 0, 0):
             text = Path(self.folders.source, 'arch/riscv/Kconfig').read_text(encoding='utf-8')
             if 'config EFI' in text:
                 runner.configs.append('CONFIG_EFI=n')
-        runner.only_test_boot = self.only_test_boot
-        self._runners.append(runner)
+        runners.append(runner)
+
+        if self._has_lto:
+            runner = RISCVLLVMKernelRunner()
+            runner.configs = ['defconfig', 'CONFIG_LTO_CLANG_THIN=y']
+            runners.append(runner)
+        else:
+            self._results.append({
+                'name':
+                'riscv LTO configs',
+                'build':
+                'skipped',
+                'reason':
+                f"either LLVM < {MIN_LLVM_VER_LTO} ('{self._llvm_version}') or lack of support in Linux",
+            })
+
+        if self._has_cfi:
+            base_cfgs = ['defconfig', 'CONFIG_CFI_CLANG=y']
+
+            runner = RISCVLLVMKernelRunner()
+            runner.configs = base_cfgs.copy()
+            runners.append(runner)
+
+            if self._has_lto:
+                runner = RISCVLLVMKernelRunner()
+                runner.configs = [*base_cfgs, 'CONFIG_LTO_CLANG_THIN=y']
+                runners.append(runner)
+        else:
+            self._results.append({
+                'name':
+                f"{KERNEL_ARCH} CFI configs",
+                'build':
+                'skipped',
+                'reason':
+                f"either LLVM < {MIN_LLVM_VER_CFI} ('{self._llvm_version}') or lack of support in Linux",
+            })
+
+        for runner in runners:
+            runner.bootable = True
+            runner.only_test_boot = self.only_test_boot
+        self._runners += runners
 
     def _add_otherconfig_runners(self):
-        runner = RISCVLLVMKernelRunner()
-        runner.configs = ['allmodconfig']
+        runners = []
+
+        base_all_cfgs = ['allmodconfig']
         if 'CONFIG_WERROR' in self.lsm.configs:
-            runner.configs.append('CONFIG_WERROR=n')
-        self._runners.append(runner)
+            base_all_cfgs.append('CONFIG_WERROR=n')
+
+        runner = RISCVLLVMKernelRunner()
+        runner.configs = base_all_cfgs.copy()
+        runners.append(runner)
+
+        if self._has_lto:
+            runner = RISCVLLVMKernelRunner()
+            runner.configs = [*base_all_cfgs, 'CONFIG_GCOV_KERNEL=n', 'CONFIG_LTO_CLANG_THIN=y']
+            runners.append(runner)
+
+        self._runners += runners
 
     def _add_distroconfig_runners(self):
         configs = [
@@ -83,6 +143,11 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
         if (self._llvm_version < (13, 0, 0) or 'ec3a5cb61146c' not in self.lsm.commits
                 or self.lsm.version <= (5, 10, 999)):
             self.make_vars['LD'] = f"{CROSS_COMPILE}ld"
+
+        riscv_kconfig_txt = Path(self.folders.source,
+                                 'arch/riscv/Kconfig').read_text(encoding='utf-8')
+        self._has_cfi = self._llvm_version >= MIN_LLVM_VER_CFI and 'ARCH_SUPPORTS_CFI_CLANG' in riscv_kconfig_txt
+        self._has_lto = self._llvm_version >= MIN_LLVM_VER_LTO and 'ARCH_SUPPORTS_LTO_CLANG' in riscv_kconfig_txt
 
         if 'def' in self.targets:
             self._add_defconfig_runners()
