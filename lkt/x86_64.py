@@ -5,11 +5,15 @@ import platform
 
 import lkt.runner
 import lkt.utils
+import lkt.version
 
 KERNEL_ARCH = 'x86_64'
 CLANG_TARGET = 'x86_64-linux-gnu'
 CROSS_COMPILE = f"{CLANG_TARGET}-"
 QEMU_ARCH = 'x86_64'
+
+# https://github.com/llvm/llvm-project/commit/cff5bef948c91e4919de8a5fb9765e0edc13f3de
+MIN_LLVM_VER_CFI = lkt.version.ClangVersion(16, 0, 0)
 
 
 class X8664LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
@@ -43,7 +47,7 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
             runner.configs = ['defconfig', 'CONFIG_LTO_CLANG_THIN=y']
             runners.append(runner)
 
-        if '89245600941e4' in self.lsm.commits:
+        if self._llvm_version >= MIN_LLVM_VER_CFI and '89245600941e4' in self.lsm.commits:
             runner = X8664LLVMKernelRunner()
             runner.configs = ['defconfig', 'CONFIG_CFI_CLANG=y']
             runners.append(runner)
@@ -51,6 +55,15 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
             runner = X8664LLVMKernelRunner()
             runner.configs = ['defconfig', 'CONFIG_CFI_CLANG=y', 'CONFIG_LTO_CLANG_THIN=y']
             runners.append(runner)
+        else:
+            self._results.append({
+                'name':
+                f"{KERNEL_ARCH} CFI configs",
+                'build':
+                'skipped',
+                'reason':
+                f"either LLVM < {MIN_LLVM_VER_CFI} ('{self._llvm_version}') or lack of support in Linux",
+            })
 
         for runner in runners:
             runner.bootable = True
