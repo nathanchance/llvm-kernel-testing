@@ -41,13 +41,13 @@ for distro in $distros
                 amd64 \
                 arm64 \
                 armmp \
-                # no 6.6.8 for i386 right now?
+                i386 \
                 powerpc64le \
                 s390x
 
             for arch in $deb_arches
-                set package_version_signed 6.6.9
-                set kernel_version_signed 6.6.9-1
+                set package_version_signed 6.7
+                set kernel_version_signed 6.7.1-1~exp1
                 set package_version_unsigned $package_version_signed
                 set kernel_version_unsigned $kernel_version_signed
 
@@ -56,18 +56,15 @@ for distro in $distros
                 set work_dir $tmp_dir/$arch
 
                 switch $arch
-                    case amd64 arm64 i386
-                        switch $arch
-                            case i386
-                                set deb_arch_config 686
-                        end
-
+                    case amd64 arm64
                         set url_suffix linux-signed-$arch/linux-image-"$package_version_signed"-"$deb_arch_config"_"$kernel_version_signed"_"$deb_arch_final".deb
 
-                    case armmp powerpc64le s390x
+                    case armmp i386 powerpc64le s390x
                         switch $arch
                             case armmp
                                 set deb_arch_final armhf
+                            case i386
+                                set deb_arch_config 686
                             case powerpc64le
                                 set deb_arch_final ppc64el
                         end
