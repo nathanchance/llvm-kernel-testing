@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
+import subprocess
+import shutil
 
 import lkt.runner
 from lkt.version import BinutilsVersion, ClangVersion, QemuVersion
@@ -37,7 +39,16 @@ class S390LKTRunner(lkt.runner.LKTRunner):
         super().__init__()
 
         self.make_vars['ARCH'] = KERNEL_ARCH
-        for variable in ['LD', 'OBJCOPY', 'OBJDUMP']:
+
+        gnu_vars = ['OBJCOPY', 'OBJDUMP']
+        # https://github.com/llvm/llvm-project/pull/75643
+        lld_res = subprocess.run([shutil.which('ld.lld'), '-m', 'elf64_s390'],
+                                 capture_output=True,
+                                 check=False,
+                                 text=True)
+        if 'error: unknown emulation:' in lld_res.stdout:
+            gnu_vars.append('LD')
+        for variable in gnu_vars:
             self.make_vars[variable] = f"{CROSS_COMPILE}{variable.lower()}"
 
         self._binutils_version = BinutilsVersion(binary=f"{CROSS_COMPILE}as")
