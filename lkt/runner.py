@@ -11,7 +11,7 @@ import tempfile
 import time
 
 import lkt.utils
-import lkt.version
+from lkt.version import ClangVersion
 
 HAVE_DEV_KVM_ACCESS = os.access('/dev/kvm', os.R_OK | os.W_OK)
 
@@ -466,7 +466,7 @@ class LKTRunner:
         self.targets = []
         self.save_objects = False
 
-        self._llvm_version = lkt.version.ClangVersion()
+        self._llvm_version = ClangVersion()
 
         self._clang_target = ''
         self._results = []

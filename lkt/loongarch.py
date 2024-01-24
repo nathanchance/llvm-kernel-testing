@@ -4,7 +4,7 @@ from pathlib import Path
 import subprocess
 
 import lkt.runner
-import lkt.version
+from lkt.version import ClangVersion, QemuVersion
 
 KERNEL_ARCH = 'loongarch'
 CLANG_TARGET = 'loongarch64-linux-gnusf'
@@ -12,11 +12,11 @@ QEMU_ARCH = 'loongarch64'
 
 # Building the kernel for LoongArch was not very well supported prior to LLVM
 # 17.x
-HARD_MIN_LLVM_VER = lkt.version.ClangVersion(17, 0, 0)
+HARD_MIN_LLVM_VER = ClangVersion(17, 0, 0)
 
 # QEMU older than 8.0.0 hits an assert in Loongson's EDK2 firmware:
 # ASSERT [VirtNorFlashDxe] .../Platform/Loongson/LoongArchQemuPkg/Library/NorFlashQemuLib/NorFlashQemuLib.c(56): !(((INTN)(RETURN_STATUS)(FindNodeStatus)) < 0)
-MIN_QEMU_VER = lkt.version.QemuVersion(8, 0, 0)
+MIN_QEMU_VER = QemuVersion(8, 0, 0)
 
 
 class LoongArchLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
@@ -39,7 +39,7 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
 
         self._broken_configs = []
         self._clang_target = CLANG_TARGET
-        self._qemu_version = lkt.version.QemuVersion(arch=QEMU_ARCH)
+        self._qemu_version = QemuVersion(arch=QEMU_ARCH)
 
     def _add_defconfig_runners(self):
         runner = LoongArchLLVMKernelRunner()

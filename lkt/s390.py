@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import lkt.runner
-import lkt.version
+from lkt.version import BinutilsVersion, ClangVersion, QemuVersion
 
 KERNEL_ARCH = 's390'
 CLANG_TARGET = 's390x-linux-gnu'
@@ -14,11 +14,11 @@ QEMU_ARCH = 's390x'
 # not land in Linux until 5.14, backports to earlier versions may use
 # the assembly constructs that caused the minimum version to be bumped
 # in the first place
-HARD_MIN_LLVM_VER = lkt.version.ClangVersion(13, 0, 0)
+HARD_MIN_LLVM_VER = ClangVersion(13, 0, 0)
 
 # QEMU needs to contain at least https://gitlab.com/qemu-project/qemu/-/commit/c23908305b3ce7a547b0981eae549f36f756b950
 # which comes from this series: https://lore.kernel.org/all/20210108132049.8501-1-david@redhat.com/
-MIN_QEMU_VER = lkt.version.QemuVersion(6, 0, 0)
+MIN_QEMU_VER = QemuVersion(6, 0, 0)
 
 
 class S390LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
@@ -40,9 +40,9 @@ class S390LKTRunner(lkt.runner.LKTRunner):
         for variable in ['LD', 'OBJCOPY', 'OBJDUMP']:
             self.make_vars[variable] = f"{CROSS_COMPILE}{variable.lower()}"
 
-        self._binutils_version = lkt.version.BinutilsVersion(binary=f"{CROSS_COMPILE}as")
+        self._binutils_version = BinutilsVersion(binary=f"{CROSS_COMPILE}as")
         self._clang_target = CLANG_TARGET
-        self._qemu_version = lkt.version.QemuVersion(arch=QEMU_ARCH)
+        self._qemu_version = QemuVersion(arch=QEMU_ARCH)
 
     def _add_defconfig_runners(self):
         runner = S390LLVMKernelRunner()

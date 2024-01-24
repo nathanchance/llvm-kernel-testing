@@ -12,7 +12,7 @@ import sys
 import lkt.report
 import lkt.source
 import lkt.utils
-import lkt.version
+from lkt.version import ClangVersion
 
 import lkt.arm
 import lkt.arm64
@@ -193,9 +193,7 @@ if __name__ == '__main__':
 
     results = []
 
-    min_llvm_ver = lsm.get_min_llvm_ver()
-    llvm_ver = lkt.version.ClangVersion()
-    if llvm_ver < min_llvm_ver:
+    if (llvm_ver := ClangVersion()) < (min_llvm_ver := lsm.get_min_llvm_ver()):
         result = {
             'name': 'build matrix',
             'build': 'skipped',

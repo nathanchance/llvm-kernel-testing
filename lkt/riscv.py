@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import lkt.runner
-import lkt.version
+from lkt.version import ClangVersion
 
 KERNEL_ARCH = 'riscv'
 CLANG_TARGET = 'riscv64-linux-gnu'
@@ -11,9 +11,9 @@ CROSS_COMPILE = f"{CLANG_TARGET}-"
 QEMU_ARCH = 'riscv64'
 
 # https://git.kernel.org/linus/7f7d3ea6eb000bd329a6f2fe3f1c7596c4e783e1
-MIN_LLVM_VER_CFI = lkt.version.ClangVersion(17, 0, 0)
+MIN_LLVM_VER_CFI = ClangVersion(17, 0, 0)
 # https://git.kernel.org/riscv/c/021d23428bdbae032294e8f4a29cb53cb50ae71c
-MIN_LLVM_VER_LTO = lkt.version.ClangVersion(14, 0, 0)
+MIN_LLVM_VER_LTO = ClangVersion(14, 0, 0)
 
 
 class RISCVLLVMKernelRunner(lkt.runner.LLVMKernelRunner):

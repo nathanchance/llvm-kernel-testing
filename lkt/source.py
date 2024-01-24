@@ -3,7 +3,7 @@
 from pathlib import Path
 import re
 
-import lkt.version
+from lkt.version import LinuxVersion, MinToolVersion
 
 
 class LinuxSourceManager:
@@ -19,7 +19,7 @@ class LinuxSourceManager:
         self.configs = []
         self.folder = linux_source
 
-        self.version = lkt.version.LinuxVersion(folder=linux_source)
+        self.version = LinuxVersion(folder=linux_source)
 
         # Introduced by: bcachefs: Initial commit
         # Link: https://git.kernel.org/linus/1c6fdbd8f2465ddfb73a01ec620cbf3d14044e1a
@@ -287,4 +287,4 @@ class LinuxSourceManager:
             self.configs.append(config)
 
     def get_min_llvm_ver(self, arch=None):
-        return lkt.version.MinToolVersion(folder=self.folder, arch=arch, tool='llvm')
+        return MinToolVersion(folder=self.folder, arch=arch, tool='llvm')

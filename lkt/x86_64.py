@@ -5,7 +5,7 @@ import platform
 
 import lkt.runner
 import lkt.utils
-import lkt.version
+from lkt.version import ClangVersion
 
 KERNEL_ARCH = 'x86_64'
 CLANG_TARGET = 'x86_64-linux-gnu'
@@ -13,7 +13,7 @@ CROSS_COMPILE = f"{CLANG_TARGET}-"
 QEMU_ARCH = 'x86_64'
 
 # https://github.com/llvm/llvm-project/commit/cff5bef948c91e4919de8a5fb9765e0edc13f3de
-MIN_LLVM_VER_CFI = lkt.version.ClangVersion(16, 0, 0)
+MIN_LLVM_VER_CFI = ClangVersion(16, 0, 0)
 
 
 class X8664LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
