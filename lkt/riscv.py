@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import lkt.runner
-from lkt.version import ClangVersion
+from lkt.version import ClangVersion, LinuxVersion
 
 KERNEL_ARCH = 'riscv'
 CLANG_TARGET = 'riscv64-linux-gnu'
@@ -54,14 +54,10 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
             runner.configs = ['defconfig', 'CONFIG_LTO_CLANG_THIN=y']
             runners.append(runner)
         else:
-            self._results.append({
-                'name':
-                'riscv LTO configs',
-                'build':
-                'skipped',
-                'reason':
+            self._skip_one(
+                f"{KERNEL_ARCH} LTO configs",
                 f"either LLVM < {MIN_LLVM_VER_LTO} ('{self._llvm_version}') or lack of support in Linux",
-            })
+            )
 
         if self._has_cfi:
             base_cfgs = ['defconfig', 'CONFIG_CFI_CLANG=y']
@@ -75,14 +71,10 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
                 runner.configs = [*base_cfgs, 'CONFIG_LTO_CLANG_THIN=y']
                 runners.append(runner)
         else:
-            self._results.append({
-                'name':
+            self._skip_one(
                 f"{KERNEL_ARCH} CFI configs",
-                'build':
-                'skipped',
-                'reason':
                 f"either LLVM < {MIN_LLVM_VER_CFI} ('{self._llvm_version}') or lack of support in Linux",
-            })
+            )
 
         for runner in runners:
             runner.bootable = True
@@ -153,11 +145,17 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
         if 'def' in self.targets:
             self._add_defconfig_runners()
 
-        if (not self.only_test_boot and self.lsm.version > (5, 8, 0)
-                and 'ec3a5cb61146c' in self.lsm.commits):
-            if 'other' in self.targets:
-                self._add_otherconfig_runners()
-            if 'distro' in self.targets:
-                self._add_distroconfig_runners()
+        if not self.only_test_boot:
+            min_other_distro_lnx_ver = LinuxVersion(5, 8, 0)
+            if self.lsm.version > min_other_distro_lnx_ver and 'ec3a5cb61146c' in self.lsm.commits:
+                if 'other' in self.targets:
+                    self._add_otherconfig_runners()
+                if 'distro' in self.targets:
+                    self._add_distroconfig_runners()
+            else:
+                self._skip_one(
+                    f"{KERNEL_ARCH} other and distro configs",
+                    f"Linux < {min_other_distro_lnx_ver} ('{self.lsm.version}') or missing ec3a5cb61146c",
+                )
 
         return super().run()

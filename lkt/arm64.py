@@ -4,6 +4,7 @@ from pathlib import Path
 import platform
 
 import lkt.runner
+from lkt.version import ClangVersion
 
 KERNEL_ARCH = 'arm64'
 CLANG_TARGET = 'aarch64-linux-gnu'
@@ -44,16 +45,27 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
 
         # LLVM 15: https://git.kernel.org/linus/146a15b873353f8ac28dc281c139ff611a3c4848
         # LLVM 13: https://git.kernel.org/linus/e9c6deee00e9197e75cd6aa0d265d3d45bd7cc28
-        if self._llvm_version >= (15 if '146a15b873353' in self.lsm.commits else 13, 0, 0):
+        min_be_llvm_ver = ClangVersion(15 if '146a15b873353' in self.lsm.commits else 13, 0, 0)
+        if self._llvm_version >= min_be_llvm_ver:
             runner = Arm64LLVMKernelRunner()
             runner.boot_arch = 'arm64be'
             runner.configs = ['defconfig', 'CONFIG_CPU_BIG_ENDIAN=y']
             runners.append(runner)
+        else:
+            self._skip_one(
+                f"{KERNEL_ARCH} big endian defconfig",
+                f"LLVM < {min_be_llvm_ver} ('{self._llvm_version}')",
+            )
 
         if 'CONFIG_LTO_CLANG_THIN' in self.lsm.configs:
             runner = Arm64LLVMKernelRunner()
             runner.configs = ['defconfig', 'CONFIG_LTO_CLANG_THIN=y']
             runners.append(runner)
+        else:
+            self._skip_one(
+                f"{KERNEL_ARCH} LTO builds",
+                'lack of Linux support',
+            )
 
         if 'CONFIG_CFI_CLANG' in self.lsm.configs:
             if '89245600941e4' in self.lsm.commits:
@@ -77,6 +89,11 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
             runner = Arm64LLVMKernelRunner()
             runner.configs = ['defconfig', 'CONFIG_SHADOW_CALL_STACK=y']
             runners.append(runner)
+        else:
+            self._skip_one(
+                f"{KERNEL_ARCH} CFI/SCS builds",
+                'lack of Linux support',
+            )
 
         for runner in runners:
             runner.bootable = True

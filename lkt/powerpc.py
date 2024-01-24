@@ -4,6 +4,8 @@ from pathlib import Path
 import shutil
 
 import lkt.runner
+import lkt.utils
+from lkt.version import ClangVersion
 
 KERNEL_ARCH = 'powerpc'
 CLANG_TARGET = 'powerpc-linux-gnu'
@@ -66,17 +68,13 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         has_44x_hack = '"440 (44x family)"\n\tdepends on 44x\n\tdepends on !CC_IS_CLANG' in kconfig_text
 
         cbl_1814 = '2255411d1d0f0' in self.lsm.commits and not has_44x_hack
-        cbl_1679 = self._llvm_version < (16, 0, 0) and cbl_1814
+        cbl_1679 = self._llvm_version < (cbl_1679_fixed_ver := ClangVersion(16, 0, 0)) and cbl_1814
 
         if cbl_1679:
-            self._results.append({
-                'name':
-                'powerpc ppc44x_defconfig',
-                'build':
-                'skipped',
-                'reason':
-                'LLVM < 16.x and 2255411d1d0f0 (https://github.com/ClangBuiltLinux/linux/issues/1679)',
-            })
+            self._skip_one(
+                f"{KERNEL_ARCH} ppc44x_defconfig",
+                f"LLVM < {cbl_1679_fixed_ver} ('{self._llvm_version}') with 2255411d1d0f0 present (https://github.com/ClangBuiltLinux/linux/issues/1679)",
+            )
         else:
             runner = PowerPCLLVMKernelRunner()
             runner.boot_arch = 'ppc32'
@@ -106,9 +104,11 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         if '297565aa22cfa' in self.lsm.commits:
             runner = PowerPCLLVMKernelRunner()
             runner.boot_arch = 'ppc32_mac'
-            runner.bootable = self._llvm_version >= (14, 0, 0)
+            runner.bootable = self._llvm_version >= (pmac_min_llvm_ver_for_boot :=
+                                                     ClangVersion(14, 0, 0))
             if not runner.bootable:
-                runner.result['boot'] = 'skipped due to LLVM < 14.0.0 (lack of 1e3c6fc7cb9d2)'
+                runner.result[
+                    'boot'] = f"skipped due to LLVM < {pmac_min_llvm_ver_for_boot} (lack of 1e3c6fc7cb9d2)"
             runner.configs = ['pmac32_defconfig']
             if '0b5e06e9cb156' not in self.lsm.commits:
                 runner.configs += [
@@ -120,14 +120,10 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
             runner.qemu_arch = 'ppc'
             self._runners.append(runner)
         else:
-            self._results.append({
-                'name':
-                'powerpc pmac32_defconfig',
-                'build':
-                'skipped',
-                'reason':
+            self._skip_one(
+                f"{KERNEL_ARCH} pmac32_defconfig",
                 'missing 297565aa22cfa (https://github.com/ClangBuiltLinux/linux/issues/563)',
-            })
+            )
 
         #####################
         # 64-bit big endian #
@@ -218,7 +214,8 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         self._runners.append(runner)
 
     def _add_otherconfig_runners(self):
-        can_select_elfv2 = 'a11334d8327b' in self.lsm.commits and self._llvm_version >= (15, 0, 0)
+        min_llvm_ver_for_elfv2_select = ClangVersion(15, 0, 0)
+        can_select_elfv2 = 'a11334d8327b' in self.lsm.commits and self._llvm_version >= min_llvm_ver_for_elfv2_select
         elfv2_on_by_default = ppc64_be_defaults_to_elfv2(self.lsm)
         if can_select_elfv2 or elfv2_on_by_default:
             runner = PowerPCLLVMKernelRunner()
@@ -230,6 +227,11 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
                 runner.configs.append('CONFIG_PPC64_BIG_ENDIAN_ELF_ABI_V2=y')
             runner.make_vars.update(self._ppc64_vars)
             self._runners.append(runner)
+        else:
+            self._skip_one(
+                f"{KERNEL_ARCH} allmodconfig",
+                f"lack of a11334d8327b with LLVM < {min_llvm_ver_for_elfv2_select} ('{self._llvm_version}') or lack of 9d90161ca5c7",
+            )
 
         for cfg_target in ['allnoconfig', 'tinyconfig']:
             runner = PowerPCLLVMKernelRunner()
@@ -246,14 +248,10 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
             if (distro == 'opensuse' and '231b232df8f67' in self.lsm.commits
                     and '6fcb574125e67' not in self.lsm.commits
                     and self._llvm_version <= (12, 0, 0)):
-                self._results.append({
-                    'name':
-                    f"{self.make_vars['ARCH']} {distro} config",
-                    'build':
-                    'skipped',
-                    'reason':
+                self._skip_one(
+                    f"{KERNEL_ARCH} {distro} config",
                     'https://github.com/ClangBuiltLinux/linux/issues/1160',
-                })
+                )
                 continue
             runner = PowerPCLLVMKernelRunner()
             runner.configs = [Path(self.folders.configs, distro, f"{config_name}.config")]

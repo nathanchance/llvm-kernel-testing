@@ -485,6 +485,15 @@ class LKTRunner:
 
         return self._results
 
+    def _skip_one(self, name, reason):
+        result = {
+            'name': name,
+            'build': 'skipped',
+            'reason': reason,
+        }
+        self._results.append(result)
+        print(f"Skipping {name} due to {reason}")
+
     def run(self):
         if 'ARCH' not in self.make_vars:
             raise RuntimeError('ARCH not in make variables?')

@@ -4,6 +4,7 @@ from pathlib import Path
 import platform
 
 import lkt.runner
+from lkt.version import ClangVersion, LinuxVersion
 
 KERNEL_ARCH = 'i386'
 CLANG_TARGET = 'i386-linux-gnu'
@@ -42,6 +43,11 @@ class I386LKTRunner(lkt.runner.LKTRunner):
             runner = I386LLVMKernelRunner()
             runner.configs = ['defconfig', 'CONFIG_LTO_CLANG_THIN=y']
             runners.append(runner)
+        else:
+            self._skip_one(
+                f"{KERNEL_ARCH} LTO builds",
+                'lack of Linux support',
+            )
 
         for runner in runners:
             runner.bootable = True
@@ -95,15 +101,16 @@ class I386LKTRunner(lkt.runner.LKTRunner):
         return broken_configs
 
     def run(self):
-        if self.lsm.version < (5, 9, 0):
+        if self.lsm.version < (min_lnx_ver := LinuxVersion(5, 9, 0)):
             return self._skip_all(
                 'missing 158807de5822',
-                'i386 kernels do not build properly prior to Linux 5.9: https://github.com/ClangBuiltLinux/linux/issues/194',
+                f"i386 kernels do not build properly prior to Linux {min_lnx_ver}: https://github.com/ClangBuiltLinux/linux/issues/194",
             )
-        if self._llvm_version >= (12, 0, 0) and 'bb73d07148c40' not in self.lsm.commits:
+        if self._llvm_version >= (min_llvm_ver := ClangVersion(
+                12, 0, 0)) and 'bb73d07148c40' not in self.lsm.commits:
             return self._skip_all(
-                'missing bb73d07148c4 with LLVM > 12.0.0',
-                'x86 kernels do not build properly with LLVM 12.0.0+ without R_386_PLT32 handling: https://github.com/ClangBuiltLinux/linux/issues/1210',
+                f"missing bb73d07148c4 with LLVM > {min_llvm_ver}",
+                f"x86 kernels do not build properly with LLVM {min_llvm_ver}+ without R_386_PLT32 handling: https://github.com/ClangBuiltLinux/linux/issues/1210",
             )
 
         if platform.machine() != 'x86_64':

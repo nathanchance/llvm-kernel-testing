@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import lkt.runner
+from lkt.version import ClangVersion
 
 KERNEL_ARCH = 'hexagon'
 CLANG_TARGET = 'hexagon-linux-musl'
@@ -22,12 +23,19 @@ class HexagonLKTRunner(lkt.runner.LKTRunner):
         self._runners.append(runner)
 
     def _add_otherconfig_runners(self):
-        if 'ffb92ce826fd8' in self.lsm.commits and self._llvm_version >= (13, 0, 0):
+        # https://github.com/ClangBuiltLinux/linux/issues/1407
+        min_llvm_ver_for_allmod = ClangVersion(13, 0, 0)
+        if 'ffb92ce826fd8' in self.lsm.commits and self._llvm_version >= min_llvm_ver_for_allmod:
             runner = lkt.runner.LLVMKernelRunner()
             runner.configs = ['allmodconfig']
             if 'CONFIG_WERROR' in self.lsm.configs:
                 runner.configs.append('CONFIG_WERROR=n')
             self._runners.append(runner)
+        else:
+            self._skip_one(
+                f"{KERNEL_ARCH} allmodconfig",
+                f"either lack of ffb92ce826fd8 or LLVM < {min_llvm_ver_for_allmod} ('{self._llvm_version}')",
+            )
 
     def run(self):
         if self.only_test_boot:

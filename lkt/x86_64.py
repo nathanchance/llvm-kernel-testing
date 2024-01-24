@@ -56,14 +56,10 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
             runner.configs = ['defconfig', 'CONFIG_CFI_CLANG=y', 'CONFIG_LTO_CLANG_THIN=y']
             runners.append(runner)
         else:
-            self._results.append({
-                'name':
+            self._skip_one(
                 f"{KERNEL_ARCH} CFI configs",
-                'build':
-                'skipped',
-                'reason':
                 f"either LLVM < {MIN_LLVM_VER_CFI} ('{self._llvm_version}') or lack of support in Linux",
-            })
+            )
 
         for runner in runners:
             runner.bootable = True

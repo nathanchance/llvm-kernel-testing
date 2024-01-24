@@ -63,6 +63,11 @@ class ArmLKTRunner(lkt.runner.LKTRunner):
             runner = ArmLLVMKernelRunner()
             runner.configs = ['multi_v7_defconfig', 'CONFIG_THUMB2_KERNEL=y']
             runners.append(runner)
+        else:
+            self._skip_one(
+                f"{KERNEL_ARCH} multi_v7_defconfig + Thumb2",
+                'either lack of 9d417cbe36eee or presence of CONFIG_HAVE_FUTEX_CMPXCHG',
+            )
 
         for runner in runners:
             runner.bootable = True
