@@ -96,19 +96,19 @@ class I386LKTRunner(lkt.runner.LKTRunner):
 
     def run(self):
         if self.lsm.version < (5, 9, 0):
-            return self._skip(
+            return self._skip_all(
                 'missing 158807de5822',
                 'i386 kernels do not build properly prior to Linux 5.9: https://github.com/ClangBuiltLinux/linux/issues/194',
             )
         if self._llvm_version >= (12, 0, 0) and 'bb73d07148c40' not in self.lsm.commits:
-            return self._skip(
+            return self._skip_all(
                 'missing bb73d07148c4 with LLVM > 12.0.0',
                 'x86 kernels do not build properly with LLVM 12.0.0+ without R_386_PLT32 handling: https://github.com/ClangBuiltLinux/linux/issues/1210',
             )
 
         if platform.machine() != 'x86_64':
             if 'd5cbd80e302df' not in self.lsm.commits:
-                return self._skip(
+                return self._skip_all(
                     'missing d5cbd80e302d on a non-x86_64 host',
                     'Cannot cross compile without https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f',
                 )

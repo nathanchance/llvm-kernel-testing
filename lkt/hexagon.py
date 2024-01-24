@@ -31,7 +31,7 @@ class HexagonLKTRunner(lkt.runner.LKTRunner):
 
     def run(self):
         if self.only_test_boot:
-            return self._skip('only testing boot', 'Only boot testing was requested')
+            return self._skip_all('only testing boot', 'Only boot testing was requested')
 
         if not ('788dcee0306e1' in self.lsm.commits and 'f1f99adf05f21' in self.lsm.commits):
             print_text = (
@@ -43,7 +43,8 @@ class HexagonLKTRunner(lkt.runner.LKTRunner):
                 '\n'
                 'Provide a kernel tree with Linux 5.13+ or one with these fixes to build Hexagon kernels.'
             )
-            return self._skip('missing 788dcee0306e, 6fff7410f6be, and/or f1f99adf05f2', print_text)
+            return self._skip_all('missing 788dcee0306e, 6fff7410f6be, and/or f1f99adf05f2',
+                                  print_text)
 
         if '6f5b41a2f5a63' not in self.lsm.commits:
             self.make_vars['CROSS_COMPILE'] = CLANG_TARGET

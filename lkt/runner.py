@@ -472,7 +472,7 @@ class LKTRunner:
         self._results = []
         self._runners = []
 
-    def _skip(self, log_reason, print_reason):
+    def _skip_all(self, log_reason, print_reason):
         result = {
             'name': f"{self.make_vars['ARCH']} kernels",
             'build': 'skipped',
@@ -490,13 +490,13 @@ class LKTRunner:
             raise RuntimeError('ARCH not in make variables?')
 
         if not lkt.utils.clang_supports_target(self._clang_target):
-            return self._skip('missing clang target',
-                              f"Missing {self._clang_target} target in clang")
+            return self._skip_all('missing clang target',
+                                  f"Missing {self._clang_target} target in clang")
 
         if 'CROSS_COMPILE' in self.make_vars and \
            'LLVM_IAS' not in self.make_vars and \
             not shutil.which(f"{self.make_vars['CROSS_COMPILE']}as"):
-            return self._skip('missing binutils', 'Cannot find binutils')
+            return self._skip_all('missing binutils', 'Cannot find binutils')
 
         lkt.utils.header(f"Building {self.make_vars['ARCH']} kernels", end='')
 

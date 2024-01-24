@@ -88,14 +88,14 @@ class S390LKTRunner(lkt.runner.LKTRunner):
                 's390 kernels did not build properly until Linux 5.6\n'
                 '        https://lore.kernel.org/lkml/your-ad-here.call-01580230449-ext-6884@work.hours/'
             )
-            return self._skip(
+            return self._skip_all(
                 'missing fixes from 5.6 (https://lore.kernel.org/r/your-ad-here.call-01580230449-ext-6884@work.hours/)',
                 print_text)
         if self._binutils_version >= (2, 39, 50) and '80ddf5ce1c929' not in self.lsm.commits:
             print_text = (
                 's390 kernels may fail to link with binutils 2.40+ and CONFIG_RELOCATABLE=n\n'
                 '        https://github.com/ClangBuiltLinux/linux/issues/1747')
-            return self._skip(
+            return self._skip_all(
                 'linker error with CONFIG_RELOCATABLE=n (https://github.com/ClangBuiltLinux/linux/issues/1747)',
                 print_text)
 
@@ -106,8 +106,8 @@ class S390LKTRunner(lkt.runner.LKTRunner):
             reason = 'because of scripts/min-tool-version.sh for supplied tree'
 
         if self._llvm_version < min_llvm_ver:
-            return self._skip(f"LLVM < {min_llvm_ver}",
-                              f"s390 requires LLVM {min_llvm_ver} or newer {reason}")
+            return self._skip_all(f"LLVM < {min_llvm_ver}",
+                                  f"s390 requires LLVM {min_llvm_ver} or newer {reason}")
 
         if self.lsm.version >= (5, 19, 0):
             self.make_vars['LLVM_IAS'] = 1

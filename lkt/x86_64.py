@@ -122,7 +122,7 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
         cross_compile = None
         if platform.machine() != KERNEL_ARCH:
             if 'd5cbd80e302df' not in self.lsm.commits:
-                return self._skip(
+                return self._skip_all(
                     'missing d5cbd80e302d on a non-x86_64 host',
                     'Cannot cross compile without https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f',
                 )

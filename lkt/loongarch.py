@@ -86,8 +86,8 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
             reason = 'because of scripts/min-tool-version.sh for supplied tree'
 
         if self._llvm_version < min_llvm_ver:
-            return self._skip(f"LLVM < {min_llvm_ver}",
-                              f"LoongArch requires LLVM {min_llvm_ver} or newer {reason}")
+            return self._skip_all(f"LLVM < {min_llvm_ver}",
+                                  f"LoongArch requires LLVM {min_llvm_ver} or newer {reason}")
 
         if '65eea6b44a5dd' not in self.lsm.commits:
             print_text = (
@@ -97,7 +97,7 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
                 '\n'
                 'Provide a kernel tree with Linux 6.5+ or one with this series to build LoongArch kernels.'
             )
-            return self._skip('missing 65eea6b44a5dd', print_text)
+            return self._skip_all('missing 65eea6b44a5dd', print_text)
 
         loongarch_makefile_text = Path(self.lsm.folder,
                                        'arch/loongarch/Makefile').read_text(encoding='utf-8')

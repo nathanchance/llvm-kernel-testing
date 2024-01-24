@@ -131,7 +131,8 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
                 '        * https://git.kernel.org/linus/abc71bf0a70311ab294f97a7f16e8de03718c05a\n'
                 '\n'
                 'Provide a kernel tree with Linux 5.7 or newer to build RISC-V kernels.')
-            return self._skip('missing 52e7c52d2ded, fdff9911f266, and/or abc71bf0a703', print_text)
+            return self._skip_all('missing 52e7c52d2ded, fdff9911f266, and/or abc71bf0a703',
+                                  print_text)
 
         if self._llvm_version >= (13, 0, 0):
             self.make_vars['LLVM_IAS'] = 1
