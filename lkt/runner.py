@@ -4,6 +4,7 @@ import contextlib
 import os
 from pathlib import Path
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -137,7 +138,8 @@ class LLVMKernelRunner:
         # configuration handling #
         ##########################
         base_config = self.configs[0]
-        extra_configs = self.configs[1:]
+        requested_configs = self.configs[1:]
+        extra_configs = requested_configs.copy()
         need_olddefconfig = False
 
         if isinstance(base_config, str):
@@ -209,6 +211,32 @@ class LLVMKernelRunner:
                 sys.stdout.buffer.write(byte)
                 sys.stdout.flush()
                 file.write(byte)
+
+        # Make sure requested configurations are their expected value
+        if need_olddefconfig:
+            missing_configs = []
+
+            config_text = self._config.read_text(encoding='utf-8')
+            for item in requested_configs:
+                cfg_name, cfg_val = item.split('=', 1)
+                # 'CONFIG_FOO=n' does not appear in the final config, it is
+                # '# CONFIG_FOO is not set'
+                search = f"# {cfg_name} is not set" if cfg_val == 'n' else item
+                # If we find a match, move on
+                if re.search(f"^{search}$", config_text, flags=re.M):
+                    continue
+                # If we did not find a match for '# CONFIG_FOO is not set', we
+                # should only add it to the missing configs list if it is
+                # present with some other value because it may not be visible,
+                # which means it is 'n'.
+                if cfg_val != 'n' or re.search(f"^{cfg_name}=", config_text, flags=re.M):
+                    missing_configs.append(item)
+
+            if missing_configs:
+                warning_msg = f"\nWARNING: {type(self).__name__}(): Missing requested configurations after olddefconfig: {', '.join(missing_configs)}"
+                print(warning_msg)
+                with self.result['log'].open('a') as file:
+                    file.write(f"{warning_msg}\n")
 
         self.result['build'] = 'successful' if proc.returncode == 0 else 'failed'
         self.result['duration'] = lkt.utils.get_time_diff(start_time)
