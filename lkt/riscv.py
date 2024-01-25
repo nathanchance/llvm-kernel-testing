@@ -92,7 +92,16 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
         runner.configs = base_all_cfgs.copy()
         runners.append(runner)
 
-        if self._has_lto:
+        # The first version to support linker relaxation
+        broken_lto_start = ClangVersion(15, 0, 0)
+        # https://github.com/llvm/llvm-project/commit/9d37ea95df1b84cca9b5e954d8964c976a5e303e
+        broken_lto_end = ClangVersion(17, 0, 0)
+        if not self._has_lto or broken_lto_start <= self._llvm_version < broken_lto_end:
+            self._skip_one(
+                f"{KERNEL_ARCH} allmodconfig + ThinLTO",
+                f"either LLVM between {broken_lto_start} and {broken_lto_end} ('{self._llvm_version}') or lack of support in Linux",
+            )
+        else:
             runner = RISCVLLVMKernelRunner()
             runner.configs = [*base_all_cfgs, 'CONFIG_GCOV_KERNEL=n', 'CONFIG_LTO_CLANG_THIN=y']
             runners.append(runner)
