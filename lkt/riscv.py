@@ -14,6 +14,13 @@ QEMU_ARCH = 'riscv64'
 MIN_LLVM_VER_CFI = ClangVersion(17, 0, 0)
 # https://git.kernel.org/riscv/c/021d23428bdbae032294e8f4a29cb53cb50ae71c
 MIN_LLVM_VER_LTO = ClangVersion(14, 0, 0)
+# https://github.com/llvm/llvm-project/commit/aa1d2693c25622ea4a8ee2b622ba2a617e18ef88
+MIN_LLVM_VER_SCS = ClangVersion(17, 0, 0)
+
+# https://git.kernel.org/linus/74f8fc31feb4b756814ec0720f48ccdc1175f774
+LNX_VER_CFI = LinuxVersion(6, 6, 0)
+# https://git.kernel.org/riscv/c/021d23428bdbae032294e8f4a29cb53cb50ae71c
+EXPECTED_LNX_VER_LTO = LinuxVersion(6, 9, 0)
 
 
 class RISCVLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
@@ -37,6 +44,7 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
 
         self._has_cfi = False
         self._has_lto = False
+        self._has_scs = False
 
     def _add_defconfig_runners(self):
         runners = []
@@ -56,11 +64,13 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
         else:
             self._skip_one(
                 f"{KERNEL_ARCH} LTO configs",
-                f"either LLVM < {MIN_LLVM_VER_LTO} ('{self._llvm_version}') or Linux < {LinuxVersion(6, 9, 0)} ('{self.lsm.version}')",
+                f"either LLVM < {MIN_LLVM_VER_LTO} ('{self._llvm_version}') or Linux < {EXPECTED_LNX_VER_LTO} ('{self.lsm.version}')",
             )
 
-        if self._has_cfi:
-            base_cfgs = ['defconfig', 'CONFIG_CFI_CLANG=y']
+        if self._has_scs:
+            # SCS implies CFI because it came first and they perform the same
+            # function, so they are worth testing together.
+            base_cfgs = ['defconfig', 'CONFIG_CFI_CLANG=y', 'CONFIG_SHADOW_CALL_STACK=y']
 
             runner = RISCVLLVMKernelRunner()
             runner.configs = base_cfgs.copy()
@@ -70,10 +80,14 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
                 runner = RISCVLLVMKernelRunner()
                 runner.configs = [*base_cfgs, 'CONFIG_LTO_CLANG_THIN=y']
                 runners.append(runner)
+        elif self._has_cfi:
+            runner = RISCVLLVMKernelRunner()
+            runner.configs = ['defconfig', 'CONFIG_CFI_CLANG=y']
+            runners.append(runner)
         else:
             self._skip_one(
-                f"{KERNEL_ARCH} CFI configs",
-                f"either LLVM < {MIN_LLVM_VER_CFI} ('{self._llvm_version}') or Linux < {LinuxVersion(6, 6, 0)} ('{self.lsm.version}')",
+                f"{KERNEL_ARCH} CFI/SCS configs",
+                f"either LLVM < {MIN_LLVM_VER_CFI} ('{self._llvm_version}') or Linux < {LNX_VER_CFI} ('{self.lsm.version}')",
             )
 
         for runner in runners:
@@ -99,7 +113,7 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
         if not self._has_lto or broken_lto_start <= self._llvm_version < broken_lto_end:
             self._skip_one(
                 f"{KERNEL_ARCH} allmodconfig + ThinLTO",
-                f"either LLVM between {broken_lto_start} and {broken_lto_end} ('{self._llvm_version}') or Linux < {LinuxVersion(6, 9, 0)} ('{self.lsm.version}')",
+                f"either LLVM between {broken_lto_start} and {broken_lto_end} ('{self._llvm_version}') or Linux < {EXPECTED_LNX_VER_LTO} ('{self.lsm.version}')",
             )
         else:
             runner = RISCVLLVMKernelRunner()
@@ -150,6 +164,7 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
                                  'arch/riscv/Kconfig').read_text(encoding='utf-8')
         self._has_cfi = self._llvm_version >= MIN_LLVM_VER_CFI and 'ARCH_SUPPORTS_CFI_CLANG' in riscv_kconfig_txt
         self._has_lto = self._llvm_version >= MIN_LLVM_VER_LTO and 'ARCH_SUPPORTS_LTO_CLANG' in riscv_kconfig_txt
+        self._has_scs = self._llvm_version >= MIN_LLVM_VER_SCS and 'ARCH_SUPPORTS_SHADOW_CALL_STACK' in riscv_kconfig_txt
 
         if 'def' in self.targets:
             self._add_defconfig_runners()
