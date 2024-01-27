@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+import platform
 import re
 import shutil
 import time
@@ -54,10 +55,13 @@ class LKTReport:
         if not self.folders.source.exists():
             raise FileNotFoundError('Provided source location does not exist?')
 
+        uname = platform.uname()
+
         self.env_info['clang version'], self.env_info['clang location'] = get_cmd_info('clang')
         self.env_info['binutils version'], self.env_info['binutils location'] = get_cmd_info('as')
-        self.env_info['Linux version'] = get_linux_version(self.folders.source)
+        self.env_info['Linux source version'] = get_linux_version(self.folders.source)
         self.env_info['Linux source location'] = self.folders.source
+        self.env_info['Host uname'] = f"{uname.system} {uname.node} {uname.release} {uname.version} {uname.machine}"  # yapf: disable
         self.env_info['PATH'] = os.environ['PATH']
 
     def generate_report(self, results):
