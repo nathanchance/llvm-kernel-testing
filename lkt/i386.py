@@ -44,9 +44,10 @@ class I386LKTRunner(lkt.runner.LKTRunner):
             runner.configs = ['defconfig', 'CONFIG_LTO_CLANG_THIN=y']
             runners.append(runner)
         else:
+            # https://git.kernel.org/linus/583bfd484bcc85e9371e7205fa9e827c18ae34fb
             self._skip_one(
                 f"{KERNEL_ARCH} LTO builds",
-                'lack of Linux support',
+                f"Linux < {LinuxVersion(5, 14, 0)} ('{self.lsm.version}')",
             )
 
         for runner in runners:

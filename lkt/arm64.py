@@ -4,7 +4,7 @@ from pathlib import Path
 import platform
 
 import lkt.runner
-from lkt.version import ClangVersion
+from lkt.version import ClangVersion, LinuxVersion
 
 KERNEL_ARCH = 'arm64'
 CLANG_TARGET = 'aarch64-linux-gnu'
@@ -62,9 +62,10 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
             runner.configs = ['defconfig', 'CONFIG_LTO_CLANG_THIN=y']
             runners.append(runner)
         else:
+            # https://git.kernel.org/linus/112b6a8e038d793d016e330f53acb9383ac504b3
             self._skip_one(
                 f"{KERNEL_ARCH} LTO builds",
-                'lack of Linux support',
+                f"Linux < {LinuxVersion(5, 12, 0)} ('{self.lsm.version}')",
             )
 
         if 'CONFIG_CFI_CLANG' in self.lsm.configs:
@@ -90,9 +91,10 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
             runner.configs = ['defconfig', 'CONFIG_SHADOW_CALL_STACK=y']
             runners.append(runner)
         else:
+            # https://git.kernel.org/linus/5287569a790d2546a06db07e391bf84b8bd6cf51
             self._skip_one(
                 f"{KERNEL_ARCH} CFI/SCS builds",
-                'lack of Linux support',
+                f"Linux < {LinuxVersion(5, 8, 0)} ('{self.lsm.version}')",
             )
 
         for runner in runners:

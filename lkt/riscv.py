@@ -56,7 +56,7 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
         else:
             self._skip_one(
                 f"{KERNEL_ARCH} LTO configs",
-                f"either LLVM < {MIN_LLVM_VER_LTO} ('{self._llvm_version}') or lack of support in Linux",
+                f"either LLVM < {MIN_LLVM_VER_LTO} ('{self._llvm_version}') or Linux < {LinuxVersion(6, 9, 0)} ('{self.lsm.version}')",
             )
 
         if self._has_cfi:
@@ -73,7 +73,7 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
         else:
             self._skip_one(
                 f"{KERNEL_ARCH} CFI configs",
-                f"either LLVM < {MIN_LLVM_VER_CFI} ('{self._llvm_version}') or lack of support in Linux",
+                f"either LLVM < {MIN_LLVM_VER_CFI} ('{self._llvm_version}') or Linux < {LinuxVersion(6, 6, 0)} ('{self.lsm.version}')",
             )
 
         for runner in runners:
@@ -99,7 +99,7 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
         if not self._has_lto or broken_lto_start <= self._llvm_version < broken_lto_end:
             self._skip_one(
                 f"{KERNEL_ARCH} allmodconfig + ThinLTO",
-                f"either LLVM between {broken_lto_start} and {broken_lto_end} ('{self._llvm_version}') or lack of support in Linux",
+                f"either LLVM between {broken_lto_start} and {broken_lto_end} ('{self._llvm_version}') or Linux < {LinuxVersion(6, 9, 0)} ('{self.lsm.version}')",
             )
         else:
             runner = RISCVLLVMKernelRunner()

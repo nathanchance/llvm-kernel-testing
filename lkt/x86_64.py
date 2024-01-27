@@ -5,7 +5,7 @@ import platform
 
 import lkt.runner
 import lkt.utils
-from lkt.version import ClangVersion
+from lkt.version import ClangVersion, LinuxVersion
 
 KERNEL_ARCH = 'x86_64'
 CLANG_TARGET = 'x86_64-linux-gnu'
@@ -46,6 +46,12 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
             runner = X8664LLVMKernelRunner()
             runner.configs = ['defconfig', 'CONFIG_LTO_CLANG_THIN=y']
             runners.append(runner)
+        else:
+            # https://git.kernel.org/linus/b33fff07e3e3817d94dbec7bf2040070ecd96d16
+            self._skip_one(
+                f"{KERNEL_ARCH} LTO builds",
+                f"Linux < {LinuxVersion(5, 12, 0)} ('{self.lsm.version}')",
+            )
 
         if self._llvm_version >= MIN_LLVM_VER_CFI and '89245600941e4' in self.lsm.commits:
             runner = X8664LLVMKernelRunner()
@@ -56,9 +62,10 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
             runner.configs = ['defconfig', 'CONFIG_CFI_CLANG=y', 'CONFIG_LTO_CLANG_THIN=y']
             runners.append(runner)
         else:
+            # https://git.kernel.org/linus/3c516f89e17e56b4738f05588e51267e295b5e63
             self._skip_one(
                 f"{KERNEL_ARCH} CFI configs",
-                f"either LLVM < {MIN_LLVM_VER_CFI} ('{self._llvm_version}') or lack of support in Linux",
+                f"either LLVM < {MIN_LLVM_VER_CFI} ('{self._llvm_version}') or Linux < {LinuxVersion(6, 1, 0)} ('{self.lsm.version}')",
             )
 
         for runner in runners:
