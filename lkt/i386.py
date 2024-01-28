@@ -104,21 +104,21 @@ class I386LKTRunner(lkt.runner.LKTRunner):
     def run(self):
         if self.lsm.version < (min_lnx_ver := LinuxVersion(5, 9, 0)):
             return self._skip_all(
-                'missing 158807de5822',
+                f"missing 158807de5822 (from {min_lnx_ver})",
                 f"i386 kernels do not build properly prior to Linux {min_lnx_ver}: https://github.com/ClangBuiltLinux/linux/issues/194",
             )
         if self._llvm_version >= (min_llvm_ver := ClangVersion(
                 12, 0, 0)) and 'bb73d07148c40' not in self.lsm.commits:
             return self._skip_all(
-                f"missing bb73d07148c4 with LLVM > {min_llvm_ver}",
+                f"missing bb73d07148c4 (from {LinuxVersion(5, 12, 0)}) with LLVM > {min_llvm_ver} (using '{self._llvm_version}')",
                 f"x86 kernels do not build properly with LLVM {min_llvm_ver}+ without R_386_PLT32 handling: https://github.com/ClangBuiltLinux/linux/issues/1210",
             )
 
         if platform.machine() != 'x86_64':
             if 'd5cbd80e302df' not in self.lsm.commits:
                 return self._skip_all(
-                    'missing d5cbd80e302d on a non-x86_64 host',
-                    'Cannot cross compile without https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f',
+                    f"missing d5cbd80e302d (from {LinuxVersion(5, 13, 0)}) on a non-x86_64 host",
+                    f"Cannot cross compile without https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f (from {LinuxVersion(5, 13, 0)})",
                 )
             if '6f5b41a2f5a63' not in self.lsm.commits:
                 self.make_vars['CROSS_COMPILE'] = CROSS_COMPILE
