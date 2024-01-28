@@ -4,11 +4,14 @@ from pathlib import Path
 import subprocess
 
 import lkt.runner
-from lkt.version import ClangVersion, QemuVersion
+from lkt.version import ClangVersion, LinuxVersion, QemuVersion
 
 KERNEL_ARCH = 'loongarch'
 CLANG_TARGET = 'loongarch64-linux-gnusf'
 QEMU_ARCH = 'loongarch64'
+
+# https://git.kernel.org/torvalds/l/65eea6b44a5dd332c50390fdaeda7e197802c484
+MIN_LNX_VER = LinuxVersion(6, 5, 0)
 
 # Building the kernel for LoongArch was not very well supported prior to LLVM
 # 17.x
@@ -86,18 +89,20 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
             reason = 'because of scripts/min-tool-version.sh for supplied tree'
 
         if self._llvm_version < min_llvm_ver:
-            return self._skip_all(f"LLVM < {min_llvm_ver}",
-                                  f"LoongArch requires LLVM {min_llvm_ver} or newer {reason}")
+            return self._skip_all(
+                f"LLVM < {min_llvm_ver}",
+                f"LoongArch requires LLVM {min_llvm_ver} or newer {reason} (using '{self._llvm_version}')",
+            )
 
         if '65eea6b44a5dd' not in self.lsm.commits:
             print_text = (
-                'LoongArch needs the following series from Linux 6.5 to build properly:\n'
+                f"LoongArch needs the following series from Linux {MIN_LNX_VER} to build properly:\n"
                 '\n'
                 '  * https://git.kernel.org/torvalds/l/65eea6b44a5dd332c50390fdaeda7e197802c484\n'
                 '\n'
-                'Provide a kernel tree with Linux 6.5+ or one with this series to build LoongArch kernels.'
+                f"Provide a kernel tree with Linux {MIN_LNX_VER}+ or one with this series to build LoongArch kernels."
             )
-            return self._skip_all('missing 65eea6b44a5dd', print_text)
+            return self._skip_all(f"missing 65eea6b44a5dd (from {MIN_LNX_VER})", print_text)
 
         loongarch_makefile_text = Path(self.lsm.folder,
                                        'arch/loongarch/Makefile').read_text(encoding='utf-8')
@@ -134,6 +139,6 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
                 if runner.bootable:
                     runner.bootable = False
                     runner.result[
-                        'boot'] = f"skipped due to qemu older than {MIN_QEMU_VER} (found {self._qemu_version})"
+                        'boot'] = f"skipped due to QEMU < {MIN_QEMU_VER} (found '{self._qemu_version}')"
 
         return super().run()

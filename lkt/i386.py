@@ -47,7 +47,7 @@ class I386LKTRunner(lkt.runner.LKTRunner):
             # https://git.kernel.org/linus/583bfd484bcc85e9371e7205fa9e827c18ae34fb
             self._skip_one(
                 f"{KERNEL_ARCH} LTO builds",
-                f"Linux < {LinuxVersion(5, 14, 0)} ('{self.lsm.version}')",
+                f"Linux < {LinuxVersion(5, 14, 0)} (have '{self.lsm.version}')",
             )
 
         for runner in runners:

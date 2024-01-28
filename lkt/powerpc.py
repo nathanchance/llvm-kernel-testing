@@ -5,7 +5,7 @@ import shutil
 
 import lkt.runner
 import lkt.utils
-from lkt.version import ClangVersion
+from lkt.version import ClangVersion, LinuxVersion
 
 KERNEL_ARCH = 'powerpc'
 CLANG_TARGET = 'powerpc-linux-gnu'
@@ -73,7 +73,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         if cbl_1679:
             self._skip_one(
                 f"{KERNEL_ARCH} ppc44x_defconfig",
-                f"LLVM < {cbl_1679_fixed_ver} ('{self._llvm_version}') with 2255411d1d0f0 present (https://github.com/ClangBuiltLinux/linux/issues/1679)",
+                f"LLVM < {cbl_1679_fixed_ver} (using '{self._llvm_version}') with 2255411d1d0f0 (from {LinuxVersion(6, 0, 0)}) present (https://github.com/ClangBuiltLinux/linux/issues/1679)",
             )
         else:
             runner = PowerPCLLVMKernelRunner()
@@ -104,11 +104,12 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         if '297565aa22cfa' in self.lsm.commits:
             runner = PowerPCLLVMKernelRunner()
             runner.boot_arch = 'ppc32_mac'
+            # https://github.com/llvm/llvm-project/commit/1e3c6fc7cb9d2ee6a5328881f95d6643afeadbff
             runner.bootable = self._llvm_version >= (pmac_min_llvm_ver_for_boot :=
                                                      ClangVersion(14, 0, 0))
             if not runner.bootable:
                 runner.result[
-                    'boot'] = f"skipped due to LLVM < {pmac_min_llvm_ver_for_boot} (lack of 1e3c6fc7cb9d2)"
+                    'boot'] = f"skipped due to LLVM < {pmac_min_llvm_ver_for_boot} (using '{self._llvm_version}')"
             runner.configs = ['pmac32_defconfig']
             if '0b5e06e9cb156' not in self.lsm.commits:
                 runner.configs += [
@@ -122,7 +123,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         else:
             self._skip_one(
                 f"{KERNEL_ARCH} pmac32_defconfig",
-                'missing 297565aa22cfa (https://github.com/ClangBuiltLinux/linux/issues/563)',
+                f"missing 297565aa22cfa (from {LinuxVersion(5, 18, 0)}) for https://github.com/ClangBuiltLinux/linux/issues/563",
             )
 
         #####################
@@ -230,7 +231,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         else:
             self._skip_one(
                 f"{KERNEL_ARCH} allmodconfig",
-                f"lack of a11334d8327b with LLVM < {min_llvm_ver_for_elfv2_select} ('{self._llvm_version}') or lack of 9d90161ca5c7",
+                f"lack of a11334d8327b (from {LinuxVersion(6, 4, 0)}) with LLVM < {min_llvm_ver_for_elfv2_select} (using '{self._llvm_version}') or lack of 9d90161ca5c7 (from {LinuxVersion(6, 5, 0)})",
             )
 
         for cfg_target in ['allnoconfig', 'tinyconfig']:

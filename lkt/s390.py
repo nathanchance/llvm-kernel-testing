@@ -3,12 +3,15 @@
 from pathlib import Path
 
 import lkt.runner
-from lkt.version import BinutilsVersion, ClangVersion, QemuVersion
+from lkt.version import BinutilsVersion, ClangVersion, LinuxVersion, QemuVersion
 
 KERNEL_ARCH = 's390'
 CLANG_TARGET = 's390x-linux-gnu'
 CROSS_COMPILE = f"{CLANG_TARGET}-"
 QEMU_ARCH = 's390x'
+
+# https://lore.kernel.org/r/your-ad-here.call-01580230449-ext-6884@work.hours/
+MIN_LNX_VER = LinuxVersion(5, 6, 0)
 
 # While the change that raised the minimum version of LLVM for s390 did
 # not land in Linux until 5.14, backports to earlier versions may use
@@ -83,13 +86,13 @@ class S390LKTRunner(lkt.runner.LKTRunner):
             self._runners.append(runner)
 
     def run(self):
-        if self.lsm.version < (5, 6, 0):
+        if self.lsm.version < MIN_LNX_VER:
             print_text = (
-                's390 kernels did not build properly until Linux 5.6\n'
+                f"s390 kernels did not build properly until Linux {MIN_LNX_VER}\n"
                 '        https://lore.kernel.org/lkml/your-ad-here.call-01580230449-ext-6884@work.hours/'
             )
             return self._skip_all(
-                'missing fixes from 5.6 (https://lore.kernel.org/r/your-ad-here.call-01580230449-ext-6884@work.hours/)',
+                f"missing fixes from {MIN_LNX_VER} (https://lore.kernel.org/r/your-ad-here.call-01580230449-ext-6884@work.hours/)",
                 print_text)
         if self._binutils_version >= (2, 39, 50) and '80ddf5ce1c929' not in self.lsm.commits:
             print_text = (
@@ -106,8 +109,10 @@ class S390LKTRunner(lkt.runner.LKTRunner):
             reason = 'because of scripts/min-tool-version.sh for supplied tree'
 
         if self._llvm_version < min_llvm_ver:
-            return self._skip_all(f"LLVM < {min_llvm_ver}",
-                                  f"s390 requires LLVM {min_llvm_ver} or newer {reason}")
+            return self._skip_all(
+                f"LLVM < {min_llvm_ver}",
+                f"s390 requires LLVM {min_llvm_ver} or newer {reason} (using '{self._llvm_version}')",
+            )
 
         if self.lsm.version >= (5, 19, 0):
             self.make_vars['LLVM_IAS'] = 1
@@ -128,6 +133,6 @@ class S390LKTRunner(lkt.runner.LKTRunner):
                 if runner.bootable:
                     runner.bootable = False
                     runner.result[
-                        'boot'] = f"skipped due to qemu older than {MIN_QEMU_VER} (found {self._qemu_version})"
+                        'boot'] = f"skipped due to QEMU < {MIN_QEMU_VER} (found '{self._qemu_version}')"
 
         return super().run()

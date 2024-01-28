@@ -50,7 +50,7 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
             # https://git.kernel.org/linus/b33fff07e3e3817d94dbec7bf2040070ecd96d16
             self._skip_one(
                 f"{KERNEL_ARCH} LTO builds",
-                f"Linux < {LinuxVersion(5, 12, 0)} ('{self.lsm.version}')",
+                f"Linux < {LinuxVersion(5, 12, 0)} (have '{self.lsm.version}')",
             )
 
         if self._llvm_version >= MIN_LLVM_VER_CFI and '89245600941e4' in self.lsm.commits:
@@ -65,7 +65,7 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
             # https://git.kernel.org/linus/3c516f89e17e56b4738f05588e51267e295b5e63
             self._skip_one(
                 f"{KERNEL_ARCH} CFI configs",
-                f"either LLVM < {MIN_LLVM_VER_CFI} ('{self._llvm_version}') or Linux < {LinuxVersion(6, 1, 0)} ('{self.lsm.version}')",
+                f"either LLVM < {MIN_LLVM_VER_CFI} (using '{self._llvm_version}') or Linux < {LinuxVersion(6, 1, 0)} (have '{self.lsm.version}')",
             )
 
         for runner in runners:
@@ -126,8 +126,8 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
         if platform.machine() != KERNEL_ARCH:
             if 'd5cbd80e302df' not in self.lsm.commits:
                 return self._skip_all(
-                    'missing d5cbd80e302d on a non-x86_64 host',
-                    'Cannot cross compile without https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f',
+                    f"missing d5cbd80e302d (from {LinuxVersion(5, 13, 0)}) on a non-x86_64 host",
+                    f"Cannot cross compile without https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f (from {LinuxVersion(5, 13, 0)})",
                 )
 
             cross_compile = CROSS_COMPILE

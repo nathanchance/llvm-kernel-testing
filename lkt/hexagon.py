@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import lkt.runner
-from lkt.version import ClangVersion
+from lkt.version import ClangVersion, LinuxVersion
 
 KERNEL_ARCH = 'hexagon'
 CLANG_TARGET = 'hexagon-linux-musl'
@@ -34,7 +34,7 @@ class HexagonLKTRunner(lkt.runner.LKTRunner):
         else:
             self._skip_one(
                 f"{KERNEL_ARCH} allmodconfig",
-                f"either lack of ffb92ce826fd8 or LLVM < {min_llvm_ver_for_allmod} ('{self._llvm_version}')",
+                f"either lack of ffb92ce826fd8 (from {LinuxVersion(5, 16 ,0)}) or LLVM < {min_llvm_ver_for_allmod} (using '{self._llvm_version}')",
             )
 
     def run(self):
@@ -51,8 +51,9 @@ class HexagonLKTRunner(lkt.runner.LKTRunner):
                 '\n'
                 'Provide a kernel tree with Linux 5.13+ or one with these fixes to build Hexagon kernels.'
             )
-            return self._skip_all('missing 788dcee0306e, 6fff7410f6be, and/or f1f99adf05f2',
-                                  print_text)
+            return self._skip_all(
+                f"missing 788dcee0306e, 6fff7410f6be, and/or f1f99adf05f2 (from {LinuxVersion(5, 13 ,0)})",
+                print_text)
 
         if '6f5b41a2f5a63' not in self.lsm.commits:
             self.make_vars['CROSS_COMPILE'] = CLANG_TARGET

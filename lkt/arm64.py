@@ -54,7 +54,7 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
         else:
             self._skip_one(
                 f"{KERNEL_ARCH} big endian defconfig",
-                f"LLVM < {min_be_llvm_ver} ('{self._llvm_version}')",
+                f"LLVM < {min_be_llvm_ver} (using '{self._llvm_version}')",
             )
 
         if 'CONFIG_LTO_CLANG_THIN' in self.lsm.configs:
@@ -65,7 +65,7 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
             # https://git.kernel.org/linus/112b6a8e038d793d016e330f53acb9383ac504b3
             self._skip_one(
                 f"{KERNEL_ARCH} LTO builds",
-                f"Linux < {LinuxVersion(5, 12, 0)} ('{self.lsm.version}')",
+                f"Linux < {LinuxVersion(5, 12, 0)} (have '{self.lsm.version}')",
             )
 
         if 'CONFIG_CFI_CLANG' in self.lsm.configs:
@@ -94,7 +94,7 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
             # https://git.kernel.org/linus/5287569a790d2546a06db07e391bf84b8bd6cf51
             self._skip_one(
                 f"{KERNEL_ARCH} CFI/SCS builds",
-                f"Linux < {LinuxVersion(5, 8, 0)} ('{self.lsm.version}')",
+                f"Linux < {LinuxVersion(5, 8, 0)} (have '{self.lsm.version}')",
             )
 
         for runner in runners:

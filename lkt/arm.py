@@ -5,6 +5,7 @@ import re
 import shutil
 
 import lkt.runner
+from lkt.version import LinuxVersion
 
 KERNEL_ARCH = 'arm'
 CLANG_TARGET = 'arm-linux-gnueabi'
@@ -66,7 +67,7 @@ class ArmLKTRunner(lkt.runner.LKTRunner):
         else:
             self._skip_one(
                 f"{KERNEL_ARCH} multi_v7_defconfig + Thumb2",
-                'either lack of 9d417cbe36eee or presence of CONFIG_HAVE_FUTEX_CMPXCHG',
+                f"either lack of 9d417cbe36eee (from {LinuxVersion(5, 15, 0)}) or presence of CONFIG_HAVE_FUTEX_CMPXCHG",
             )
 
         for runner in runners:

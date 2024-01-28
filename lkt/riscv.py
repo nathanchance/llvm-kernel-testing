@@ -10,6 +10,9 @@ CLANG_TARGET = 'riscv64-linux-gnu'
 CROSS_COMPILE = f"{CLANG_TARGET}-"
 QEMU_ARCH = 'riscv64'
 
+# https://git.kernel.org/torvalds/l/abc71bf0a70311ab294f97a7f16e8de03718c05a
+MIN_LNX_VER = LinuxVersion(5, 7, 0)
+
 # https://git.kernel.org/linus/7f7d3ea6eb000bd329a6f2fe3f1c7596c4e783e1
 MIN_LLVM_VER_CFI = ClangVersion(17, 0, 0)
 # https://git.kernel.org/riscv/c/021d23428bdbae032294e8f4a29cb53cb50ae71c
@@ -64,7 +67,7 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
         else:
             self._skip_one(
                 f"{KERNEL_ARCH} LTO configs",
-                f"either LLVM < {MIN_LLVM_VER_LTO} ('{self._llvm_version}') or Linux < {EXPECTED_LNX_VER_LTO} ('{self.lsm.version}')",
+                f"either LLVM < {MIN_LLVM_VER_LTO} (using '{self._llvm_version}') or Linux < {EXPECTED_LNX_VER_LTO} (have '{self.lsm.version}')",
             )
 
         if self._has_scs:
@@ -87,7 +90,7 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
         else:
             self._skip_one(
                 f"{KERNEL_ARCH} CFI/SCS configs",
-                f"either LLVM < {MIN_LLVM_VER_CFI} ('{self._llvm_version}') or Linux < {LNX_VER_CFI} ('{self.lsm.version}')",
+                f"either LLVM < {MIN_LLVM_VER_CFI} (using '{self._llvm_version}') or Linux < {LNX_VER_CFI} (have '{self.lsm.version}')",
             )
 
         for runner in runners:
@@ -113,7 +116,7 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
         if not self._has_lto or broken_lto_start <= self._llvm_version < broken_lto_end:
             self._skip_one(
                 f"{KERNEL_ARCH} allmodconfig + ThinLTO",
-                f"either LLVM between {broken_lto_start} and {broken_lto_end} ('{self._llvm_version}') or Linux < {EXPECTED_LNX_VER_LTO} ('{self.lsm.version}')",
+                f"either LLVM between {broken_lto_start} and {broken_lto_end} (using '{self._llvm_version}') or Linux < {EXPECTED_LNX_VER_LTO} (have '{self.lsm.version}')",
             )
         else:
             runner = RISCVLLVMKernelRunner()
@@ -131,23 +134,25 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
             runner = RISCVLLVMKernelRunner()
             runner.bootable = 'f2928e224d85e' in self.lsm.commits
             if not runner.bootable:
-                runner.result['boot'] = 'skipped due to lack of f2928e224d85e'
+                runner.result[
+                    'boot'] = f"skipped due to lack of f2928e224d85e (from {LinuxVersion(5, 16, 0)})"
             runner.configs = [Path(self.folders.configs, distro, f"{config_name}.config")]
             runner.lsm = self.lsm
             self._runners.append(runner)
 
     def run(self):
-        if self.lsm.version < (5, 7, 0):
+        if self.lsm.version < MIN_LNX_VER:
             print_text = (
-                'RISC-V needs the following fixes from Linux 5.7 to build properly:\n'
+                f"RISC-V needs the following fixes from Linux {MIN_LNX_VER} to build properly:\n"
                 '\n'
                 '        * https://git.kernel.org/linus/52e7c52d2ded5908e6a4f8a7248e5fa6e0d6809a\n'
                 '        * https://git.kernel.org/linus/fdff9911f266951b14b20e25557278b5b3f0d90d\n'
                 '        * https://git.kernel.org/linus/abc71bf0a70311ab294f97a7f16e8de03718c05a\n'
                 '\n'
-                'Provide a kernel tree with Linux 5.7 or newer to build RISC-V kernels.')
-            return self._skip_all('missing 52e7c52d2ded, fdff9911f266, and/or abc71bf0a703',
-                                  print_text)
+                f"Provide a kernel tree with Linux {MIN_LNX_VER} or newer to build RISC-V kernels.")
+            return self._skip_all(
+                f"missing 52e7c52d2ded, fdff9911f266, and/or abc71bf0a703 (from {MIN_LNX_VER})",
+                print_text)
 
         if self._llvm_version >= (13, 0, 0):
             self.make_vars['LLVM_IAS'] = 1
@@ -179,7 +184,7 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
             else:
                 self._skip_one(
                     f"{KERNEL_ARCH} other and distro configs",
-                    f"Linux < {min_other_distro_lnx_ver} ('{self.lsm.version}') or missing ec3a5cb61146c",
+                    f"Linux < {min_other_distro_lnx_ver} (have '{self.lsm.version}') or missing ec3a5cb61146c (from {LinuxVersion(5, 13, 0)})",
                 )
 
         return super().run()
