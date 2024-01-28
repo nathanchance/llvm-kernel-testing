@@ -12,7 +12,7 @@ import sys
 import lkt.report
 import lkt.source
 import lkt.utils
-from lkt.version import ClangVersion
+from lkt.version import ClangVersion, LinuxVersion
 
 import lkt.arm
 import lkt.arm64
@@ -24,6 +24,11 @@ import lkt.powerpc
 import lkt.riscv
 import lkt.s390
 import lkt.x86_64
+
+# This is the minimum version of Linux that can be used with this test
+# framework due to assumptions made throughout the framework with regards to
+# present commits and make variables.
+MINIMUM_SUPPORTED_LINUX_VERSION = LinuxVersion(5, 4, 0)
 
 REPO = Path(__file__).resolve().parent
 SUPPORTED_TARGETS = [
@@ -193,7 +198,14 @@ if __name__ == '__main__':
 
     results = []
 
-    if (llvm_ver := ClangVersion()) < (min_llvm_ver := lsm.get_min_llvm_ver()):
+    if lsm.version < MINIMUM_SUPPORTED_LINUX_VERSION:
+        result = {
+            'name': 'build matrix',
+            'build': 'skipped',
+            'reason': f"found Linux version ('{lsm.version}') is older than the minimum supported version ('{MINIMUM_SUPPORTED_LINUX_VERSION}') of llvm-kernel-testing",
+        }  # yapf: disable
+        results.append(result)
+    elif (llvm_ver := ClangVersion()) < (min_llvm_ver := lsm.get_min_llvm_ver()):
         result = {
             'name': 'build matrix',
             'build': 'skipped',
