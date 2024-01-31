@@ -23,6 +23,9 @@ HARD_MIN_LLVM_VER = ClangVersion(13, 0, 0)
 # which comes from this series: https://lore.kernel.org/all/20210108132049.8501-1-david@redhat.com/
 MIN_QEMU_VER = QemuVersion(6, 0, 0)
 
+# https://git.kernel.org/torvalds/l/8218827b73c6e41029438a2d3cc573286beee914
+MIN_IAS_LNX_VER = LinuxVersion(5, 19, 0)
+
 
 class S390LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 
@@ -114,10 +117,9 @@ class S390LKTRunner(lkt.runner.LKTRunner):
                 f"s390 requires LLVM {min_llvm_ver} or newer {reason} (using '{self._llvm_version}')",
             )
 
-        if self.lsm.version >= (5, 19, 0):
-            self.make_vars['LLVM_IAS'] = 1
-        else:
+        if self.lsm.version < MIN_IAS_LNX_VER:
             self.make_vars['CROSS_COMPILE'] = CROSS_COMPILE
+            self.make_vars['LLVM_IAS'] = 0
 
         if 'def' in self.targets:
             self._add_defconfig_runners()

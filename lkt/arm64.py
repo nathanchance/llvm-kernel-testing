@@ -11,6 +11,9 @@ CLANG_TARGET = 'aarch64-linux-gnu'
 CROSS_COMPILE = f"{CLANG_TARGET}-"
 QEMU_ARCH = 'aarch64'
 
+# https://github.com/ClangBuiltLinux/linux/issues/1106
+MIN_IAS_LNX_VER = LinuxVersion(5, 9, 0)
+
 
 class Arm64LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 
@@ -149,12 +152,10 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
 
     def run(self):
         cross_compile = '' if platform.machine() == 'aarch64' else CROSS_COMPILE
-        if self.lsm.version >= (5, 10, 0):
-            self.make_vars['LLVM_IAS'] = 1
-            if '6f5b41a2f5a63' not in self.lsm.commits and cross_compile:
-                self.make_vars['CROSS_COMPILE'] = cross_compile
-        elif cross_compile:
+        if '6f5b41a2f5a63' not in self.lsm.commits and cross_compile:
             self.make_vars['CROSS_COMPILE'] = cross_compile
+        if self.lsm.version < MIN_IAS_LNX_VER:
+            self.make_vars['LLVM_IAS'] = 0
 
         if 'def' in self.targets:
             self._add_defconfig_runners()

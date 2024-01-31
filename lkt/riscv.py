@@ -20,6 +20,10 @@ MIN_LLVM_VER_LTO = ClangVersion(14, 0, 0)
 # https://github.com/llvm/llvm-project/commit/aa1d2693c25622ea4a8ee2b622ba2a617e18ef88
 MIN_LLVM_VER_SCS = ClangVersion(17, 0, 0)
 
+# https://github.com/ClangBuiltLinux/linux/issues/1023
+# https://github.com/ClangBuiltLinux/linux/issues/1143
+MIN_IAS_LLVM_VER = ClangVersion(13, 0, 0)
+
 # https://git.kernel.org/linus/74f8fc31feb4b756814ec0720f48ccdc1175f774
 LNX_VER_CFI = LinuxVersion(6, 6, 0)
 # https://git.kernel.org/riscv/c/021d23428bdbae032294e8f4a29cb53cb50ae71c
@@ -154,12 +158,10 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
                 f"missing 52e7c52d2ded, fdff9911f266, and/or abc71bf0a703 (from {MIN_LNX_VER})",
                 print_text)
 
-        if self._llvm_version >= (13, 0, 0):
-            self.make_vars['LLVM_IAS'] = 1
-            if '6f5b41a2f5a63' not in self.lsm.commits:
-                self.make_vars['CROSS_COMPILE'] = CROSS_COMPILE
-        else:
+        if '6f5b41a2f5a63' not in self.lsm.commits:
             self.make_vars['CROSS_COMPILE'] = CROSS_COMPILE
+        if self._llvm_version < MIN_IAS_LLVM_VER:
+            self.make_vars['LLVM_IAS'] = 0
 
         if (self._llvm_version < (13, 0, 0) or 'ec3a5cb61146c' not in self.lsm.commits
                 or self.lsm.version <= (5, 10, 999)):

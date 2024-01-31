@@ -41,7 +41,7 @@ class LLVMKernelRunner:
         self.make_vars = {
             'HOSTLDFLAGS': '-fuse-ld=lld',
             'LLVM': 1,
-            'LLVM_IAS': '0',
+            'LLVM_IAS': 1,
             'LOCALVERSION': '-cbl',
         }
         self.only_test_boot = False

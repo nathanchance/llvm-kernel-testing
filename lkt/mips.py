@@ -3,9 +3,16 @@
 import shutil
 
 import lkt.runner
+from lkt.version import LinuxVersion
 
 KERNEL_ARCH = 'mips'
 CLANG_TARGET = 'mips-linux-gnu'
+
+# https://github.com/ClangBuiltLinux/linux/issues/763
+# Technically, that issue was resolved in 5.14 but we check 5.15 to allow
+# setting CROSS_COMPILE and LLVM_IAS=0 in the same block (as CROSS_COMPILE is
+# not required with the integrated assembler starting in 5.15)
+MIN_IAS_LNX_VER = LinuxVersion(5, 15, 0)
 
 
 class MipsLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
@@ -94,10 +101,9 @@ class MipsLKTRunner(lkt.runner.LKTRunner):
             self._runners.append(runner)
 
     def run(self):
-        if self.lsm.version >= (5, 15, 0):
-            self.make_vars['LLVM_IAS'] = 1
-        else:
+        if self.lsm.version < MIN_IAS_LNX_VER:
             self.make_vars['CROSS_COMPILE'] = self._cross_compile
+            self.make_vars['LLVM_IAS'] = 0
 
         if 'e91946d6d93ef' in self.lsm.commits and self._llvm_version < (13, 0, 0):
             self._be_vars['LD'] = f"{self._cross_compile}ld"

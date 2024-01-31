@@ -5,11 +5,16 @@ import re
 import shutil
 
 import lkt.runner
-from lkt.version import LinuxVersion
+from lkt.version import ClangVersion, LinuxVersion
 
 KERNEL_ARCH = 'arm'
 CLANG_TARGET = 'arm-linux-gnueabi'
 QEMU_ARCH = 'arm'
+
+# https://github.com/ClangBuiltLinux/linux/issues?q=is%3Aissue+label%3A%22%5BARCH%5D+arm32%22+label%3A%22%5BTOOL%5D+integrated-as%22+label%3A%22%5BBUG%5D+linux%22+
+MIN_IAS_LNX_VER = LinuxVersion(5, 13, 0)
+# https://github.com/ClangBuiltLinux/linux/issues?q=is%3Aissue+label%3A%22%5BARCH%5D+arm32%22+label%3A%22%5BTOOL%5D+integrated-as%22+label%3A%22%5BFIXED%5D%5BLLVM%5D+13%22+
+MIN_IAS_LLVM_VER = ClangVersion(13, 0, 0)
 
 
 def disable_be(linux):
@@ -106,12 +111,10 @@ class ArmLKTRunner(lkt.runner.LKTRunner):
             if shutil.which(f"{cross_compile}as"):
                 break
 
-        if self._llvm_version >= (13, 0, 0) and self.lsm.version >= (5, 13, 0):
-            self.make_vars['LLVM_IAS'] = 1
-            if '6f5b41a2f5a63' not in self.lsm.commits:
-                self.make_vars['CROSS_COMPILE'] = cross_compile
-        else:
+        if '6f5b41a2f5a63' not in self.lsm.commits:
             self.make_vars['CROSS_COMPILE'] = cross_compile
+        if self._llvm_version < MIN_IAS_LLVM_VER or self.lsm.version < MIN_IAS_LNX_VER:
+            self.make_vars['LLVM_IAS'] = 0
 
         if 'def' in self.targets:
             self._add_defconfig_runners()

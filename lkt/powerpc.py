@@ -10,6 +10,12 @@ from lkt.version import ClangVersion, LinuxVersion
 KERNEL_ARCH = 'powerpc'
 CLANG_TARGET = 'powerpc-linux-gnu'
 
+# https://github.com/ClangBuiltLinux/linux/issues/1418
+# https://git.kernel.org/linus/12318163737cd8808d13faa6e2393774191a6182
+MIN_IAS_LNX_VER = LinuxVersion(5, 18, 0)
+# https://github.com/llvm/llvm-project/commit/33504b3bbe10d5d4caae13efcb99bd159c126070
+MIN_IAS_LLVM_VER = ClangVersion(14, 0, 2)
+
 
 def ppc64_be_defaults_to_elfv2(lsm):
     # If CONFIG_PPC64_BIG_ENDIAN_ELF_ABI_V2 does not exist in the current tree,
@@ -39,6 +45,9 @@ class PowerPCLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
         self.boot_arch = 'ppc64le'
         self.image_target = 'zImage.epapr'
         self.qemu_arch = 'ppc64'
+
+        # Support will be enabled based on known working combinations
+        self.make_vars['LLVM_IAS'] = 0
 
 
 class PowerPCLKTRunner(lkt.runner.LKTRunner):
@@ -281,7 +290,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
     def run(self):
         if '0355785313e21' not in self.lsm.commits and 'CROSS_COMPILE' in self.make_vars:
             self._ppc64le_vars['LD'] = f"{self.make_vars['CROSS_COMPILE']}ld"
-        if self.lsm.version >= (5, 18, 0) and self._llvm_version >= (14, 0, 0):
+        if self.lsm.version >= MIN_IAS_LNX_VER and self._llvm_version >= MIN_IAS_LLVM_VER:
             self._ppc64_vars['LLVM_IAS'] = 1
             self._ppc64le_vars['LLVM_IAS'] = 1
 

@@ -15,6 +15,9 @@ QEMU_ARCH = 'x86_64'
 # https://github.com/llvm/llvm-project/commit/cff5bef948c91e4919de8a5fb9765e0edc13f3de
 MIN_LLVM_VER_CFI = ClangVersion(16, 0, 0)
 
+# https://github.com/ClangBuiltLinux/linux/issues/1190
+MIN_IAS_LNX_VER = LinuxVersion(5, 10, 0)
+
 
 class X8664LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 
@@ -132,12 +135,10 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
 
             cross_compile = CROSS_COMPILE
 
-        if self.lsm.version >= (5, 10, 0):
-            self.make_vars['LLVM_IAS'] = 1
-            if '6f5b41a2f5a63' not in self.lsm.commits and cross_compile:
-                self.make_vars['CROSS_COMPILE'] = cross_compile
-        elif cross_compile:
+        if '6f5b41a2f5a63' not in self.lsm.commits and cross_compile:
             self.make_vars['CROSS_COMPILE'] = cross_compile
+        if self.lsm.version < MIN_IAS_LNX_VER:
+            self.make_vars['LLVM_IAS'] = 0
 
         if 'def' in self.targets:
             self._add_defconfig_runners()

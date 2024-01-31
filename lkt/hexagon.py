@@ -13,7 +13,6 @@ class HexagonLKTRunner(lkt.runner.LKTRunner):
         super().__init__()
 
         self.make_vars['ARCH'] = KERNEL_ARCH
-        self.make_vars['LLVM_IAS'] = 1
 
         self._clang_target = CLANG_TARGET
 
