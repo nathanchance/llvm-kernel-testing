@@ -1,3 +1,6 @@
+target-version = 'py38'
+
+[lint]
 select = [
     'A', # flake8-builtins
     'ARG', # flake8-unused-arguments
@@ -26,4 +29,3 @@ ignore = [
     'PLR2004', # magic-value-comparison
     'S603', # subprocess-without-shell-equals-true
 ]
-target-version = 'py38'

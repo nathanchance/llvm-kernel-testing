@@ -98,9 +98,9 @@ class LinuxVersion(Version):
 class MinToolVersion(Version):
 
     def _gen_ver_iter(self, **kwargs):
-        folder = kwargs['folder'] if 'folder' in kwargs else Path.cwd()
-        arch = kwargs['arch'] if 'arch' in kwargs else None
-        tool = kwargs['tool'] if 'tool' in kwargs else 'llvm'
+        folder = kwargs.get('folder', Path.cwd())
+        arch = kwargs.get('arch')
+        tool = kwargs.get('tool', 'llvm')
 
         if not (min_tool_ver := Path(folder, 'scripts/min-tool-version.sh')).exists():
             return DEFAULT_VERSION  # minimum versions were not codified yet
