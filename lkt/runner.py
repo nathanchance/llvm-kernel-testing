@@ -531,7 +531,7 @@ class LKTRunner:
                                   f"Missing {self._clang_target} target in clang")
 
         if 'CROSS_COMPILE' in self.make_vars and \
-           'LLVM_IAS' not in self.make_vars and \
+           self.make_vars.get('LLVM_IAS', 1) == 0 and \
             not shutil.which(f"{self.make_vars['CROSS_COMPILE']}as"):
             return self._skip_all('missing binutils', 'Cannot find binutils')
 
