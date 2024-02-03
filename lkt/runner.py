@@ -486,17 +486,17 @@ class LLVMKernelRunner:
 
 class LKTRunner:
 
-    def __init__(self):
+    def __init__(self, arch, clang_target):
         self.folders = Folders()
         self.lsm = None
-        self.make_vars = {}
+        self.make_vars = {'ARCH': arch}
         self.only_test_boot = False
         self.targets = []
         self.save_objects = False
 
         self._llvm_version = ClangVersion()
 
-        self._clang_target = ''
+        self._clang_target = clang_target
         self._results = []
         self._runners = []
 
@@ -523,9 +523,6 @@ class LKTRunner:
         print(f"Skipping {name} due to {reason}")
 
     def run(self):
-        if 'ARCH' not in self.make_vars:
-            raise RuntimeError('ARCH not in make variables?')
-
         if not lkt.utils.clang_supports_target(self._clang_target):
             return self._skip_all('missing clang target',
                                   f"Missing {self._clang_target} target in clang")

@@ -53,9 +53,8 @@ class PowerPCLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 class PowerPCLKTRunner(lkt.runner.LKTRunner):
 
     def __init__(self):
-        super().__init__()
+        super().__init__(KERNEL_ARCH, CLANG_TARGET)
 
-        self.make_vars['ARCH'] = KERNEL_ARCH
         for cross_compile in ['powerpc64-linux-gnu-', f"{CLANG_TARGET}-", 'powerpc64le-linux-gnu-']:
             # Assignment first so that 'CROSS_COMPILE' is always present in
             # self.make_vars. If binutils are not installed, the whole build
@@ -64,7 +63,6 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
             if shutil.which(f"{cross_compile}as"):
                 break
 
-        self._clang_target = CLANG_TARGET
         self._ppc64_vars = {}
         self._ppc64le_vars = {}
 

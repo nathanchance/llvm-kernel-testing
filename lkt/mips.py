@@ -28,11 +28,7 @@ class MipsLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 class MipsLKTRunner(lkt.runner.LKTRunner):
 
     def __init__(self):
-        super().__init__()
-
-        self.make_vars['ARCH'] = KERNEL_ARCH
-
-        self._clang_target = CLANG_TARGET
+        super().__init__(KERNEL_ARCH, CLANG_TARGET)
 
         for cross_compile in ['mips64-linux-gnu-', f"{CLANG_TARGET}-", 'mipsel-linux-gnu-']:
             if shutil.which(f"{cross_compile}as"):

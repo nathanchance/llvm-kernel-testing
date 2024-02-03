@@ -35,12 +35,9 @@ class LoongArchLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 class LoongArchLKTRunner(lkt.runner.LKTRunner):
 
     def __init__(self):
-        super().__init__()
-
-        self.make_vars['ARCH'] = KERNEL_ARCH
+        super().__init__(KERNEL_ARCH, CLANG_TARGET)
 
         self._broken_configs = []
-        self._clang_target = CLANG_TARGET
         self._qemu_version = QemuVersion(arch=QEMU_ARCH)
 
     def _add_defconfig_runners(self):

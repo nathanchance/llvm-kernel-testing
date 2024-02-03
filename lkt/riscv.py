@@ -43,11 +43,7 @@ class RISCVLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 class RISCVLKTRunner(lkt.runner.LKTRunner):
 
     def __init__(self):
-        super().__init__()
-
-        self.make_vars['ARCH'] = KERNEL_ARCH
-
-        self._clang_target = CLANG_TARGET
+        super().__init__(KERNEL_ARCH, CLANG_TARGET)
 
         self._has_cfi = False
         self._has_lto = False

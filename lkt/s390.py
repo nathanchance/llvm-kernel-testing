@@ -40,14 +40,12 @@ class S390LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 class S390LKTRunner(lkt.runner.LKTRunner):
 
     def __init__(self):
-        super().__init__()
+        super().__init__(KERNEL_ARCH, CLANG_TARGET)
 
-        self.make_vars['ARCH'] = KERNEL_ARCH
         for variable in ['LD', 'OBJCOPY', 'OBJDUMP']:
             self.make_vars[variable] = f"{CROSS_COMPILE}{variable.lower()}"
 
         self._binutils_version = BinutilsVersion(binary=f"{CROSS_COMPILE}as")
-        self._clang_target = CLANG_TARGET
         self._qemu_version = QemuVersion(arch=QEMU_ARCH)
 
     def _add_defconfig_runners(self):
