@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
+import subprocess
+import shutil
 
 import lkt.runner
 from lkt.version import BinutilsVersion, ClangVersion, LinuxVersion, QemuVersion
@@ -41,9 +43,6 @@ class S390LKTRunner(lkt.runner.LKTRunner):
 
     def __init__(self):
         super().__init__(KERNEL_ARCH, CLANG_TARGET)
-
-        for variable in ['LD', 'OBJCOPY', 'OBJDUMP']:
-            self.make_vars[variable] = f"{CROSS_COMPILE}{variable.lower()}"
 
         self._binutils_version = BinutilsVersion(binary=f"{CROSS_COMPILE}as")
         self._qemu_version = QemuVersion(arch=QEMU_ARCH)
@@ -114,6 +113,20 @@ class S390LKTRunner(lkt.runner.LKTRunner):
                 f"LLVM < {min_llvm_ver}",
                 f"s390 requires LLVM {min_llvm_ver} or newer {reason} (using '{self._llvm_version}')",
             )
+
+        gnu_vars = ['OBJCOPY', 'OBJDUMP']
+        # https://github.com/llvm/llvm-project/pull/75643
+        lld_res = subprocess.run([shutil.which('ld.lld'), '-m', 'elf64_s390'],
+                                 capture_output=True,
+                                 check=False,
+                                 text=True)
+        # https://lore.kernel.org/20240207-s390-lld-and-orphan-warn-v1-11-8a665b3346ab@kernel.org/
+        s390_makefile_txt = Path(self.folders.source,
+                                 'arch/s390/Makefile').read_text(encoding='utf-8')
+        if 'error: unknown emulation:' in lld_res.stdout or '-z notext' not in s390_makefile_txt:
+            gnu_vars.append('LD')
+        for variable in gnu_vars:
+            self.make_vars[variable] = f"{CROSS_COMPILE}{variable.lower()}"
 
         if self.lsm.version < MIN_IAS_LNX_VER:
             self.make_vars['CROSS_COMPILE'] = CROSS_COMPILE
