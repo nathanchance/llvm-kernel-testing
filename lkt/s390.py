@@ -123,7 +123,7 @@ class S390LKTRunner(lkt.runner.LKTRunner):
         # https://lore.kernel.org/20240207-s390-lld-and-orphan-warn-v1-11-8a665b3346ab@kernel.org/
         s390_makefile_txt = Path(self.folders.source,
                                  'arch/s390/Makefile').read_text(encoding='utf-8')
-        if 'error: unknown emulation:' in lld_res.stdout or '-z notext' not in s390_makefile_txt:
+        if 'error: unknown emulation:' in lld_res.stderr or '-z notext' not in s390_makefile_txt:
             gnu_vars.append('LD')
         for variable in gnu_vars:
             self.make_vars[variable] = f"{CROSS_COMPILE}{variable.lower()}"
