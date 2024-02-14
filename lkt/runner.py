@@ -327,6 +327,9 @@ class LLVMKernelRunner:
             ('MTK_MMSYS', 'drivers/soc/mediatek/Kconfig'),
             # CONFIG_MTK_SMI as a module is invalid before https://git.kernel.org/linus/50fc8d9232cdc64b9e9d1b9488452f153de52b69
             ('MTK_SMI', 'drivers/memory/Kconfig'),
+            # CONFIG_NET_DSA_REALTEK_{MDIO,SMI} as modules is invalid after https://git.kernel.org/netdev/net-next/c/98b75c1c149c653ad11a440636213eb070325158
+            *[(f"NET_DSA_REALTEK_{val}", 'drivers/net/dsa/realtek/Kconfig')
+              for val in ('MDIO', 'SMI')],
             # CONFIG_NVME_AUTH as a module is invalid before https://git.kernel.org/linus/6affe08aea5f3b630565676e227b41d55a6f009c
             ('NVME_AUTH', 'drivers/nvme/common/Kconfig'),
             # CONFIG_NVMEM_ZYNQMP as a module is invalid before https://git.kernel.org/linus/bcd1fe07def0f070eb5f31594620aaee6f81d31a
