@@ -120,10 +120,12 @@ class S390LKTRunner(lkt.runner.LKTRunner):
                                  capture_output=True,
                                  check=False,
                                  text=True)
+        no_s390_support_in_lld = 'error: unknown emulation:' in lld_res.stderr
         # https://lore.kernel.org/20240207-s390-lld-and-orphan-warn-v1-11-8a665b3346ab@kernel.org/
         s390_makefile_txt = Path(self.folders.source,
                                  'arch/s390/Makefile').read_text(encoding='utf-8')
-        if 'error: unknown emulation:' in lld_res.stderr or '-z notext' not in s390_makefile_txt:
+        no_s390_kernel_support_for_lld = '-z notext' not in s390_makefile_txt
+        if no_s390_support_in_lld or no_s390_kernel_support_for_lld:
             gnu_vars.append('LD')
         # https://github.com/llvm/llvm-project/pull/81841
         objcopy_res = subprocess.run(
@@ -132,11 +134,13 @@ class S390LKTRunner(lkt.runner.LKTRunner):
             check=False,
             input='',
             text=True)
+        no_s390_support_in_llvm_objcopy = 'error: invalid output format:' in objcopy_res.stderr
         # https://github.com/ClangBuiltLinux/linux/issues/1996
         s390_boot_makefile_txt = ''
         if (s390_boot_makefile := Path(self.folders.source, 'arch/s390/boot/Makefile')).exists():
             s390_boot_makefile_txt = s390_boot_makefile.read_text(encoding='utf-8')
-        if 'error: invalid output format:' in objcopy_res.stderr or '--set-section-flags .vmlinux.info=alloc,load' not in s390_boot_makefile_txt:
+        have_broken_info_bin = '--set-section-flags .vmlinux.info=alloc,load' not in s390_boot_makefile_txt
+        if no_s390_support_in_llvm_objcopy or have_broken_info_bin:
             gnu_vars.append('OBJCOPY')
         for variable in gnu_vars:
             self.make_vars[variable] = f"{CROSS_COMPILE}{variable.lower()}"
