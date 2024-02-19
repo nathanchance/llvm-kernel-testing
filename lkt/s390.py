@@ -114,7 +114,7 @@ class S390LKTRunner(lkt.runner.LKTRunner):
                 f"s390 requires LLVM {min_llvm_ver} or newer {reason} (using '{self._llvm_version}')",
             )
 
-        gnu_vars = ['OBJDUMP']
+        gnu_vars = []
         # https://github.com/llvm/llvm-project/pull/75643
         lld_res = subprocess.run([shutil.which('ld.lld'), '-m', 'elf64_s390'],
                                  capture_output=True,
@@ -142,6 +142,10 @@ class S390LKTRunner(lkt.runner.LKTRunner):
         have_broken_info_bin = '--set-section-flags .vmlinux.info=alloc,load' not in s390_boot_makefile_txt
         if no_s390_support_in_llvm_objcopy or have_broken_info_bin:
             gnu_vars.append('OBJCOPY')
+        # https://github.com/ClangBuiltLinux/linux/issues/859
+        have_objdump_t_j_wa = r' | grep "\s$*\s\+" | ' in s390_boot_makefile_txt
+        if not have_objdump_t_j_wa:
+            gnu_vars.append('OBJDUMP')
         for variable in gnu_vars:
             self.make_vars[variable] = f"{CROSS_COMPILE}{variable.lower()}"
 
