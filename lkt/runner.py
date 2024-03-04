@@ -263,6 +263,8 @@ class LLVMKernelRunner:
         compat_changes = [
             # CONFIG_BCM7120_L2_IRQ as a module is invalid before https://git.kernel.org/linus/3ac268d5ed2233d4a2db541d8fd744ccc13f46b0
             ('BCM7120_L2_IRQ', 'drivers/irqchip/Kconfig'),
+            # CONFIG_CHARGER_MANAGER as a module is invalid before https://git.kernel.org/linus/241eaabc3c315cdfea505725a43de848f498527f
+            ('CHARGER_MANAGER', 'drivers/power/supply/Kconfig'),
             # CONFIG_CHELSIO_IPSEC_INLINE as a module is invalid before https://git.kernel.org/linus/1b77be463929e6d3cefbc929f710305714a89723
             ('CHELSIO_IPSEC_INLINE', 'drivers/crypto/chelsio/Kconfig'),
             # CONFIG_COMMON_CLK_MT8173 and CONFIG_COMMON_CLK_MT8173_MMSYS as modules is invalid before https://git.kernel.org/linus/4c02c9af3cb9449cd176300b288e8addb5083934
@@ -347,6 +349,8 @@ class LLVMKernelRunner:
             ('POWER_RESET_SC27XX', 'drivers/power/reset/Kconfig'),
             # CONFIG_PROC_THERMAL_MMIO_RAPL as a module is invalid before https://git.kernel.org/linus/a5923b6c3137b9d4fc2ea1c997f6e4d51ac5d774
             ('PROC_THERMAL_MMIO_RAPL', 'drivers/thermal/intel/int340x_thermal/Kconfig'),
+            # CONFIG_PWM_CRC as a module is invalid before https://git.kernel.org/linus/91a69d38cf97b195fef1a10ea53cf429aa134497
+            ('PWM_CRC', 'drivers/pwm/Kconfig'),
             # CONFIG_QCOM_IPCC as a module is invalid before https://git.kernel.org/linus/8d7e5908c0bcf8a0abc437385e58e49abab11a93
             ('QCOM_IPCC', 'drivers/mailbox/Kconfig'),
             # CONFIG_QCOM_RPMPD as a module is invalid before https://git.kernel.org/linus/f29808b2fb85a7ff2d4830aa1cb736c8c9b986f4
@@ -391,6 +395,8 @@ class LLVMKernelRunner:
             ('VFIO_VIRQFD', 'drivers/vfio/Kconfig'),
             # CONFIG_VIRTIO_IOMMU as a module is invalid before https://git.kernel.org/linus/fa4afd78ea12cf31113f8b146b696c500d6a9dc3
             ('VIRTIO_IOMMU', 'drivers/iommu/Kconfig'),
+            # CONFIG_XEN_PVCALLS_BACKEND as a module is invalid before https://git.kernel.org/linus/45da234467f381239d87536c86597149f189d375
+            ('XEN_PVCALLS_BACKEND', 'drivers/xen/Kconfig'),
         ]
         for config_sym, file in compat_changes:
             sym_is_m = lkt.utils.is_modular(self.folders.source, self.folders.build, config_sym)
