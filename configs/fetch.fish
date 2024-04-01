@@ -40,16 +40,16 @@ for distro in $distros
             set deb_arches \
                 amd64 \
                 arm64 \
-                # armmp \ no 6.7.9 for armmp?
+                armmp \
                 i386 \
                 powerpc64le \
                 s390x
 
             for arch in $deb_arches
                 set package_version_signed 6.7.9
-                set kernel_version_signed 6.7.9-1
+                set kernel_version_signed 6.7.9-2
                 set package_version_unsigned $package_version_signed
-                set kernel_version_unsigned (string replace 1 2 $kernel_version_signed)
+                set kernel_version_unsigned $kernel_version_signed
 
                 set deb_arch_config $arch
                 set deb_arch_final $arch
