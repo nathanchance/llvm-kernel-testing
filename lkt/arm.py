@@ -16,6 +16,9 @@ MIN_IAS_LNX_VER = LinuxVersion(5, 13, 0)
 # https://github.com/ClangBuiltLinux/linux/issues?q=is%3Aissue+label%3A%22%5BARCH%5D+arm32%22+label%3A%22%5BTOOL%5D+integrated-as%22+label%3A%22%5BFIXED%5D%5BLLVM%5D+13%22+
 MIN_IAS_LLVM_VER = ClangVersion(13, 0, 0)
 
+# https://github.com/llvm/llvm-project/commit/cacd3e73d7f87ef3593443271ab3f170d0360934
+MIN_LLVM_VER_CFI = ClangVersion(16, 0, 0)
+
 
 def disable_be(linux):
     text = Path(linux, 'arch/arm/mm/Kconfig').read_text(encoding='utf-8')
@@ -69,6 +72,19 @@ class ArmLKTRunner(lkt.runner.LKTRunner):
             self._skip_one(
                 f"{KERNEL_ARCH} multi_v7_defconfig + Thumb2",
                 f"either lack of 9d417cbe36eee (from {LinuxVersion(5, 15, 0)}) or presence of CONFIG_HAVE_FUTEX_CMPXCHG",
+            )
+
+        arm_kconfig_text = Path(self.folders.source, 'arch/arm/Kconfig').read_text(encoding='utf-8')
+        arm_supports_kcfi = 'select ARCH_SUPPORTS_CFI_CLANG' in arm_kconfig_text
+        if self._llvm_version >= MIN_LLVM_VER_CFI and arm_supports_kcfi:
+            runner = ArmLLVMKernelRunner()
+            runner.configs = ['multi_v7_defconfig', 'CONFIG_CFI_CLANG=y']
+            runners.append(runner)
+        else:
+            # https://git.kernel.org/rmk/c/1a4fec49efe5273eb2fcf575175a117745f76f97
+            self._skip_one(
+                f"{KERNEL_ARCH} CFI configs",
+                f"either LLVM < {MIN_LLVM_VER_CFI} (using '{self._llvm_version}') or Linux < {LinuxVersion(6, 10, 0)} (have '{self.lsm.version}')",
             )
 
         for runner in runners:
