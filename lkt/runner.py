@@ -418,6 +418,16 @@ class LLVMKernelRunner:
         if mfd_arizona_is_m and 'arizona-objs' not in file_text:
             configs.append('CONFIG_MFD_ARIZONA=y')
 
+        # Handle type of CONFIG_BASE_SMALL changing: https://lore.kernel.org/20240505080343.1471198-1-yoann.congal@smile.fr/
+        file_text = ''.join(
+            Path(self.folders.source, 'init/Kconfig').read_text(encoding='utf-8').split())
+        base_small_val = lkt.utils.get_config_val(self.folders.source, self.folders.build,
+                                                  'BASE_SMALL')
+        if 'configBASE_SMALLint' in file_text and base_small_val == 'n':
+            configs.append('CONFIG_BASE_SMALL=0')
+        if 'configBASE_SMALLbool' in file_text and base_small_val == '0':
+            configs.append('CONFIG_BASE_SMALL=n')
+
         return configs
 
     def _initial_distro_prep(self):
