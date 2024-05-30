@@ -480,6 +480,9 @@ class LLVMKernelRunner:
 
         self._config = Path(self.folders.build, '.config')
 
+        if 'allmodconfig' in self.configs and 'CONFIG_WERROR' in self.lsm.configs:
+            self.configs.append('CONFIG_WERROR=n')
+
         if 'CONFIG_WERROR=n' in self.configs:
             # We do not want to have to maintain these in the callers but it is
             # important to note them in the build logs, so we add them here.

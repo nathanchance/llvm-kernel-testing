@@ -63,11 +63,8 @@ class S390LKTRunner(lkt.runner.LKTRunner):
         for config_target in other_cfgs:
             runner = S390LLVMKernelRunner()
             runner.configs = [config_target]
-            if config_target == 'allmodconfig':
-                if '925d046e7e52' in self.lsm.commits and '876e480da2f74' not in self.lsm.commits:
-                    runner.configs.append('CONFIG_INFINIBAND_ADDR_TRANS=n')
-                if 'CONFIG_WERROR' in self.lsm.configs:
-                    runner.configs.append('CONFIG_WERROR=n')
+            if config_target == 'allmodconfig' and '925d046e7e52' in self.lsm.commits and '876e480da2f74' not in self.lsm.commits:
+                runner.configs.append('CONFIG_INFINIBAND_ADDR_TRANS=n')
             self._runners.append(runner)
 
     def _add_distroconfig_runners(self):

@@ -56,8 +56,6 @@ class I386LKTRunner(lkt.runner.LKTRunner):
             runner.configs = [config_target]
             if config_target == 'allmodconfig':
                 runner.configs += self._disable_broken_configs_with_fortify()
-                if 'CONFIG_WERROR' in self.lsm.configs:
-                    runner.configs.append('CONFIG_WERROR=n')
             self._runners.append(runner)
 
     def _add_distroconfig_runners(self):

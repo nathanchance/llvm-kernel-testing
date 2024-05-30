@@ -101,12 +101,8 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
     def _add_otherconfig_runners(self):
         runners = []
 
-        base_all_cfgs = ['allmodconfig']
-        if 'CONFIG_WERROR' in self.lsm.configs:
-            base_all_cfgs.append('CONFIG_WERROR=n')
-
         runner = RISCVLLVMKernelRunner()
-        runner.configs = base_all_cfgs.copy()
+        runner.configs = ['allmodconfig']
         runners.append(runner)
 
         # The first version to support linker relaxation
@@ -120,7 +116,7 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
             )
         else:
             runner = RISCVLLVMKernelRunner()
-            runner.configs = [*base_all_cfgs, 'CONFIG_GCOV_KERNEL=n', 'CONFIG_LTO_CLANG_THIN=y']
+            runner.configs = ['allmodconfig', 'CONFIG_GCOV_KERNEL=n', 'CONFIG_LTO_CLANG_THIN=y']
             runners.append(runner)
 
         self._runners += runners

@@ -61,8 +61,6 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
         # https://github.com/ClangBuiltLinux/linux/issues/1895
         if '2363088eba2ec' in self.lsm.commits and base_all_cfgs[0] == 'allyesconfig':
             base_all_cfgs.append('CONFIG_KCOV=n')
-        if 'CONFIG_WERROR' in self.lsm.configs:
-            base_all_cfgs.append('CONFIG_WERROR=n')
 
         runner = LoongArchLLVMKernelRunner()
         runner.configs = base_all_cfgs.copy()

@@ -75,8 +75,6 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
     def _add_otherconfig_runners(self):
         runner = X8664LLVMKernelRunner()
         runner.configs = ['allmodconfig']
-        if 'CONFIG_WERROR' in self.lsm.configs:
-            runner.configs.append('CONFIG_WERROR=n')
         # https://github.com/ClangBuiltLinux/linux/issues/515
         if self.lsm.version < (5, 7, 0):
             runner.configs += ['CONFIG_STM=n', 'CONFIG_TEST_MEMCAT_P=n']
@@ -90,8 +88,6 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
                 'CONFIG_KASAN=n',
                 'CONFIG_LTO_CLANG_THIN=y',
             ]
-            if 'CONFIG_WERROR' in self.lsm.configs:
-                runner.configs.append('CONFIG_WERROR=n')
             self._runners.append(runner)
 
     def _add_distroconfig_runners(self):

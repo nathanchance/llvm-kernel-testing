@@ -227,10 +227,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         elfv2_on_by_default = ppc64_be_defaults_to_elfv2(self.lsm)
         if can_select_elfv2 or elfv2_on_by_default:
             runner = PowerPCLLVMKernelRunner()
-            runner.configs = [
-                'allmodconfig',
-                'CONFIG_WERROR=n',
-            ]
+            runner.configs = ['allmodconfig']
             if not elfv2_on_by_default:
                 runner.configs.append('CONFIG_PPC64_BIG_ENDIAN_ELF_ABI_V2=y')
             runner.make_vars.update(self._ppc64_vars)

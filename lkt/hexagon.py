@@ -23,8 +23,6 @@ class HexagonLKTRunner(lkt.runner.LKTRunner):
         if 'ffb92ce826fd8' in self.lsm.commits and self._llvm_version >= min_llvm_ver_for_allmod:
             runner = lkt.runner.LLVMKernelRunner()
             runner.configs = ['allmodconfig']
-            if 'CONFIG_WERROR' in self.lsm.configs:
-                runner.configs.append('CONFIG_WERROR=n')
             self._runners.append(runner)
         else:
             self._skip_one(

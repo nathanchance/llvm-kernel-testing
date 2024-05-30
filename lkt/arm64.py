@@ -106,8 +106,6 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
         runner.configs = ['allmodconfig']
         if 'd8e85e144bbe1' not in self.lsm.commits:
             runner.configs.append('CONFIG_CPU_BIG_ENDIAN=n')
-        if 'CONFIG_WERROR' in self.lsm.configs:
-            runner.configs.append('CONFIG_WERROR=n')
         self._runners.append(runner)
 
         if 'CONFIG_LTO_CLANG_THIN' in self.lsm.configs:
@@ -118,8 +116,6 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
                 'CONFIG_KASAN=n',
                 'CONFIG_LTO_CLANG_THIN=y',
             ]
-            if 'CONFIG_WERROR' in self.lsm.configs:
-                runner.configs.append('CONFIG_WERROR=n')
             self._runners.append(runner)
 
         for config_target in ['allnoconfig', 'tinyconfig']:

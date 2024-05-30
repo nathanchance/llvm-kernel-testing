@@ -96,11 +96,8 @@ class ArmLKTRunner(lkt.runner.LKTRunner):
         for config_target in ['allmodconfig', 'allnoconfig', 'tinyconfig']:
             runner = ArmLLVMKernelRunner()
             runner.configs = [config_target]
-            if config_target == 'allmodconfig':
-                if disable_be(self.folders.source):
-                    runner.configs.append('CONFIG_CPU_BIG_ENDIAN=n')
-                if 'CONFIG_WERROR' in self.lsm.configs:
-                    runner.configs.append('CONFIG_WERROR=n')
+            if config_target == 'allmodconfig' and disable_be(self.folders.source):
+                runner.configs.append('CONFIG_CPU_BIG_ENDIAN=n')
             self._runners.append(runner)
 
     def _add_distroconfig_runners(self):
