@@ -31,6 +31,11 @@ class LinuxSourceManager:
         # First appeared: v5.13-rc1~145^2~17
         self._add_config('CONFIG_CFI_CLANG', 'arch/Kconfig')
 
+        # Introduced by: drm: Add CONFIG_DRM_WERROR
+        # Link: https://git.kernel.org/linus/f89632a9e5fa6c4787c14458cd42a9ef42025434
+        # First appeared: v6.10-rc1~148^2~24^2~105
+        self._add_config('CONFIG_DRM_WERROR', 'drivers/gpu/drm/Kconfig')
+
         # Removed by: futex: Remove futex_cmpxchg detection
         # Link: https://git.kernel.org/linus/3297481d688a5cc2973ea58bd78e66b8639748b1
         # Removed in: v5.17-rc1~120^2~18
