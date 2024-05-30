@@ -137,7 +137,6 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
                 runner.result[
                     'boot'] = f"skipped due to lack of f2928e224d85e (from {LinuxVersion(5, 16, 0)})"
             runner.configs = [Path(self.folders.configs, distro, f"{config_name}.config")]
-            runner.lsm = self.lsm
             self._runners.append(runner)
 
     def run(self):

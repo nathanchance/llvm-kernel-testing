@@ -115,7 +115,6 @@ class ArmLKTRunner(lkt.runner.LKTRunner):
             runner = ArmLLVMKernelRunner()
             runner.bootable = distro != 'fedora'
             runner.configs = [Path(self.folders.configs, distro, f"{config_name}.config")]
-            runner.lsm = self.lsm
             self._runners.append(runner)
 
     def run(self):

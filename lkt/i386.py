@@ -70,7 +70,6 @@ class I386LKTRunner(lkt.runner.LKTRunner):
                                    'arch/x86/include/asm/atomic64_32.h').read_text(encoding='utf-8')
             if distro == 'debian' and 'while ((old = arch_atomic64_cmpxchg(v, c, c ^ i)) != c)' not in atomic64_32_txt:
                 runner.configs += ['CONFIG_MGEODE_LX=n', 'CONFIG_M686=y']
-            runner.lsm = self.lsm
             self._runners.append(runner)
 
     # https://github.com/ClangBuiltLinux/linux/issues/1442

@@ -117,7 +117,6 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
                 for sym in ['STM', 'TEST_MEMCAT_P']:
                     if lkt.utils.is_set(self.folders.source, runner.configs[0], sym):
                         runner.configs.append(f"CONFIG_{sym}=n")
-            runner.lsm = self.lsm
             self._runners.append(runner)
 
     def run(self):

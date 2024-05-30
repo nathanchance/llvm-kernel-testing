@@ -475,6 +475,8 @@ class LLVMKernelRunner:
             raise RuntimeError('No build folder set?')
         if not self.configs:
             raise RuntimeError('No configuration to build?')
+        if not self.lsm:
+            raise RuntimeError('No source manager set?')
 
         self._config = Path(self.folders.build, '.config')
 
@@ -482,8 +484,6 @@ class LLVMKernelRunner:
         # configurations to build properly, as those configuration
         # changes should be visible in the log.
         if isinstance(self.configs[0], Path):
-            if not self.lsm:
-                raise RuntimeError('No source manager with distro configuration?')
             configs = [f"{self.configs[0].parts[-2]} config"]
             self._initial_distro_prep()
             if len(self.configs) > 1:
@@ -557,6 +557,8 @@ class LKTRunner:
 
         for runner in self._runners:
             runner.folders = self.folders
+            if not runner.lsm and self.lsm:
+                runner.lsm = self.lsm
             runner.make_vars.update(self.make_vars)
             self._results.append(runner.run())
 

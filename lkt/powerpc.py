@@ -281,7 +281,6 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
                     'and Linux < 5.19 (7b4537199a4a)',
                 ]
                 runner.result['boot'] = ' '.join(parts)
-            runner.lsm = self.lsm
             runner.make_vars.update(self._ppc64le_vars)
             self._runners.append(runner)
 

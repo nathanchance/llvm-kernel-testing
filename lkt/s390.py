@@ -82,7 +82,6 @@ class S390LKTRunner(lkt.runner.LKTRunner):
             runner.configs = [Path(self.folders.configs, distro, 's390x.config')]
             if distro == 'fedora' and 'efe5e0fea4b24' not in self.lsm.commits:
                 runner.configs += ['CONFIG_MARCH_Z13=n', 'CONFIG_MARCH_Z196=y']
-            runner.lsm = self.lsm
             self._runners.append(runner)
 
     def run(self):
