@@ -301,6 +301,8 @@ class LLVMKernelRunner:
             ('CPUFREQ_DT_PLATDEV', 'drivers/cpufreq/Kconfig'),
             # CONFIG_CS89x0_PLATFORM as a module is invalid before https://git.kernel.org/linus/47fd22f2b84765a2f7e3f150282497b902624547
             ('CS89x0_PLATFORM', 'drivers/net/ethernet/cirrus/Kconfig'),
+            # CONFIG_DIMLIB as a module is invalid before https://git.kernel.org/linus/0d5044b4e7749099b12da5f2c8618f04bb4fa82f
+            ('DIMLIB', 'lib/Kconfig'),
             # CONFIG_DRIVER_PE_KUNIT_TEST as a module is invalid before https://git.kernel.org/linus/98ad1dd06a02096fff6c65703a85b9f3c3de1a7d
             ('DRIVER_PE_KUNIT_TEST', 'drivers/base/test/Kconfig'),
             # CONFIG_DRM_GEM_{CMA,SHMEM}_HELPER as modules is invalid before https://git.kernel.org/linus/4b2b5e142ff499a2bef2b8db0272bbda1088a3fe
@@ -367,6 +369,8 @@ class LLVMKernelRunner:
             # CONFIG_RTW88_8822CE as a module is invalid before https://git.kernel.org/linus/ba0fbe236fb8a7b992e82d6eafb03a600f5eba43
             *[(f"RTW88_8822{val}E", 'drivers/net/wireless/realtek/rtw88/Kconfig')
               for val in ['B', 'C']],
+            # CONFIG_SERIAL_SC16IS7XX_{I2C,SPI} as modules is invalid before https://git.kernel.org/linus/d49216438139bca0454e69b6c4ab8a01af2b72ed
+            *[(f"SERIAL_SC16IS7XX_{val}", 'drivers/tty/serial/Kconfig') for val in ('I2C', 'SPI')],
             # CONFIG_SERIAL_LANTIQ as a module is invalid before https://git.kernel.org/linus/ad406341bdd7d22ba9497931c2df5dde6bb9440e
             ('SERIAL_LANTIQ', 'drivers/tty/serial/Kconfig'),
             # CONFIG_SND_SOC_SOF_DEBUG_PROBES as a module is invalid before https://git.kernel.org/linus/3dc0d709177828a22dfc9d0072e3ac937ef90d06
