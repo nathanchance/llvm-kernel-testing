@@ -51,7 +51,7 @@ class I386LKTRunner(lkt.runner.LKTRunner):
         self._runners += runners
 
     def _add_otherconfig_runners(self):
-        for config_target in ['allmodconfig', 'allnoconfig', 'tinyconfig']:
+        for config_target in ('allmodconfig', 'allnoconfig', 'tinyconfig'):
             runner = I386LLVMKernelRunner()
             runner.configs = [config_target]
             if config_target == 'allmodconfig':
@@ -59,7 +59,7 @@ class I386LKTRunner(lkt.runner.LKTRunner):
             self._runners.append(runner)
 
     def _add_distroconfig_runners(self):
-        for distro in ['debian', 'opensuse']:
+        for distro in ('debian', 'opensuse'):
             runner = I386LLVMKernelRunner()
             runner.configs = [Path(self.folders.configs, distro, "i386.config")]
             runner.configs += self._disable_broken_configs_with_fortify()

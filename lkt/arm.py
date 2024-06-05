@@ -93,7 +93,7 @@ class ArmLKTRunner(lkt.runner.LKTRunner):
         self._runners += runners
 
     def _add_otherconfig_runners(self):
-        for config_target in ['allmodconfig', 'allnoconfig', 'tinyconfig']:
+        for config_target in ('allmodconfig', 'allnoconfig', 'tinyconfig'):
             runner = ArmLLVMKernelRunner()
             runner.configs = [config_target]
             if config_target == 'allmodconfig' and disable_be(self.folders.source):
@@ -115,7 +115,7 @@ class ArmLKTRunner(lkt.runner.LKTRunner):
             self._runners.append(runner)
 
     def run(self):
-        for cross_compile in ['arm-linux-gnu-', 'arm-linux-gnueabihf-', f"{CLANG_TARGET}-"]:
+        for cross_compile in ('arm-linux-gnu-', 'arm-linux-gnueabihf-', f"{CLANG_TARGET}-"):
             if shutil.which(f"{cross_compile}as"):
                 break
 

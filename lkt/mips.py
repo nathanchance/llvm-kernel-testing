@@ -30,7 +30,7 @@ class MipsLKTRunner(lkt.runner.LKTRunner):
     def __init__(self):
         super().__init__(KERNEL_ARCH, CLANG_TARGET)
 
-        for cross_compile in ['mips64-linux-gnu-', f"{CLANG_TARGET}-", 'mipsel-linux-gnu-']:
+        for cross_compile in ('mips64-linux-gnu-', f"{CLANG_TARGET}-", 'mipsel-linux-gnu-'):
             if shutil.which(f"{cross_compile}as"):
                 self._cross_compile = cross_compile
 
@@ -90,7 +90,7 @@ class MipsLKTRunner(lkt.runner.LKTRunner):
             self._runners.append(runner)
 
     def _add_otherconfig_runners(self):
-        for cfg_target in ['allnoconfig', 'tinyconfig']:
+        for cfg_target in ('allnoconfig', 'tinyconfig'):
             runner = MipsLLVMKernelRunner()
             runner.configs = [cfg_target]
             runner.make_vars.update(self._be_vars)

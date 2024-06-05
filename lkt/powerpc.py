@@ -55,7 +55,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
     def __init__(self):
         super().__init__(KERNEL_ARCH, CLANG_TARGET)
 
-        for cross_compile in ['powerpc64-linux-gnu-', f"{CLANG_TARGET}-", 'powerpc64le-linux-gnu-']:
+        for cross_compile in ('powerpc64-linux-gnu-', f"{CLANG_TARGET}-", 'powerpc64le-linux-gnu-'):
             # Assignment first so that 'CROSS_COMPILE' is always present in
             # self.make_vars. If binutils are not installed, the whole build
             # will be skipped later.
@@ -238,7 +238,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
                 f"lack of a11334d8327b (from {LinuxVersion(6, 4, 0)}) with LLVM < {min_llvm_ver_for_elfv2_select} (using '{self._llvm_version}') or lack of 9d90161ca5c7 (from {LinuxVersion(6, 5, 0)})",
             )
 
-        for cfg_target in ['allnoconfig', 'tinyconfig']:
+        for cfg_target in ('allnoconfig', 'tinyconfig'):
             runner = PowerPCLLVMKernelRunner()
             runner.configs = [cfg_target]
             self._runners.append(runner)

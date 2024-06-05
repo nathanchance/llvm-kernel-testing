@@ -110,7 +110,7 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
                 else:
                     runner.make_vars['OBJCOPY'] = 'objcopy'
             if self.lsm.version < (5, 7, 0):
-                for sym in ['STM', 'TEST_MEMCAT_P']:
+                for sym in ('STM', 'TEST_MEMCAT_P'):
                     if lkt.utils.is_set(self.folders.source, runner.configs[0], sym):
                         runner.configs.append(f"CONFIG_{sym}=n")
             self._runners.append(runner)

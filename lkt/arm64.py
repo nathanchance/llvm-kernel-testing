@@ -118,7 +118,7 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
             ]
             self._runners.append(runner)
 
-        for config_target in ['allnoconfig', 'tinyconfig']:
+        for config_target in ('allnoconfig', 'tinyconfig'):
             runner = Arm64LLVMKernelRunner()
             runner.configs = [config_target]
             self._runners.append(runner)
@@ -136,7 +136,7 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
             runner.bootable = True
             runner.configs = [Path(self.folders.configs, distro, f"{config_name}.config")]
             if distro == 'fedora' and self.lsm.version < (5, 7, 0):
-                for sym in ['STM', 'TEST_MEMCAT_P']:
+                for sym in ('STM', 'TEST_MEMCAT_P'):
                     if lkt.utils.is_set(self.folders.source, runner.configs[0], sym):
                         runner.configs.append(f"CONFIG_{sym}=n")
             self._runners.append(runner)

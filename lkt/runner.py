@@ -250,7 +250,7 @@ class LLVMKernelRunner:
 
         if distro == 'debian':
             # The Android drivers are not modular in upstream
-            for android_cfg in ['ANDROID_BINDER_IPC', 'ASHMEM']:
+            for android_cfg in ('ANDROID_BINDER_IPC', 'ASHMEM'):
                 if lkt.utils.is_modular(self.folders.source, self.folders.build, android_cfg):
                     configs.append(f"CONFIG_{android_cfg}=y")
 
@@ -269,9 +269,9 @@ class LLVMKernelRunner:
             ('CHELSIO_IPSEC_INLINE', 'drivers/crypto/chelsio/Kconfig'),
             # CONFIG_COMMON_CLK_MT8173 and CONFIG_COMMON_CLK_MT8173_MMSYS as modules is invalid before https://git.kernel.org/linus/4c02c9af3cb9449cd176300b288e8addb5083934
             *[(f"COMMON_CLK_MT8173{val}", 'drivers/clk/mediatek/Kconfig')
-              for val in ['', '_MMSYS']],
+              for val in ('', '_MMSYS')],
             # CONFIG_COMMON_CLK_MT8183 and all its subdrivers as modules is invalid before https://git.kernel.org/linus/95ffe65437b239db3f5a570b31cd79629c851743
-            *[(f"COMMON_CLK_MT8183{val}", 'drivers/clk/mediatek/Kconfig') for val in [
+            *[(f"COMMON_CLK_MT8183{val}", 'drivers/clk/mediatek/Kconfig') for val in (
                 '',
                 '_AUDIOSYS',
                 '_CAMSYS',
@@ -284,9 +284,9 @@ class LLVMKernelRunner:
                 '_MMSYS',
                 '_VDECSYS',
                 '_VENCSYS',
-            ]],
+            )],
             # CONFIG_CORESIGHT (and all of its drivers) as a module is invalid before https://git.kernel.org/linus/8e264c52e1dab8a7c1e036222ef376c8920c3423
-            *[(f"CORESIGHT{val}", 'drivers/hwtracing/coresight/Kconfig') for val in [
+            *[(f"CORESIGHT{val}", 'drivers/hwtracing/coresight/Kconfig') for val in (
                 '',
                 '_LINKS_AND_SINKS',
                 '_LINK_AND_SINK_TMC',
@@ -296,7 +296,7 @@ class LLVMKernelRunner:
                 '_SOURCE_ETM3X',
                 '_SOURCE_ETM4X',
                 '_STM',
-            ]],
+            )],
             # CONFIG_CPUFREQ_DT_PLATDEV as a module is invalid before https://git.kernel.org/linus/3b062a086984d35a3c6d3a1c7841d0aa73aa76af
             ('CPUFREQ_DT_PLATDEV', 'drivers/cpufreq/Kconfig'),
             # CONFIG_CS89x0_PLATFORM as a module is invalid before https://git.kernel.org/linus/47fd22f2b84765a2f7e3f150282497b902624547
@@ -306,7 +306,7 @@ class LLVMKernelRunner:
             # CONFIG_DRIVER_PE_KUNIT_TEST as a module is invalid before https://git.kernel.org/linus/98ad1dd06a02096fff6c65703a85b9f3c3de1a7d
             ('DRIVER_PE_KUNIT_TEST', 'drivers/base/test/Kconfig'),
             # CONFIG_DRM_GEM_{CMA,SHMEM}_HELPER as modules is invalid before https://git.kernel.org/linus/4b2b5e142ff499a2bef2b8db0272bbda1088a3fe
-            *[(f"DRM_GEM_{val}_HELPER", 'drivers/gpu/drm/Kconfig') for val in ['CMA', 'SHMEM']],
+            *[(f"DRM_GEM_{val}_HELPER", 'drivers/gpu/drm/Kconfig') for val in ('CMA', 'SHMEM')],
             # CONFIG_FSCACHE as a module is invalid after https://git.kernel.org/next/linux-next/c/9896c4f367fcc44213d15fe7210e9305df8063f2
             # While the new configuration location is fs/netfs/Kconfig, we
             # check for whether or not FSCACHE can be a module in
@@ -318,7 +318,7 @@ class LLVMKernelRunner:
             # CONFIG_GPIO_PL061 as a module is invalid before https://git.kernel.org/linus/616844408de7f21546c3c2a71ea7f8d364f45e0d
             # CONFIG_GPIO_TPS68470 as a module is invalid before https://git.kernel.org/linus/a1ce76e89907a69713f729ff21db1efa00f3bb47
             *[(f"GPIO_{val}", 'drivers/gpio/Kconfig')
-              for val in ['DAVINCI', 'MXC', 'PL061', 'TPS68470']],
+              for val in ('DAVINCI', 'MXC', 'PL061', 'TPS68470')],
             # CONFIG_IMX_DSP as a module is invalid before https://git.kernel.org/linus/f52cdcce9197fef9d4a68792dd3b840ad2b77117
             ('IMX_DSP', 'drivers/firmware/imx/Kconfig'),
             # CONFIG_KPROBES_SANITY_TEST as a module is invalid before https://git.kernel.org/linus/e44e81c5b90f698025eadceb7eef8661eda117d5
@@ -342,7 +342,7 @@ class LLVMKernelRunner:
             # CONFIG_PCI_EXYNOS as a module is invalid before https://git.kernel.org/linus/778f7c194b1dac351d345ce723f8747026092949
             # CONFIG_PCI_MESON as a module is invalid before https://git.kernel.org/linus/a98d2187efd9e6d554efb50e3ed3a2983d340fe5
             *[(f"PCI_{val}", 'drivers/pci/controller/dwc/Kconfig')
-              for val in ['DRA7XX', 'DRA7XX_EP', 'DRA7XX_HOST', 'EXYNOS', 'MESON']],
+              for val in ('DRA7XX', 'DRA7XX_EP', 'DRA7XX_HOST', 'EXYNOS', 'MESON')],
             # CONFIG_PCI_MVEBU as a module is invalid before https://git.kernel.org/linus/0746ae1be12177ebda0666eefa82583cbaeeefd6
             ('PCI_MVEBU', 'drivers/pci/controller/Kconfig'),
             # CONFIG_PINCTRL_ROCKCHIP as a module is invalid before https://git.kernel.org/linus/be786ac5a6c4bf4ef3e4c569a045d302c1e60fe6
@@ -357,18 +357,18 @@ class LLVMKernelRunner:
             ('QCOM_IPCC', 'drivers/mailbox/Kconfig'),
             # CONFIG_QCOM_RPMPD as a module is invalid before https://git.kernel.org/linus/f29808b2fb85a7ff2d4830aa1cb736c8c9b986f4
             # CONFIG_QCOM_RPMHPD as a module is invalid before https://git.kernel.org/linus/d4889ec1fc6ac6321cc1e8b35bb656f970926a09
-            *[(f"QCOM_RPM{val}PD", 'drivers/soc/qcom/Kconfig') for val in ['', 'H']],
+            *[(f"QCOM_RPM{val}PD", 'drivers/soc/qcom/Kconfig') for val in ('', 'H')],
             # CONFIG_RADIO_ADAPTERS as a module is invalid before https://git.kernel.org/linus/215d49a41709610b9e82a49b27269cfaff1ef0b6
             ('RADIO_ADAPTERS', 'drivers/media/radio/Kconfig'),
             # CONFIG_RATIONAL as a module is invalid before https://git.kernel.org/linus/bcda5fd34417c89f653cc0912cc0608b36ea032c
             ('RATIONAL', 'lib/math/Kconfig'),
             # CONFIG_RESET_IMX7 as a module is invalid before https://git.kernel.org/linus/a442abbbe186e14128d18bc3e42fb0fbf1a62210
             # CONFIG_RESET_MESON as a module is invalid before https://git.kernel.org/linus/3bfe8933f9d187f93f0d0910b741a59070f58c4c
-            *[(f"RESET_{val}", 'drivers/reset/Kconfig') for val in ['IMX7', 'MESON']],
+            *[(f"RESET_{val}", 'drivers/reset/Kconfig') for val in ('IMX7', 'MESON')],
             # CONFIG_RTW88_8822BE as a module is invalid before https://git.kernel.org/linus/416e87fcc780cae8d72cb9370fa0f46007faa69a
             # CONFIG_RTW88_8822CE as a module is invalid before https://git.kernel.org/linus/ba0fbe236fb8a7b992e82d6eafb03a600f5eba43
             *[(f"RTW88_8822{val}E", 'drivers/net/wireless/realtek/rtw88/Kconfig')
-              for val in ['B', 'C']],
+              for val in ('B', 'C')],
             # CONFIG_SERIAL_SC16IS7XX_{I2C,SPI} as modules is invalid before https://git.kernel.org/linus/d49216438139bca0454e69b6c4ab8a01af2b72ed
             *[(f"SERIAL_SC16IS7XX_{val}", 'drivers/tty/serial/Kconfig') for val in ('I2C', 'SPI')],
             # CONFIG_SERIAL_LANTIQ as a module is invalid before https://git.kernel.org/linus/ad406341bdd7d22ba9497931c2df5dde6bb9440e
@@ -388,11 +388,11 @@ class LLVMKernelRunner:
             # CONFIG_TEGRA124_EMC as a module is invalid before https://git.kernel.org/linus/281462e593483350d8072a118c6e072c550a80fa
             # CONFIG_TEGRA20_EMC as a module is invalid before https://git.kernel.org/linus/0260979b018faaf90ff5a7bb04ac3f38e9dee6e3
             # CONFIG_TEGRA30_EMC as a module is invalid before https://git.kernel.org/linus/0c56eda86f8cad705d7d14e81e0e4efaeeaf4613
-            *[(f"TEGRA{ver}_EMC", 'drivers/memory/tegra/Kconfig') for ver in ['124', '20', '30']],
+            *[(f"TEGRA{ver}_EMC", 'drivers/memory/tegra/Kconfig') for ver in ('124', '20', '30')],
             # CONFIG_TI_CPTS as a module is invalid before https://git.kernel.org/linus/92db978f0d686468e527d49268e7c7e8d97d334b
             ('TI_CPTS', 'drivers/net/ethernet/ti/Kconfig'),
             # CONFIG_TI_K3_UDMA and CONFIG_TI_K3_UDMA_GLUE_LAYER as modules is invalid before https://git.kernel.org/linus/56b0a668cb35c5f04ef98ffc22b297f116fe7108
-            *[(f"TI_K3_UDMA{suffix}", 'drivers/dma/ti/Kconfig') for suffix in ['', '_GLUE_LAYER']],
+            *[(f"TI_K3_UDMA{suffix}", 'drivers/dma/ti/Kconfig') for suffix in ('', '_GLUE_LAYER')],
             # CONFIG_UNICODE as a module is invalid before https://git.kernel.org/linus/5298d4bfe80f6ae6ae2777bcd1357b0022d98573
             ('UNICODE', 'fs/unicode/Kconfig'),
             # CONFIG_VFIO_VIRQFD as a module is invalid after https://git.kernel.org/next/linux-next/c/e2d55709398e62cf53e5c7df3758ae52cc62d63a
