@@ -46,8 +46,8 @@ for distro in $distros
                 s390x
 
             for arch in $deb_arches
-                set package_version_signed 6.8.12
-                set kernel_version_signed $package_version_signed-1
+                set package_version_signed 6.9
+                set kernel_version_signed $package_version_signed.2-1~exp1
                 set package_version_unsigned $package_version_signed
                 set kernel_version_unsigned $kernel_version_signed
 
