@@ -23,6 +23,9 @@ class HexagonLKTRunner(lkt.runner.LKTRunner):
         if 'ffb92ce826fd8' in self.lsm.commits and self._llvm_version >= min_llvm_ver_for_allmod:
             runner = lkt.runner.LLVMKernelRunner()
             runner.configs = ['allmodconfig']
+            # https://github.com/llvm/llvm-project/issues/80185#issuecomment-2187294487
+            if self._llvm_version >= ClangVersion(19, 0, 0):
+                runner.configs.append('CONFIG_FORTIFY_KUNIT_TEST=n')
             self._runners.append(runner)
         else:
             self._skip_one(
