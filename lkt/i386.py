@@ -63,11 +63,6 @@ class I386LKTRunner(lkt.runner.LKTRunner):
             runner = I386LLVMKernelRunner()
             runner.configs = [Path(self.folders.configs, distro, "i386.config")]
             runner.configs += self._disable_broken_configs_with_fortify()
-            # https://github.com/ClangBuiltLinux/linux/issues/2018
-            atomic64_32_txt = Path(self.lsm.folder,
-                                   'arch/x86/include/asm/atomic64_32.h').read_text(encoding='utf-8')
-            if distro == 'debian' and 'while ((old = arch_atomic64_cmpxchg(v, c, c ^ i)) != c)' not in atomic64_32_txt:
-                runner.configs += ['CONFIG_MGEODE_LX=n', 'CONFIG_M686=y']
             self._runners.append(runner)
 
     # https://github.com/ClangBuiltLinux/linux/issues/1442
