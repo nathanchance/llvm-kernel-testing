@@ -260,6 +260,34 @@ class LLVMKernelRunner:
                       '\tdefault "8" if PPC64 && PPC_64K_PAGES')
             configs.append(f"CONFIG_ARCH_FORCE_MAX_ORDER={8 if search in text else 9}")
 
+        mtk_common_clk_cfgs = {
+            # https://git.kernel.org/linus/650fcdf9181e4551cd22d651a8e637c800045c97
+            'MT2712':
+            ('', '_BDPSYS', '_IMGSYS', '_JPGDECSYS', '_MFGCFG', '_MMSYS', '_VDECSYS', '_VENCSYS'),
+            # https://git.kernel.org/linus/cfe2c864f0cc80ef292c0b01bb7b83b4cc393516
+            'MT6765':
+            ('_AUDIOSYS', '_CAMSYS', '_GCESYS', '_MMSYS', '_IMGSYS', '_VCODECSYS', '_MFGSYS',
+             '_MIPI0ASYS', '_MIPI0BSYS', '_MIPI1ASYS', '_MIPI1BSYS', '_MIPI2ASYS', '_MIPI2BSYS'),
+            # https://git.kernel.org/linus/6f0d2e07f2dbcafdc4018839bc99971dd1a7232d
+            'MT6797': ('_MMSYS', '_IMGSYS', '_VDECSYS', '_VENCSYS'),
+            # https://git.kernel.org/linus/c8f0ef997329728a136d07967b7a97cba3f07f7b
+            'MT7622': ('', '_ETHSYS', '_HIFSYS', '_AUDSYS'),
+            # https://git.kernel.org/linus/a851b17059bc07572224045f05ee556aa4ab0303
+            'MT7986': ('', '_ETHSYS'),
+            'MT8167': ('', '_AUDSYS', '_IMGSYS', '_MFGCFG', '_MMSYS', '_VDECSYS'),
+            # https://git.kernel.org/linus/4c02c9af3cb9449cd176300b288e8addb5083934
+            'MT8173': ('', '_MMSYS'),
+            # https://git.kernel.org/linus/95ffe65437b239db3f5a570b31cd79629c851743
+            'MT8183': ('', '_AUDIOSYS', '_CAMSYS', '_IMGSYS', '_IPU_CORE0', '_IPU_CORE1',
+                       '_IPU_ADL', '_IPU_CONN', '_MFGCFG', '_MMSYS', '_VDECSYS', '_VENCSYS'),
+            # https://git.kernel.org/linus/5baf38e06a570a2a4ed471a996aff6d6ba69cceb
+            'MT8186': ('', ),
+            # https://git.kernel.org/linus/9bfa4fb1e0d6de678a79ec5a05fac464edcee91d
+            'MT8192': ('', '_AUDSYS', '_CAMSYS', '_IMGSYS', '_IMP_IIC_WRAP', '_IPESYS', '_MDPSYS',
+                       '_MFGCFG', '_MMSYS', '_MSDC', '_SCP_ADSP', '_VDECSYS', '_VENCSYS'),
+            # https://git.kernel.org/linus/876d4e21aad8b60e155dbc5bbfb8c8e75c4d9f4b
+            'MT8516': ('', '_AUDSYS'),
+        }
         compat_changes = [
             # CONFIG_BCM7120_L2_IRQ as a module is invalid before https://git.kernel.org/linus/3ac268d5ed2233d4a2db541d8fd744ccc13f46b0
             ('BCM7120_L2_IRQ', 'drivers/irqchip/Kconfig'),
@@ -267,24 +295,10 @@ class LLVMKernelRunner:
             ('CHARGER_MANAGER', 'drivers/power/supply/Kconfig'),
             # CONFIG_CHELSIO_IPSEC_INLINE as a module is invalid before https://git.kernel.org/linus/1b77be463929e6d3cefbc929f710305714a89723
             ('CHELSIO_IPSEC_INLINE', 'drivers/crypto/chelsio/Kconfig'),
-            # CONFIG_COMMON_CLK_MT8173 and CONFIG_COMMON_CLK_MT8173_MMSYS as modules is invalid before https://git.kernel.org/linus/4c02c9af3cb9449cd176300b288e8addb5083934
-            *[(f"COMMON_CLK_MT8173{val}", 'drivers/clk/mediatek/Kconfig')
-              for val in ('', '_MMSYS')],
-            # CONFIG_COMMON_CLK_MT8183 and all its subdrivers as modules is invalid before https://git.kernel.org/linus/95ffe65437b239db3f5a570b31cd79629c851743
-            *[(f"COMMON_CLK_MT8183{val}", 'drivers/clk/mediatek/Kconfig') for val in (
-                '',
-                '_AUDIOSYS',
-                '_CAMSYS',
-                '_IMGSYS',
-                '_IPU_CORE0',
-                '_IPU_CORE1',
-                '_IPU_ADL',
-                '_IPU_CONN',
-                '_MFGCFG',
-                '_MMSYS',
-                '_VDECSYS',
-                '_VENCSYS',
-            )],
+            # Several Mediatek common clock drivers were converted to modules over time
+            *[(f"COMMON_CLK_{mt_rev}{cfg_suffix}", 'drivers/clk/mediatek/Kconfig')
+              for mt_rev, cfg_suffixes in mtk_common_clk_cfgs.items()
+              for cfg_suffix in cfg_suffixes],
             # CONFIG_CORESIGHT (and all of its drivers) as a module is invalid before https://git.kernel.org/linus/8e264c52e1dab8a7c1e036222ef376c8920c3423
             *[(f"CORESIGHT{val}", 'drivers/hwtracing/coresight/Kconfig') for val in (
                 '',
