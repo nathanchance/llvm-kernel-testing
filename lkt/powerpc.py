@@ -147,6 +147,14 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         wa_cbl_1445 = self.lsm.version >= (5, 18, 0) and self._llvm_version < (14, 0, 0)
         if wa_cbl_668 or wa_cbl_1292 or wa_cbl_1445:
             runner.configs.append('CONFIG_PPC_DISABLE_WERROR=y')
+        # There is a warning at boot on 5.4, which does not appear in 5.10 or
+        # newer. While it would be nice to investigate this issue, 5.4 is quite
+        # old at this point, so I am just going to workaround it in this way
+        # for now.
+        # [    0.372692] Unable to lookup optimized_callback()/emulate_step()
+        # [    0.376043] WARNING: CPU: 0 PID: 1 at arch/powerpc/kernel/optprobes.c:250 kretprobe_trampoline+0x16b4/0x19dc
+        if self.lsm.version < (5, 10, 0):
+            runner.configs.append('CONFIG_KPROBES=n')
         runner.image_target = 'vmlinux'
         # This needs to happen before the LLVM_IAS assignment below.
         runner.make_vars.update(self._ppc64_vars)
