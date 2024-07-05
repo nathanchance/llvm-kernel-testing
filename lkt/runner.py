@@ -142,18 +142,23 @@ class LLVMKernelRunner:
         extra_configs = requested_configs.copy()
         need_olddefconfig = False
 
+        cmds_to_log = []
+
         if isinstance(base_config, str):
             if extra_configs:
                 # Generate .config for merge_config.sh
                 make_cmd = [*base_make_cmd, base_config]
                 lkt.utils.show_cmd(make_cmd)
+                cmds_to_log.append(make_cmd)
                 lkt.utils.chronic(make_cmd)
             else:
                 base_make_cmd += [base_config]
         elif isinstance(base_config, Path):
             self.folders.build.mkdir(parents=True)
 
-            lkt.utils.show_cmd(['mv', base_config, self._config])
+            copy_cmd = ['cp', base_config, self._config]
+            lkt.utils.show_cmd(copy_cmd)
+            cmds_to_log.append(copy_cmd)
             shutil.copy(base_config, self._config)
             extra_configs += self._distro_adjustments()
 
@@ -190,6 +195,7 @@ class LLVMKernelRunner:
                 config_path,
             ]
             lkt.utils.show_cmd(merge_config)
+            cmds_to_log.append(merge_config)
             lkt.utils.chronic(merge_config)
 
             need_olddefconfig = True
@@ -201,12 +207,15 @@ class LLVMKernelRunner:
 
         # Actually build kernel
         lkt.utils.show_cmd(base_make_cmd)
+        cmds_to_log.append(base_make_cmd)
         start_time = time.time()
         sys.stderr.flush()
         sys.stdout.flush()
         with subprocess.Popen(
                 base_make_cmd, stderr=subprocess.STDOUT,
                 stdout=subprocess.PIPE) as proc, self.result['log'].open('bw') as file:
+            cmd_log_str = '\n'.join(f"{lkt.utils.cmd_str(cmd)}\n" for cmd in cmds_to_log)
+            file.write(cmd_log_str.encode('utf-8'))
             while (byte := proc.stdout.read(1)):
                 sys.stdout.buffer.write(byte)
                 sys.stdout.flush()

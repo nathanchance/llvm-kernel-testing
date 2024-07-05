@@ -44,6 +44,10 @@ def is_set(*args):
     return get_config_val(*args) not in ('', 'n', 'undef')
 
 
+def cmd_str(cmd):
+    return f"$ {' '.join(shlex.quote(str(item)) for item in cmd)}"
+
+
 def get_time_diff(start_time, end_time=None):
     if not end_time:
         end_time = time.time()
@@ -75,4 +79,4 @@ def header(hdr_str, end='\n'):
 
 
 def show_cmd(cmd):
-    print(f"\n$ {' '.join(shlex.quote(str(item)) for item in cmd)}")
+    print(f"\n{cmd_str(cmd)}")
