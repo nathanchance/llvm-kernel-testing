@@ -268,6 +268,9 @@ class LLVMKernelRunner:
             'MT6765':
             ('_AUDIOSYS', '_CAMSYS', '_GCESYS', '_MMSYS', '_IMGSYS', '_VCODECSYS', '_MFGSYS',
              '_MIPI0ASYS', '_MIPI0BSYS', '_MIPI1ASYS', '_MIPI1BSYS', '_MIPI2ASYS', '_MIPI2BSYS'),
+            # https://git.kernel.org/linus/f09b9460a5e448dac8fb4f645828c0668144f9e6
+            'MT6779': ('', '_AUDSYS', '_CAMSYS', '_IMGSYS', '_IPESYS', '_MFGCFG', '_MMSYS',
+                       '_VDECSYS', '_VENCSYS'),
             # https://git.kernel.org/linus/6f0d2e07f2dbcafdc4018839bc99971dd1a7232d
             'MT6797': ('_MMSYS', '_IMGSYS', '_VDECSYS', '_VENCSYS'),
             # https://git.kernel.org/linus/c8f0ef997329728a136d07967b7a97cba3f07f7b
