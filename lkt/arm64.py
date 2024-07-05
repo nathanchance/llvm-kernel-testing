@@ -136,9 +136,9 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
             runner.bootable = True
             runner.configs = [Path(self.folders.configs, distro, f"{config_name}.config")]
             if distro == 'fedora' and self.lsm.version < (5, 7, 0):
-                for sym in ('STM', 'TEST_MEMCAT_P'):
+                for sym, val in (('STM', 'y'), ('TEST_MEMCAT_P', 'n')):
                     if lkt.utils.is_set(self.folders.source, runner.configs[0], sym):
-                        runner.configs.append(f"CONFIG_{sym}=n")
+                        runner.configs.append(f"CONFIG_{sym}={val}")
             self._runners.append(runner)
 
     def run(self):
