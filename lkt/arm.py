@@ -105,7 +105,6 @@ class ArmLKTRunner(lkt.runner.LKTRunner):
             ('alpine', 'armv7'),
             ('archlinux', 'armv7'),
             ('debian', 'armmp'),
-            ('fedora', 'armv7hl'),
             ('opensuse', 'armv7hl'),
         ]
         for distro, config_name in configs:
