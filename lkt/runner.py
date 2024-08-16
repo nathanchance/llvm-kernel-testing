@@ -97,6 +97,7 @@ class LLVMKernelRunner:
         with self.result['log'].open('a') as file:
             proc = subprocess.run(boot_utils_cmd,
                                   check=False,
+                                  errors='replace',
                                   stderr=subprocess.STDOUT,
                                   stdout=subprocess.PIPE,
                                   text=True)
