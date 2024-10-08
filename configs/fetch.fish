@@ -41,16 +41,13 @@ for distro in $distros
                 amd64 \
                 arm64 \
                 armmp \
-                i386 \
+                # i386 \ No 6.11.2 for i386?
                 powerpc64le \
                 s390x
 
             for arch in $deb_arches
-                set package_version_signed 6.11
-                if test $arch = i386
-                    set package_version_signed 6.11-rc5 # no 6.11 regular for i386?
-                end
-                set kernel_version_signed (string replace - '~' $package_version_signed)-1~exp1 # $package_version_signed-1
+                set package_version_signed 6.11.2
+                set kernel_version_signed $package_version_signed-1
                 set package_version_unsigned $package_version_signed
                 set kernel_version_unsigned $kernel_version_signed
 
