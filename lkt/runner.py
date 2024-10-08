@@ -302,6 +302,8 @@ class LLVMKernelRunner:
             'MT8516': ('', '_AUDSYS'),
         }
         compat_changes = [
+            # CONFIG_ARM_SCMI_TRANSPORT_OPTEE as a module is invalid before https://git.kernel.org/linus/db9cc5e677783a8a9157804f4a61bb81d83049ac
+            ('ARM_SCMI_TRANSPORT_OPTEE', 'drivers/firmware/arm_scmi/transports/Kconfig'),
             # CONFIG_BCM7120_L2_IRQ as a module is invalid before https://git.kernel.org/linus/3ac268d5ed2233d4a2db541d8fd744ccc13f46b0
             ('BCM7120_L2_IRQ', 'drivers/irqchip/Kconfig'),
             # CONFIG_CHARGER_MANAGER as a module is invalid before https://git.kernel.org/linus/241eaabc3c315cdfea505725a43de848f498527f
