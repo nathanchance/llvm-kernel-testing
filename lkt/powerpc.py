@@ -231,7 +231,11 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
 
     def _add_otherconfig_runners(self):
         min_llvm_ver_for_elfv2_select = ClangVersion(15, 0, 0)
-        can_select_elfv2 = 'a11334d8327b' in self.lsm.commits and self._llvm_version >= min_llvm_ver_for_elfv2_select
+        # This used to be a dynamic check but stable backported a11334d8327b3f
+        # without its dependencies (breaking that), so just check for the
+        # mainline version that it actually landed in.
+        min_lnx_ver_for_elfv2_select = LinuxVersion(6, 4, 0)
+        can_select_elfv2 = self.lsm.version >= min_lnx_ver_for_elfv2_select and self._llvm_version >= min_llvm_ver_for_elfv2_select
         elfv2_on_by_default = ppc64_be_defaults_to_elfv2(self.lsm)
         if can_select_elfv2 or elfv2_on_by_default:
             runner = PowerPCLLVMKernelRunner()
@@ -243,7 +247,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         else:
             self._skip_one(
                 f"{KERNEL_ARCH} allmodconfig",
-                f"lack of a11334d8327b (from {LinuxVersion(6, 4, 0)}) with LLVM < {min_llvm_ver_for_elfv2_select} (using '{self._llvm_version}') or lack of 9d90161ca5c7 (from {LinuxVersion(6, 5, 0)})",
+                f"lack of a11334d8327b (from {min_lnx_ver_for_elfv2_select}) with LLVM < {min_llvm_ver_for_elfv2_select} (using '{self._llvm_version}') or lack of 9d90161ca5c7 (from {LinuxVersion(6, 5, 0)})",
             )
 
         for cfg_target in ('allnoconfig', 'tinyconfig'):

@@ -210,15 +210,6 @@ class LinuxSourceManager:
         # First appeared: v5.15-rc7~3^2~8
         self._add_commit('9d417cbe36eee', 'select HAVE_FUTEX_CMPXCHG if FUTEX', 'arch/arm/Kconfig')
 
-        # Introduced by: powerpc: Allow CONFIG_PPC64_BIG_ENDIAN_ELF_ABI_V2 with ld.lld 15+
-        # Link: https://git.kernel.org/linus/a11334d8327b3fd7987cbfb38e956a44c722d88f
-        # First appeared: v6.4-rc1~90^2~139
-        if 'CONFIG_PPC64_BIG_ENDIAN_ELF_ABI_V2' in self.configs:
-            self._add_commit(
-                'a11334d8327b',
-                r'depends on CC_HAS_ELFV2\n\tdepends on LD_VERSION >= 22400 \|\| LLD_VERSION >= 150000',
-                'arch/powerpc/Kconfig')
-
         # Commit: x86/Kconfig: Do not allow CONFIG_X86_X32_ABI=y with llvm-objcopy
         # Link: https://git.kernel.org/linus/aaeed6ecc1253ce1463fa1aca0b70a4ccbc9fa75
         # First appeared: v5.18-rc1~94^2~7
