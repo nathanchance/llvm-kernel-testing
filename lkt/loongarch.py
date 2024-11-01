@@ -75,6 +75,20 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
         ]
         self._runners.append(runner)
 
+    def _add_distroconfig_runners(self):
+        # Do not bother attempting to build distribution configurations if
+        # there are known broken configurations, as turning those off is going
+        # to potentially taint the result.
+        if self._broken_configs:
+            return
+
+        distros = ('alpine', )
+        for distro in distros:
+            runner = LoongArchLLVMKernelRunner()
+            runner.bootable = True
+            runner.configs = [Path(self.folders.configs, distro, 'loongarch64.config')]
+            self._runners.append(runner)
+
     def run(self):
         if (min_llvm_ver := self.lsm.get_min_llvm_ver(KERNEL_ARCH)) < HARD_MIN_LLVM_VER:
             min_llvm_ver = HARD_MIN_LLVM_VER
@@ -125,8 +139,11 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
         if 'def' in self.targets:
             self._add_defconfig_runners()
 
-        if not self.only_test_boot and 'other' in self.targets:
-            self._add_otherconfig_runners()
+        if not self.only_test_boot:
+            if 'other' in self.targets:
+                self._add_otherconfig_runners()
+            if 'distro' in self.targets:
+                self._add_distroconfig_runners()
 
         if self._qemu_version < MIN_QEMU_VER:
             for runner in self._runners:
