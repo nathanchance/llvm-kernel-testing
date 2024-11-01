@@ -122,17 +122,14 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
         self._runners += runners
 
     def _add_distroconfig_runners(self):
-        configs = [
-            ('alpine', 'riscv64'),
-            ('opensuse', 'riscv64'),
-        ]
-        for distro, config_name in configs:
+        distros = ('alpine', 'opensuse')
+        for distro in distros:
             runner = RISCVLLVMKernelRunner()
             runner.bootable = 'f2928e224d85e' in self.lsm.commits
             if not runner.bootable:
                 runner.result[
                     'boot'] = f"skipped due to lack of f2928e224d85e (from {LinuxVersion(5, 16, 0)})"
-            runner.configs = [Path(self.folders.configs, distro, f"{config_name}.config")]
+            runner.configs = [Path(self.folders.configs, distro, 'riscv64.config')]
             self._runners.append(runner)
 
     def run(self):
