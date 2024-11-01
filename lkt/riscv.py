@@ -122,7 +122,7 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
         self._runners += runners
 
     def _add_distroconfig_runners(self):
-        distros = ('alpine', 'opensuse')
+        distros = ('alpine', 'fedora', 'opensuse')
         for distro in distros:
             runner = RISCVLLVMKernelRunner()
             runner.bootable = 'f2928e224d85e' in self.lsm.commits

@@ -90,7 +90,7 @@ for distro in $distros
             rm -fr $tmp_dir
 
         case fedora
-            for arch in aarch64 ppc64le s390x x86_64
+            for arch in aarch64 ppc64le riscv64 s390x x86_64
                 echo "Fetching $distro $arch configuration..."
                 crl -o $dest/$arch.config https://src.fedoraproject.org/rpms/kernel/raw/rawhide/f/kernel-$arch-fedora.config; or return
             end
