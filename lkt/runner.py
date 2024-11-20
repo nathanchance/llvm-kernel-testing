@@ -139,8 +139,18 @@ class LLVMKernelRunner:
         # configuration handling #
         ##########################
         base_config = self.configs[0]
-        requested_configs = self.configs[1:]
-        extra_configs = requested_configs.copy()
+        requested_fragments = []
+        requested_options = []
+        for item in self.configs[1:]:
+            if item.endswith('.config'):
+                requested_fragments.append(item)
+            elif item.startswith('CONFIG_'):
+                if '=' not in item:
+                    raise ValueError(f"{item} does not contain '='?")
+                requested_options.append(item)
+            else:
+                raise ValueError(f"Cannot handle {item}?")
+        extra_configs = requested_options.copy()
         need_olddefconfig = False
 
         cmds_to_log = []
@@ -148,13 +158,18 @@ class LLVMKernelRunner:
         if isinstance(base_config, str):
             if extra_configs:
                 # Generate .config for merge_config.sh
-                make_cmd = [*base_make_cmd, base_config]
+                make_cmd = [*base_make_cmd, base_config, *requested_fragments]
                 lkt.utils.show_cmd(make_cmd)
                 cmds_to_log.append(make_cmd)
                 lkt.utils.chronic(make_cmd)
             else:
-                base_make_cmd += [base_config]
+                base_make_cmd += [base_config, *requested_fragments]
         elif isinstance(base_config, Path):
+            if requested_fragments:
+                raise RuntimeError(
+                    'config fragments are not supported with out of tree configurations! Add support if this is needed.',
+                )
+
             self.folders.build.mkdir(parents=True)
 
             copy_cmd = ['cp', base_config, self._config]
@@ -166,12 +181,6 @@ class LLVMKernelRunner:
             need_olddefconfig = True
 
         if extra_configs:
-            for config in extra_configs:
-                if not config.startswith('CONFIG_'):
-                    raise ValueError(f"{config} does not start with 'CONFIG_'?")
-                if '=' not in config:
-                    raise ValueError(f"{config} does not contain '='?")
-
             _, config_path = tempfile.mkstemp(dir=self.folders.build, text=True)
 
             # Certain configuration options are choices and Kconfig warns when
@@ -227,7 +236,7 @@ class LLVMKernelRunner:
             missing_configs = []
 
             config_text = self._config.read_text(encoding='utf-8')
-            for item in requested_configs:
+            for item in requested_options:
                 cfg_name, cfg_val = item.split('=', 1)
                 # 'CONFIG_FOO=n' does not appear in the final config, it is
                 # '# CONFIG_FOO is not set'
