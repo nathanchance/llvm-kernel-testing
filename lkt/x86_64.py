@@ -67,6 +67,11 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
                 f"either LLVM < {MIN_LLVM_VER_CFI} (using '{self._llvm_version}') or Linux < {LinuxVersion(6, 1, 0)} (have '{self.lsm.version}')",
             )
 
+        if Path(self.folders.source, 'kernel/configs/hardening.config').exists():
+            runner = X8664LLVMKernelRunner()
+            runner.configs = ['defconfig', 'hardening.config']
+            runners.append(runner)
+
         for runner in runners:
             runner.bootable = True
             runner.only_test_boot = self.only_test_boot
