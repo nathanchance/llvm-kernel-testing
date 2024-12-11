@@ -6,7 +6,7 @@ from pathlib import Path
 import platform
 import re
 import shutil
-import subprocess
+from subprocess import PIPE, STDOUT, Popen
 import sys
 import tempfile
 import time
@@ -82,9 +82,8 @@ class LLVMKernelRunner:
         using_kvm = False
         if (machine := platform.machine()) == 'aarch64':
             if self.boot_arch == 'arm32_v7':
-                proc = subprocess.run(Path(boot_qemu.parent, 'utils/aarch64_32_bit_el1_supported'),
-                                      check=False)
-                using_kvm = proc.returncode == 0 and HAVE_DEV_KVM_ACCESS
+                el1_32 = Path(boot_qemu.parent, 'utils/aarch64_32_bit_el1_supported')
+                using_kvm = lkt.utils.run_check_rc_zero(el1_32) and HAVE_DEV_KVM_ACCESS
             else:
                 using_kvm = self.boot_arch in ('arm64', 'arm64be') and HAVE_DEV_KVM_ACCESS
         elif machine == 'x86_64':
@@ -95,12 +94,11 @@ class LLVMKernelRunner:
         sys.stderr.flush()
         sys.stdout.flush()
         with self.result['log'].open('a') as file:
-            proc = subprocess.run(boot_utils_cmd,
-                                  check=False,
-                                  errors='replace',
-                                  stderr=subprocess.STDOUT,
-                                  stdout=subprocess.PIPE,
-                                  text=True)
+            proc = lkt.utils.run(boot_utils_cmd,
+                                 check=False,
+                                 errors='replace',
+                                 stderr=STDOUT,
+                                 stdout=PIPE)
             file.write(proc.stdout)
             if proc.returncode == 0:
                 self.result['boot'] = 'successful'
@@ -159,9 +157,8 @@ class LLVMKernelRunner:
             if extra_configs:
                 # Generate .config for merge_config.sh
                 make_cmd = [*base_make_cmd, base_config, *requested_fragments]
-                lkt.utils.show_cmd(make_cmd)
                 cmds_to_log.append(make_cmd)
-                lkt.utils.chronic(make_cmd)
+                lkt.utils.chronic(make_cmd, show_cmd=True)
             else:
                 base_make_cmd += [base_config, *requested_fragments]
         elif isinstance(base_config, Path):
@@ -204,9 +201,8 @@ class LLVMKernelRunner:
                 self._config,
                 config_path,
             ]
-            lkt.utils.show_cmd(merge_config)
             cmds_to_log.append(merge_config)
-            lkt.utils.chronic(merge_config)
+            lkt.utils.chronic(merge_config, show_cmd=True)
 
             need_olddefconfig = True
 
@@ -221,9 +217,8 @@ class LLVMKernelRunner:
         start_time = time.time()
         sys.stderr.flush()
         sys.stdout.flush()
-        with subprocess.Popen(
-                base_make_cmd, stderr=subprocess.STDOUT,
-                stdout=subprocess.PIPE) as proc, self.result['log'].open('bw') as file:
+        with Popen(base_make_cmd, stderr=STDOUT,
+                   stdout=PIPE) as proc, self.result['log'].open('bw') as file:
             cmd_log_str = '\n'.join(f"{lkt.utils.cmd_str(cmd)}\n" for cmd in cmds_to_log)
             file.write(cmd_log_str.encode('utf-8'))
             while (byte := proc.stdout.read(1)):

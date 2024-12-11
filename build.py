@@ -6,7 +6,6 @@ import os
 from pathlib import Path
 import shutil
 import signal
-import subprocess
 import sys
 
 import lkt.report
@@ -140,15 +139,13 @@ if __name__ == '__main__':
     else:
         lkt.utils.header('Updating boot-utils')
         if not (boot_utils_folder := Path(REPO, 'src/boot-utils')).exists():
-            git_clone = [
+            lkt.utils.run([
                 'git',
                 'clone',
                 'https://github.com/ClangBuiltLinux/boot-utils',
                 boot_utils_folder,
-            ]
-            subprocess.run(git_clone, check=True)
-        git_pull = ['git', '-C', boot_utils_folder, 'pull', '--no-edit']
-        subprocess.run(git_pull, check=True)
+            ])
+        lkt.utils.run(['git', 'pull', '--no-edit'], cwd=boot_utils_folder)
 
     if args.build_folder:
         build_folder = Path(args.build_folder).resolve()
@@ -169,13 +166,9 @@ if __name__ == '__main__':
         boot_utils_json,
         'https://api.github.com/repos/ClangBuiltLinux/boot-utils/releases/latest',
     ]
-    try:
-        subprocess.run(boot_utils_json_cmd, check=True)
-    except subprocess.CalledProcessError as err:
-        if not boot_utils_json.exists():
-            raise FileNotFoundError(
-                f"{boot_utils_json} failed to download and a previous copy is not available!",
-            ) from err
+    if not (lkt.utils.run_check_rc_zero(boot_utils_json_cmd) or boot_utils_json.exists()):
+        raise FileNotFoundError(
+            f"{boot_utils_json} failed to download and a previous copy is not available!")
 
     # Add prefixes to PATH if they exist
     path = os.environ['PATH'].split(':')

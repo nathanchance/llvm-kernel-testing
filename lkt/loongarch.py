@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
-import subprocess
 
 import lkt.runner
+import lkt.utils
 from lkt.version import ClangVersion, LinuxVersion, QemuVersion
 
 KERNEL_ARCH = 'loongarch'
@@ -131,9 +131,7 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
             '-fsyntax-only',
             '-',
         ]
-        try:
-            subprocess.run(clang_cmd, capture_output=True, check=True, input=clang_prog, text=True)
-        except subprocess.CalledProcessError:
+        if not lkt.utils.run_check_rc_zero(clang_cmd, input=clang_prog):
             self._broken_configs.append('CONFIG_MODULES=n')
 
         if 'def' in self.targets:

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
-import subprocess
 import shutil
 
 import lkt.runner
+import lkt.utils
 from lkt.version import BinutilsVersion, ClangVersion, LinuxVersion, QemuVersion
 
 KERNEL_ARCH = 's390'
@@ -112,10 +112,7 @@ class S390LKTRunner(lkt.runner.LKTRunner):
 
         gnu_vars = []
         # https://github.com/llvm/llvm-project/pull/75643
-        lld_res = subprocess.run([shutil.which('ld.lld'), '-m', 'elf64_s390'],
-                                 capture_output=True,
-                                 check=False,
-                                 text=True)
+        lld_res = lkt.utils.chronic([shutil.which('ld.lld'), '-m', 'elf64_s390'], check=False)
         no_s390_support_in_lld = 'error: unknown emulation:' in lld_res.stderr
         # https://lore.kernel.org/20240207-s390-lld-and-orphan-warn-v1-11-8a665b3346ab@kernel.org/
         s390_makefile_txt = Path(self.folders.source,
@@ -124,12 +121,10 @@ class S390LKTRunner(lkt.runner.LKTRunner):
         if no_s390_support_in_lld or no_s390_kernel_support_for_lld:
             gnu_vars.append('LD')
         # https://github.com/llvm/llvm-project/pull/81841
-        objcopy_res = subprocess.run(
+        objcopy_res = lkt.utils.chronic(
             [shutil.which('llvm-objcopy'), '-I', 'binary', '-O', 'elf64-s390', '-', '/dev/null'],
-            capture_output=True,
             check=False,
-            input='',
-            text=True)
+            input='')
         no_s390_support_in_llvm_objcopy = 'error: invalid output format:' in objcopy_res.stderr
         # https://github.com/ClangBuiltLinux/linux/issues/1996
         s390_boot_makefile_txt = ''
