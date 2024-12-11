@@ -190,8 +190,9 @@ class LLVMKernelRunner:
             if 'CONFIG_CPU_LITTLE_ENDIAN=y' in extra_configs:
                 extra_configs.append('CONFIG_CPU_BIG_ENDIAN=n')
 
-            Path(config_path).write_text(''.join([f"{config}\n" for config in extra_configs]),
-                                         encoding='utf-8')
+            extra_config_txt = ''.join(f"{config}\n" for config in extra_configs)
+            cmds_to_log.append(f"cat {config_path}\n{extra_config_txt.strip()}")
+            Path(config_path).write_text(extra_config_txt, encoding='utf-8')
 
             merge_config = [
                 Path(self.folders.source, 'scripts/kconfig/merge_config.sh'),
