@@ -254,8 +254,12 @@ class LLVMKernelRunner:
                     file.write(f"{warning_msg}\n")
 
         self.result['build'] = 'successful' if proc.returncode == 0 else 'failed'
+
         self.result['duration'] = lkt.utils.get_time_diff(start_time)
-        print(f"\nReal\t{self.result['duration']}")
+        time_str = f"\nReal\t{self.result['duration']}\n"
+        print(time_str, end='')
+        with self.result['log'].open('a') as file:
+            file.write(time_str)
 
     def _distro_adjustments(self):
         configs = []
