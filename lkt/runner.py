@@ -203,7 +203,7 @@ class LLVMKernelRunner:
                 config_path,
             ]
             cmds_to_log.append(merge_config)
-            lkt.utils.chronic(merge_config, show_cmd=True)
+            lkt.utils.chronic(merge_config, cwd=self.folders.build, show_cmd=True)
 
             need_olddefconfig = True
 
