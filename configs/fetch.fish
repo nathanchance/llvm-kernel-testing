@@ -41,7 +41,6 @@ for distro in $distros
                 amd64 \
                 arm64 \
                 armmp \
-                # i386 \ No 6.12.6 for i386?
                 powerpc64le \
                 s390x
 

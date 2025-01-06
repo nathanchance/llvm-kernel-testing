@@ -59,11 +59,10 @@ class I386LKTRunner(lkt.runner.LKTRunner):
             self._runners.append(runner)
 
     def _add_distroconfig_runners(self):
-        for distro in ('debian', 'opensuse'):
-            runner = I386LLVMKernelRunner()
-            runner.configs = [Path(self.folders.configs, distro, "i386.config")]
-            runner.configs += self._disable_broken_configs_with_fortify()
-            self._runners.append(runner)
+        runner = I386LLVMKernelRunner()
+        runner.configs = [Path(self.folders.configs, 'opensuse/i386.config')]
+        runner.configs += self._disable_broken_configs_with_fortify()
+        self._runners.append(runner)
 
     # https://github.com/ClangBuiltLinux/linux/issues/1442
     def _disable_broken_configs_with_fortify(self):
