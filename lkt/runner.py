@@ -363,6 +363,8 @@ class LLVMKernelRunner:
               for val in ('DAVINCI', 'MXC', 'PL061', 'TPS68470')],
             # CONFIG_IMX_DSP as a module is invalid before https://git.kernel.org/linus/f52cdcce9197fef9d4a68792dd3b840ad2b77117
             ('IMX_DSP', 'drivers/firmware/imx/Kconfig'),
+            # CONFIG_INFINIBAND_HNS_HIP08 as a module is invalid before https://git.kernel.org/linus/8977b561216c7e693d61c6442657e33f134bfeb5
+            ('INFINIBAND_HNS_HIP08', 'drivers/infiniband/hw/hns/Kconfig'),
             # CONFIG_KPROBES_SANITY_TEST as a module is invalid before https://git.kernel.org/linus/e44e81c5b90f698025eadceb7eef8661eda117d5
             ('KPROBES_SANITY_TEST', 'lib/Kconfig.debug'),
             # CONFIG_MFD_PALMAS as a module is invalid before https://git.kernel.org/linus/d4b15e447c352ae74b18261bdaf0023fa9a7d1bd
