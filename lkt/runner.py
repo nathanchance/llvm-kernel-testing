@@ -339,6 +339,9 @@ class LLVMKernelRunner:
             )],
             # CONFIG_CPUFREQ_DT_PLATDEV as a module is invalid before https://git.kernel.org/linus/3b062a086984d35a3c6d3a1c7841d0aa73aa76af
             ('CPUFREQ_DT_PLATDEV', 'drivers/cpufreq/Kconfig'),
+            # CONFIG_CRYPTO_ARCH_HAVE_LIB_{CHACHA,CURVE25519,POLY1305} as modules is invalid after https://git.kernel.org/next/linux-next/c/56b8e4bb76226c2ae784192cc1330d09f1c37384
+            *[(f"CRYPTO_ARCH_HAVE_LIB_{alg}", 'lib/crypto/Kconfig')
+              for alg in ('CHACHA', 'CURVE25519', 'POLY1305')],
             # CONFIG_CS89x0_PLATFORM as a module is invalid before https://git.kernel.org/linus/47fd22f2b84765a2f7e3f150282497b902624547
             ('CS89x0_PLATFORM', 'drivers/net/ethernet/cirrus/Kconfig'),
             # CONFIG_DIMLIB as a module is invalid before https://git.kernel.org/linus/0d5044b4e7749099b12da5f2c8618f04bb4fa82f
