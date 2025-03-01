@@ -396,6 +396,8 @@ class LLVMKernelRunner:
             ('PCI_MVEBU', 'drivers/pci/controller/Kconfig'),
             # CONFIG_PINCTRL_ROCKCHIP as a module is invalid before https://git.kernel.org/linus/be786ac5a6c4bf4ef3e4c569a045d302c1e60fe6
             ('PINCTRL_ROCKCHIP', 'drivers/pinctrl/Kconfig'),
+            # CONFIG_PINCTRL_SPACEMIT_K1 as a module is invalid after https://git.kernel.org/linusw/linux-pinctrl/c/7ff4faba63571c51004280f7eb5d6362b15ec61f
+            ('PINCTRL_SPACEMIT_K1', 'drivers/pinctrl/spacemit/Kconfig'),
             # CONFIG_POWER_RESET_SC27XX as a module is invalid before https://git.kernel.org/linus/f78c55e3b4806974f7d590b2aab8683232b7bd25
             ('POWER_RESET_SC27XX', 'drivers/power/reset/Kconfig'),
             # CONFIG_PROC_THERMAL_MMIO_RAPL as a module is invalid before https://git.kernel.org/linus/a5923b6c3137b9d4fc2ea1c997f6e4d51ac5d774
