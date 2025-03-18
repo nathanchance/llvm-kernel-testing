@@ -483,6 +483,13 @@ class LLVMKernelRunner:
         if 'configBASE_SMALLbool' in file_text and base_small_val == '0':
             configs.append('CONFIG_BASE_SMALL=n')
 
+        file_text = Path(self.folders.source, 'lib/Kconfig.ubsan').read_text(encoding='utf-8')
+        check_cfg = f"UBSAN_{'SIGNED' if 'config UBSAN_INTEGER_WRAP' in file_text else 'INTEGER'}_WRAP"
+        if not lkt.utils.is_set(self.folders.source, self.folders.build, check_cfg):
+            configs.append(
+                f"CONFIG_UBSAN_{'INTEGER' if check_cfg == 'UBSAN_SIGNED_WRAP' else 'SIGNED'}_WRAP=n",
+            )
+
         return configs
 
     def _initial_distro_prep(self):
