@@ -348,6 +348,8 @@ class LLVMKernelRunner:
             ('DIMLIB', 'lib/Kconfig'),
             # CONFIG_DRIVER_PE_KUNIT_TEST as a module is invalid before https://git.kernel.org/linus/98ad1dd06a02096fff6c65703a85b9f3c3de1a7d
             ('DRIVER_PE_KUNIT_TEST', 'drivers/base/test/Kconfig'),
+            # CONFIG_DRM_CLIENT_SELECTION as a module is invalid before https://git.kernel.org/linus/dadd28d4142f9ad39eefb7b45ee7518bd4d2459c
+            ('DRM_CLIENT_SELECTION', 'drivers/gpu/drm/Kconfig'),
             # CONFIG_DRM_GEM_{CMA,SHMEM}_HELPER as modules is invalid before https://git.kernel.org/linus/4b2b5e142ff499a2bef2b8db0272bbda1088a3fe
             *[(f"DRM_GEM_{val}_HELPER", 'drivers/gpu/drm/Kconfig') for val in ('CMA', 'SHMEM')],
             # CONFIG_FB_BACKLIGHT as a module is invalid after https://git.kernel.org/linus/8fc38062be3f692ff8816da84fde71972530bcc4
