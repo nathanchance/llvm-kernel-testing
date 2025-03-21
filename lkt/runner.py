@@ -88,7 +88,10 @@ class LLVMKernelRunner:
                 using_kvm = self.boot_arch in ('arm64', 'arm64be') and HAVE_DEV_KVM_ACCESS
         elif machine == 'x86_64':
             using_kvm = self.boot_arch in ('x86', 'x86_64') and HAVE_DEV_KVM_ACCESS
-        if using_kvm:
+        # i386 may not have highmem automatically enabled after
+        # https://git.kernel.org/tip/bbeb69ce301323e84f1677484eb8e4cd8fb1f9f8
+        # and it does not need this workaround because it can only have 8 CPUs.
+        if using_kvm and self.boot_arch != 'x86':
             boot_utils_cmd += ['-m', '2G']
         lkt.utils.show_cmd(boot_utils_cmd)
         sys.stderr.flush()
