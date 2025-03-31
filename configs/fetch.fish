@@ -49,7 +49,7 @@ for distro in $distros
                 if string match -qr -- -rc $package_version_signed
                     set kernel_version_signed (string replace - '~' $package_version_signed)-1~exp1
                 else if test "$package_version_signed" = 6.13
-                    set kernel_version_signed $package_version_signed.8-1~exp1
+                    set kernel_version_signed $package_version_signed.9-1~exp1
                 else
                     set kernel_version_signed $package_version_signed-1
                 end
