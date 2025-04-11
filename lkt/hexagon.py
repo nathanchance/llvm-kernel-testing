@@ -31,7 +31,7 @@ class HexagonLKTRunner(lkt.runner.LKTRunner):
             runner = lkt.runner.LLVMKernelRunner()
             runner.configs = ['allmodconfig']
             # https://github.com/llvm/llvm-project/issues/80185#issuecomment-2187294487
-            if self._llvm_version >= ClangVersion(19, 0, 0):
+            if self._llvm_version[0] == 19:
                 runner.configs.append('CONFIG_FORTIFY_KUNIT_TEST=n')
             self._runners.append(runner)
         else:

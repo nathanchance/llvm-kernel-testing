@@ -41,6 +41,9 @@ class Version:
             return NotImplemented
         return self._key == self._get_key(other)
 
+    def __getitem__(self, item):
+        return self._key[item]
+
     def __lt__(self, other):
         if not self._is_valid_operand(other):
             return NotImplemented
