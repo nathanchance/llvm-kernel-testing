@@ -42,6 +42,7 @@ for distro in $distros
                 arm64 \
                 armmp \
                 powerpc64le \
+                riscv64 \
                 s390x
 
             for arch in $deb_arches
@@ -49,7 +50,7 @@ for distro in $distros
                 if string match -qr -- -rc $package_version_signed
                     set kernel_version_signed (string replace - '~' $package_version_signed)-1~exp1
                 else if test "$package_version_signed" = 6.13
-                    set kernel_version_signed $package_version_signed.9-1~exp1
+                    set kernel_version_signed $package_version_signed.11-1~exp1
                 else
                     set kernel_version_signed $package_version_signed-1
                 end
@@ -64,7 +65,7 @@ for distro in $distros
                     case amd64 arm64
                         set url_suffix linux-signed-$arch/linux-image-"$package_version_signed"-"$deb_arch_config"_"$kernel_version_signed"_"$deb_arch_final".deb
 
-                    case armmp i386 powerpc64le s390x
+                    case armmp i386 powerpc64le riscv64 s390x
                         switch $arch
                             case armmp
                                 set deb_arch_final armhf
@@ -75,6 +76,10 @@ for distro in $distros
                         end
 
                         set url_suffix linux/linux-image-"$package_version_unsigned"-"$deb_arch_config"_"$kernel_version_unsigned"_"$deb_arch_final".deb
+
+                    case '*'
+                        print_error "Unhandled architecture: $arch"
+                        return 1
                 end
 
                 set -l deb $work_dir/(basename $url_suffix)
