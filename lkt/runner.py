@@ -369,6 +369,8 @@ class LLVMKernelRunner:
             # CONFIG_GPIO_TPS68470 as a module is invalid before https://git.kernel.org/linus/a1ce76e89907a69713f729ff21db1efa00f3bb47
             *[(f"GPIO_{val}", 'drivers/gpio/Kconfig')
               for val in ('DAVINCI', 'MXC', 'PL061', 'TPS68470')],
+            # CONFIG_HAVE_KVM_IRQ_BYPASS as a module is invalid before https://git.kernel.org/linus/459a35111b0a890172a78d51c01b204e13a34a18
+            ('HAVE_KVM_IRQ_BYPASS', 'virt/kvm/Kconfig'),
             # CONFIG_IMX_DSP as a module is invalid before https://git.kernel.org/linus/f52cdcce9197fef9d4a68792dd3b840ad2b77117
             ('IMX_DSP', 'drivers/firmware/imx/Kconfig'),
             # CONFIG_INFINIBAND_HNS_HIP08 as a module is invalid before https://git.kernel.org/linus/8977b561216c7e693d61c6442657e33f134bfeb5
