@@ -2,15 +2,19 @@
 
 set configs_folder (realpath (status dirname))
 
+set distros \
+    alpine \
+    archlinux \
+    fedora \
+    opensuse
+
 if test (count $argv) -gt 0
-    set distros $argv
+    # allow opting out of downloading Debian configurations with '-debian' as the only argument
+    if not contains -- -debian $argv
+        set distros $argv
+    end
 else
-    set distros \
-        alpine \
-        archlinux \
-        debian \
-        fedora \
-        opensuse
+    set -a distros debian
 end
 
 for distro in $distros
