@@ -342,6 +342,8 @@ class LLVMKernelRunner:
             )],
             # CONFIG_CPUFREQ_DT_PLATDEV as a module is invalid before https://git.kernel.org/linus/3b062a086984d35a3c6d3a1c7841d0aa73aa76af
             ('CPUFREQ_DT_PLATDEV', 'drivers/cpufreq/Kconfig'),
+            # CONFIG_CROS_EC_PROTO as a module is invalid before https://git.kernel.org/linus/ccf395bde6aeefac139f4f250287feb139e3355d
+            ('CROS_EC_PROTO', 'drivers/platform/chrome/Kconfig'),
             # CONFIG_CRYPTO_ARCH_HAVE_LIB_{CHACHA,CURVE25519,POLY1305} as modules is invalid after https://git.kernel.org/next/linux-next/c/56b8e4bb76226c2ae784192cc1330d09f1c37384
             *[(f"CRYPTO_ARCH_HAVE_LIB_{alg}", 'lib/crypto/Kconfig')
               for alg in ('CHACHA', 'CURVE25519', 'POLY1305')],
