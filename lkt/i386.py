@@ -64,6 +64,11 @@ class I386LKTRunner(lkt.runner.LKTRunner):
         runner.configs += self._disable_broken_configs_with_fortify()
         self._runners.append(runner)
 
+        runner = I386LLVMKernelRunner()
+        runner.configs = [Path(self.folders.configs, 'alpine/x86.config')]
+        runner.configs += self._disable_broken_configs_with_fortify()
+        self._runners.append(runner)
+
     # https://github.com/ClangBuiltLinux/linux/issues/1442
     def _disable_broken_configs_with_fortify(self):
         broken_configs = []

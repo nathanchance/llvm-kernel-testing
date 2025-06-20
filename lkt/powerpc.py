@@ -257,6 +257,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
 
     def _add_distroconfig_runners(self):
         configs = [
+            ('alpine', 'ppc64le'),
             ('debian', 'powerpc64le'),
             ('fedora', 'ppc64le'),
             ('opensuse', 'ppc64le'),

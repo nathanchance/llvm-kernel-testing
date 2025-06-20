@@ -69,6 +69,7 @@ class S390LKTRunner(lkt.runner.LKTRunner):
 
     def _add_distroconfig_runners(self):
         distros = [
+            'alpine',
             'debian',
             'fedora',
             'opensuse',

@@ -23,7 +23,7 @@ for distro in $distros
 
     switch $distro
         case alpine
-            for arch in aarch64 armv7 loongarch64 riscv64 x86_64
+            for arch in aarch64 armv7 loongarch64 ppc64le riscv64 s390x x86 x86_64
                 echo "Fetching $distro $arch configuration..."
                 crl -o $dest/$arch.config https://github.com/alpinelinux/aports/raw/refs/heads/master/community/linux-stable/stable.$arch.config; or return
             end
