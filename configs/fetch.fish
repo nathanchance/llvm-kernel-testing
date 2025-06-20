@@ -25,7 +25,7 @@ for distro in $distros
         case alpine
             for arch in aarch64 armv7 loongarch64 riscv64 x86_64
                 echo "Fetching $distro $arch configuration..."
-                crl -o $dest/$arch.config https://github.com/alpinelinux/aports/raw/refs/heads/master/community/linux-edge/config-edge.$arch; or return
+                crl -o $dest/$arch.config https://github.com/alpinelinux/aports/raw/refs/heads/master/community/linux-stable/stable.$arch.config; or return
             end
 
         case archlinux
