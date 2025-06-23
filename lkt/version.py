@@ -44,6 +44,9 @@ class Version:
     def __getitem__(self, item):
         return self._key[item]
 
+    def __hash__(self):
+        return hash(self._key)
+
     def __lt__(self, other):
         if not self._is_valid_operand(other):
             return NotImplemented
