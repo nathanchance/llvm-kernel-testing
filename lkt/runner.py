@@ -270,6 +270,18 @@ class LLVMKernelRunner:
         config = self.configs[0]
         distro = config.parts[-2]
 
+        if distro == 'alpine':
+            # CONFIG_UNIX was not enabled in the linux-edge to linux-stable
+            # transition but it is needed to avoid a warning on shutdown
+            configs.append('CONFIG_UNIX=y')
+            # CONFIG_INET is needed to avoid a warning about setting up lo
+            configs.append('CONFIG_INET=y')
+            # The new Alpine configurations are defconfig style, which means
+            # that on 5.15, CONFIG_BPF_UNPRIV_DEFAULT_OFF is not on by default
+            # because of a lack of commit 8a03e56b253e ("bpf: Disallow
+            # unprivileged bpf by default"), which causes a warning on boot.
+            configs.append('CONFIG_BPF_UNPRIV_DEFAULT_OFF=y')
+
         if distro == 'debian':
             # The Android drivers are not modular in upstream
             for android_cfg in ('ANDROID_BINDER_IPC', 'ASHMEM'):
