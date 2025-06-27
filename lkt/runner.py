@@ -377,6 +377,8 @@ class LLVMKernelRunner:
             # fs/fscache/Kconfig; if it does not exist, we know it cannot be
             # 'm' due to the change above.
             ('FSCACHE', 'fs/fscache/Kconfig'),
+            # CONFIG_TEST_MISC_MINOR as a module is invalid after https://git.kernel.org/linus/74d8361be3441dff0d3bd00840545288451c77a5
+            ('TEST_MISC_MINOR', 'lib/Kconfig.debug'),
             # CONFIG_GPIO_DAVINCI as a module is invalid before https://git.kernel.org/linus/8dab99c9eab3162bfb4326c35579a3388dbf68f2
             # CONFIG_GPIO_MXC as a module is invalid before https://git.kernel.org/linus/12d16b397ce0a999d13762c4c0cae2fb82eb60ee
             # CONFIG_GPIO_PL061 as a module is invalid before https://git.kernel.org/linus/616844408de7f21546c3c2a71ea7f8d364f45e0d
