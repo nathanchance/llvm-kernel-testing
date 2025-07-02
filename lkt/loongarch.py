@@ -85,7 +85,8 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
         distros = ('alpine', )
         for distro in distros:
             runner = LoongArchLLVMKernelRunner()
-            runner.bootable = True
+            # For some reason, booting fails on 6.6; use 6.12 (the next LTS series) as a baseline for booting
+            runner.bootable = self.lsm.version >= LinuxVersion(6, 12, 0)
             runner.configs = [Path(self.folders.configs, distro, 'loongarch64.config')]
             self._runners.append(runner)
 
