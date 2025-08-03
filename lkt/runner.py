@@ -294,14 +294,6 @@ class LLVMKernelRunner:
                       '\tdefault "8" if PPC64 && PPC_64K_PAGES')
             configs.append(f"CONFIG_ARCH_FORCE_MAX_ORDER={8 if search in text else 9}")
 
-        # https://git.kernel.org/linus/aeeb85f26c3bbef6f702ac20167c45812251501d
-        if (realtek_kconfig := Path(self.folders.source,
-                                    'sound/hda/codecs/realtek/Kconfig')).exists():
-            realtek_kconfig_txt = realtek_kconfig.read_text(encoding='utf-8')
-            if vals := re.findall(r'config (\w+)\n\s+tristate "', realtek_kconfig_txt):
-                configs.append('CONFIG_SND_HDA_CODEC_REALTEK=y')
-                configs += [f"CONFIG_{val}=m" for val in vals]
-
         mtk_common_clk_cfgs = {
             # https://git.kernel.org/linus/650fcdf9181e4551cd22d651a8e637c800045c97
             'MT2712':
