@@ -328,6 +328,8 @@ class LLVMKernelRunner:
         compat_changes = [
             # CONFIG_ACPI_HED as a module is invalid after https://git.kernel.org/next/linux-next/c/cccf6ee090c8c133072d5d5b52ae25f3bc907a16
             ('ACPI_HED', 'drivers/acpi/Kconfig'),
+            # CONFIG_ARM_TEGRA124_CPUFREQ as a module is invalid before https://git.kernel.org/linus/0ae93389b6c84fbbc6414a5c78f50d65eea8cf35
+            ('ARM_TEGRA124_CPUFREQ', 'drivers/cpufreq/Kconfig.arm'),
             # CONFIG_ARM_SCMI_TRANSPORT_OPTEE as a module is invalid before https://git.kernel.org/linus/db9cc5e677783a8a9157804f4a61bb81d83049ac
             ('ARM_SCMI_TRANSPORT_OPTEE', 'drivers/firmware/arm_scmi/transports/Kconfig'),
             # CONFIG_BCM7120_L2_IRQ as a module is invalid before https://git.kernel.org/linus/3ac268d5ed2233d4a2db541d8fd744ccc13f46b0
