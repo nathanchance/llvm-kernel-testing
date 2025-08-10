@@ -15,6 +15,7 @@ import lkt.utils
 from lkt.version import ClangVersion
 
 HAVE_DEV_KVM_ACCESS = os.access('/dev/kvm', os.R_OK | os.W_OK)
+KNOWN_SUBSYS_WERROR_CONFIGS = ('DRM_WERROR', )
 
 
 class Folders:
@@ -554,6 +555,10 @@ class LLVMKernelRunner:
                                                    'SYSTEM_TRUSTED_KEYS'):
             self.configs.append('CONFIG_SYSTEM_TRUSTED_KEYS=n')
 
+        for val in KNOWN_SUBSYS_WERROR_CONFIGS:
+            if lkt.utils.is_set(self.folders.source, config, val):
+                self.configs.append(f"CONFIG_{val}=n")
+
         # Nothing is explicitly wrong with this configuration option but
         # CONFIG_EFI_ZBOOT changes the default image target, which boot-utils
         # does not expect, so undo it to get the expected image for boot
@@ -580,13 +585,10 @@ class LLVMKernelRunner:
         if 'CONFIG_WERROR=n' in self.configs:
             # We do not want to have to maintain these in the callers but it is
             # important to note them in the build logs, so we add them here.
-            known_subsys_werror_configs = [
-                'DRM_WERROR',
-            ]
             # We should not add configurations that do not exist in the
             # tree that we are testing.
             self.configs += [
-                f"{full_cfg}=n" for val in known_subsys_werror_configs
+                f"{full_cfg}=n" for val in KNOWN_SUBSYS_WERROR_CONFIGS
                 if (full_cfg := f"CONFIG_{val}") in self.lsm.configs
             ]
 
