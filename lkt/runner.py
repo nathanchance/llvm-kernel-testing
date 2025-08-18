@@ -555,6 +555,11 @@ class LLVMKernelRunner:
                                                    'SYSTEM_TRUSTED_KEYS'):
             self.configs.append('CONFIG_SYSTEM_TRUSTED_KEYS=n')
 
+        if distro == 'fedora' and config.stem in ('aarch64', 'riscv64',
+                                                  'x86_64') and lkt.utils.is_set(
+                                                      self.folders.source, config, 'EFI_SBAT_FILE'):
+            self.configs.append('CONFIG_EFI_SBAT_FILE=""')
+
         for val in KNOWN_SUBSYS_WERROR_CONFIGS:
             if lkt.utils.is_set(self.folders.source, config, val):
                 self.configs.append(f"CONFIG_{val}=n")
