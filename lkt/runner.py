@@ -181,6 +181,13 @@ class LLVMKernelRunner:
 
             need_olddefconfig = True
 
+            # Nothing is explicitly wrong with this configuration option but it
+            # changes the default image target, which boot-utils does not expect,
+            # so explicitly add the bootable image target to the end of the command
+            if base_config.stem in ('aarch64', 'arm64') and lkt.utils.is_set(
+                    self.folders.source, base_config, 'EFI_ZBOOT'):
+                self.make_targets.append(self.image_target)
+
         if extra_configs:
             _, config_path = tempfile.mkstemp(dir=self.folders.build, text=True)
 
@@ -563,14 +570,6 @@ class LLVMKernelRunner:
         for val in KNOWN_SUBSYS_WERROR_CONFIGS:
             if lkt.utils.is_set(self.folders.source, config, val):
                 self.configs.append(f"CONFIG_{val}=n")
-
-        # Nothing is explicitly wrong with this configuration option but
-        # CONFIG_EFI_ZBOOT changes the default image target, which boot-utils
-        # does not expect, so undo it to get the expected image for boot
-        # testing.
-        if config.stem in ('aarch64', 'arm64') and lkt.utils.is_set(self.folders.source, config,
-                                                                    'EFI_ZBOOT'):
-            self.configs.append('CONFIG_EFI_ZBOOT=n')
 
     def run(self):
         if not self.folders.source:
