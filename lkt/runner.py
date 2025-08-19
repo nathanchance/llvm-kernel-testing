@@ -184,7 +184,7 @@ class LLVMKernelRunner:
             # Nothing is explicitly wrong with this configuration option but it
             # changes the default image target, which boot-utils does not expect,
             # so explicitly add the bootable image target to the end of the command
-            if base_config.stem in ('aarch64', 'arm64') and lkt.utils.is_set(
+            if base_config.stem in ('aarch64', 'arm64', 'riscv64') and lkt.utils.is_set(
                     self.folders.source, base_config, 'EFI_ZBOOT'):
                 self.make_targets.append(self.image_target)
 
