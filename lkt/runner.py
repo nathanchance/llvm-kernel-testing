@@ -245,17 +245,19 @@ class LLVMKernelRunner:
             config_text = self._config.read_text(encoding='utf-8')
             for item in requested_options:
                 cfg_name, cfg_val = item.split('=', 1)
+
                 # 'CONFIG_FOO=n' does not appear in the final config, it is
                 # '# CONFIG_FOO is not set'
                 search = f"# {cfg_name} is not set" if cfg_val == 'n' else item
                 # If we find a match, move on
                 if re.search(f"^{search}$", config_text, flags=re.M):
                     continue
-                # If we did not find a match for '# CONFIG_FOO is not set', we
-                # should only add it to the missing configs list if it is
-                # present with some other value because it may not be visible,
-                # which means it is 'n'.
-                if cfg_val != 'n' or re.search(f"^{cfg_name}=", config_text, flags=re.M):
+
+                # If we did not find a match for '# CONFIG_FOO is not set' or
+                # CONFIG_FOO="", we should only add it to the missing configs
+                # list if it is present with some other value because it may
+                # not be visible, which means it is implicitly 'n' or '""'.
+                if cfg_val in ('n', '""') and re.search(f"^{cfg_name}=", config_text, flags=re.M):
                     missing_configs.append(item)
 
             if missing_configs:
