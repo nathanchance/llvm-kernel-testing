@@ -371,6 +371,8 @@ class LLVMKernelRunner:
             # CONFIG_CRYPTO_ARCH_HAVE_LIB_{CHACHA,CURVE25519,POLY1305} as modules is invalid after https://git.kernel.org/next/linux-next/c/56b8e4bb76226c2ae784192cc1330d09f1c37384
             *[(f"CRYPTO_ARCH_HAVE_LIB_{alg}", 'lib/crypto/Kconfig')
               for alg in ('CHACHA', 'CURVE25519', 'POLY1305')],
+            # CONFIG_CRYPTO_LIB_POLY1305_GENERIC as a module is invalid after https://git.kernel.org/linus/1e0b2c907d1c86de72108624a8e633dd6cebb0a0
+            ('CRYPTO_LIB_POLY1305_GENERIC', 'lib/crypto/Kconfig'),
             # CONFIG_CS89x0_PLATFORM as a module is invalid before https://git.kernel.org/linus/47fd22f2b84765a2f7e3f150282497b902624547
             ('CS89x0_PLATFORM', 'drivers/net/ethernet/cirrus/Kconfig'),
             # CONFIG_DIMLIB as a module is invalid before https://git.kernel.org/linus/0d5044b4e7749099b12da5f2c8618f04bb4fa82f
