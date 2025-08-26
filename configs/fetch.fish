@@ -28,6 +28,16 @@ for distro in $distros
                 crl -o $dest/$arch.config https://github.com/alpinelinux/aports/raw/refs/heads/master/community/linux-stable/stable.$arch.config; or return
             end
 
+            if test (string match -r '^CONFIG_CRYPTO_CRC32C=' <$dest/ppc64le.config | count) -gt 1
+                python3 -c "from pathlib import Path
+
+cfg_txt = (cfg := Path('$dest/ppc64le.config')).read_text(encoding='utf-8')
+(cfg_parts := cfg_txt.split('CONFIG_CRYPTO_CRC32C=y\n')).insert(1, 'CONFIG_CRYPTO_CRC32C=y\n')
+cfg.write_text(''.join(cfg_parts), encoding='utf-8')"
+            else
+                print_warning "alpine ppc64le CONFIG_CRYPTO_CRC32C workaround can be removed"
+            end
+
         case archlinux
             for arch in armv7 aarch64 x86_64
                 if test "$arch" = x86_64
