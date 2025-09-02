@@ -247,7 +247,13 @@ class LinuxSourceManager:
         # Commit: riscv: Use -mno-relax when using lld linker
         # Link: https://git.kernel.org/linus/ec3a5cb61146c91f0f7dcec8b7e7157a4879a9ee
         # First appeared: v5.13-rc5~8^2~3
-        self._add_commit('ec3a5cb61146c', r"KBUILD_CFLAGS \+= -mno-relax", 'arch/riscv/Makefile')
+        # Explicit version check because '-mno-relax' was removed in 6.18 with
+        # https://git.kernel.org/kbuild/c/7ccbe91796d7bb584a00833cb59ef7d4575ba784
+        if self.version >= LinuxVersion(5, 13, 0):
+            self.commits.append('ec3a5cb61146c')
+        else:
+            self._add_commit('ec3a5cb61146c', r"KBUILD_CFLAGS \+= -mno-relax",
+                             'arch/riscv/Makefile')
 
         # Commit: riscv: set default pm_power_off to NULL
         # Link: https://git.kernel.org/linus/f2928e224d85e7cc139009ab17cefdfec2df5d11
