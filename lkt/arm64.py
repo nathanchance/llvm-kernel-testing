@@ -15,6 +15,24 @@ QEMU_ARCH = 'aarch64'
 MIN_IAS_LNX_VER = LinuxVersion(5, 9, 0)
 
 
+def can_build_arm64_big_endian(lsm, llvm_version):
+    arm64_kconfig_txt = Path(lsm.folder, 'arch/arm64/Kconfig').read_text(encoding='utf-8')
+
+    # Detect if big endian support is present and working in the kernel
+    # https://git.kernel.org/arm64/c/1cf89b6bf660c2e9fa137b3e160c7b1001937a78
+    # Look for three states:
+    # 1. That commit as it exists in the arm64 tree
+    # 2. That commit with https://lore.kernel.org/aNU-sG84vqPj7p7G@sirena.org.uk/ addressed
+    # 3. A future where CONFIG_CPU_BIG_ENDIAN does not even exist
+    state_one = 'config CPU_BIG_ENDIAN\n\tbool "Build big-endian kernel"\n\t# https://github.com/llvm/llvm-project/commit/1379b150991f70a5782e9a143c2ba5308da1161c\n\tdepends on (AS_IS_GNU || AS_VERSION >= 150000) && BROKEN\n\thelp'
+    state_two = 'config CPU_BIG_ENDIAN\n\tbool "Build big-endian kernel"\n\tdepends on BROKEN\n\thelp'
+    be_broken = state_one in arm64_kconfig_txt or state_two in arm64_kconfig_txt
+    be_exists = 'config CPU_BIG_ENDIAN' in arm64_kconfig_txt
+
+    # LLVM 15: https://git.kernel.org/linus/146a15b873353f8ac28dc281c139ff611a3c4848
+    return llvm_version >= ClangVersion(15, 0, 0) and not be_broken and be_exists
+
+
 class Arm64LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 
     def __init__(self):
@@ -42,10 +60,7 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
         runner.configs = ['defconfig']
         runners.append(runner)
 
-        # LLVM 15: https://git.kernel.org/linus/146a15b873353f8ac28dc281c139ff611a3c4848
-        # LLVM 13: https://git.kernel.org/linus/e9c6deee00e9197e75cd6aa0d265d3d45bd7cc28
-        min_be_llvm_ver = ClangVersion(15 if '146a15b873353' in self.lsm.commits else 13, 0, 0)
-        if self._llvm_version >= min_be_llvm_ver:
+        if can_build_arm64_big_endian(self.lsm, self._llvm_version):
             runner = Arm64LLVMKernelRunner()
             runner.boot_arch = 'arm64be'
             runner.configs = ['defconfig', 'CONFIG_CPU_BIG_ENDIAN=y']
@@ -53,7 +68,7 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
         else:
             self._skip_one(
                 f"{KERNEL_ARCH} big endian defconfig",
-                f"LLVM < {min_be_llvm_ver} (using '{self._llvm_version}')",
+                f"LLVM < 15.0.0 (using '{self._llvm_version}') or no big endian support in Linux",
             )
 
         if 'CONFIG_LTO_CLANG_THIN' in self.lsm.configs:
