@@ -82,12 +82,13 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
                 f"Linux < {LinuxVersion(5, 12, 0)} (have '{self.lsm.version}')",
             )
 
-        if 'CONFIG_CFI_CLANG' in self.lsm.configs:
+        if self.lsm.arch_supports_kcfi(KERNEL_ARCH):
+            cfi_y_config = self.lsm.get_cfi_y_config()
             if '89245600941e4' in self.lsm.commits:
                 runner = Arm64LLVMKernelRunner()
                 runner.configs = [
                     'defconfig',
-                    'CONFIG_CFI_CLANG=y',
+                    cfi_y_config,
                     'CONFIG_SHADOW_CALL_STACK=y',
                 ]
                 runners.append(runner)
@@ -95,7 +96,7 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
             runner = Arm64LLVMKernelRunner()
             runner.configs = [
                 'defconfig',
-                'CONFIG_CFI_CLANG=y',
+                cfi_y_config,
                 'CONFIG_LTO_CLANG_THIN=y',
                 'CONFIG_SHADOW_CALL_STACK=y',
             ]

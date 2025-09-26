@@ -21,15 +21,12 @@ class LinuxSourceManager:
 
         self.version = LinuxVersion(folder=linux_source)
 
+        self._cfi_y_config = ''
+
         # Introduced by: bcachefs: Initial commit
         # Link: https://git.kernel.org/linus/1c6fdbd8f2465ddfb73a01ec620cbf3d14044e1a
         # First appeared: v6.7-rc1~201^2~2764
         self._add_config('CONFIG_BCACHEFS_FS', 'fs/bcachefs/Kconfig')
-
-        # Introduced by: add support for Clang CFI
-        # Link: https://git.kernel.org/linus/cf68fffb66d60d96209446bfc4a15291dc5a5d41
-        # First appeared: v5.13-rc1~145^2~17
-        self._add_config('CONFIG_CFI_CLANG', 'arch/Kconfig')
 
         # Introduced by: drm: Add CONFIG_DRM_WERROR
         # Link: https://git.kernel.org/linus/f89632a9e5fa6c4787c14458cd42a9ef42025434
@@ -287,6 +284,20 @@ class LinuxSourceManager:
         file_text = file.read_text(encoding='utf-8')
         if definition in file_text:
             self.configs.append(config)
+
+    def arch_supports_kcfi(self, srcarch):
+        arch_kconfig_txt = Path(self.folder, 'arch', srcarch, 'Kconfig').read_text(encoding='utf-8')
+        return 'select ARCH_SUPPORTS_CFI' in arch_kconfig_txt
+
+    # Handle rename from CONFIG_CFI_CLANG to CONFIG_CFI
+    def get_cfi_y_config(self):
+        if not self._cfi_y_config:
+            arch_kconfig_txt = Path(self.folder, 'arch/Kconfig').read_text(encoding='utf-8')
+            if match := re.search(r"config (CFI(?:_CLANG)?)$", arch_kconfig_txt, flags=re.M):
+                self._cfi_y_config = f"CONFIG_{match.groups()[0]}=y"
+            else:
+                self._cfi_y_config = 'CONFIG_CFI_CLANG=y'
+        return self._cfi_y_config
 
     def get_min_llvm_ver(self, arch=None):
         return MinToolVersion(folder=self.folder, arch=arch, tool='llvm')

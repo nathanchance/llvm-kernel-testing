@@ -53,12 +53,14 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
             )
 
         if self._llvm_version >= MIN_LLVM_VER_CFI and '89245600941e4' in self.lsm.commits:
+            cfi_y_config = self.lsm.get_cfi_y_config()
+
             runner = X8664LLVMKernelRunner()
-            runner.configs = ['defconfig', 'CONFIG_CFI_CLANG=y']
+            runner.configs = ['defconfig', cfi_y_config]
             runners.append(runner)
 
             runner = X8664LLVMKernelRunner()
-            runner.configs = ['defconfig', 'CONFIG_CFI_CLANG=y', 'CONFIG_LTO_CLANG_THIN=y']
+            runner.configs = ['defconfig', cfi_y_config, 'CONFIG_LTO_CLANG_THIN=y']
             runners.append(runner)
         else:
             # https://git.kernel.org/linus/3c516f89e17e56b4738f05588e51267e295b5e63

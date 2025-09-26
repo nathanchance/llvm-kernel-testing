@@ -74,11 +74,9 @@ class ArmLKTRunner(lkt.runner.LKTRunner):
                 f"either lack of 9d417cbe36eee (from {LinuxVersion(5, 15, 0)}) or presence of CONFIG_HAVE_FUTEX_CMPXCHG",
             )
 
-        arm_kconfig_text = Path(self.folders.source, 'arch/arm/Kconfig').read_text(encoding='utf-8')
-        arm_supports_kcfi = 'select ARCH_SUPPORTS_CFI_CLANG' in arm_kconfig_text
-        if self._llvm_version >= MIN_LLVM_VER_CFI and arm_supports_kcfi:
+        if self._llvm_version >= MIN_LLVM_VER_CFI and self.lsm.arch_supports_kcfi(KERNEL_ARCH):
             runner = ArmLLVMKernelRunner()
-            runner.configs = ['multi_v7_defconfig', 'CONFIG_CFI_CLANG=y']
+            runner.configs = ['multi_v7_defconfig', self.lsm.get_cfi_y_config()]
             runners.append(runner)
         else:
             # https://git.kernel.org/rmk/c/1a4fec49efe5273eb2fcf575175a117745f76f97
