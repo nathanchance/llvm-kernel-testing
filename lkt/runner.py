@@ -403,6 +403,8 @@ class LLVMKernelRunner:
               for val in ('DAVINCI', 'MXC', 'PL061', 'TPS68470')],
             # CONFIG_HAVE_KVM_IRQ_BYPASS as a module is invalid before https://git.kernel.org/linus/459a35111b0a890172a78d51c01b204e13a34a18
             ('HAVE_KVM_IRQ_BYPASS', 'virt/kvm/Kconfig'),
+            # CONFIG_HYPERV as a module is invalid after https://git.kernel.org/next/linux-next/c/e3ec97c3abaf2fb68cc755cae3229288696b9f3d
+            ('HYPERV', 'drivers/hv/Kconfig'),
             # CONFIG_IMX_DSP as a module is invalid before https://git.kernel.org/linus/f52cdcce9197fef9d4a68792dd3b840ad2b77117
             ('IMX_DSP', 'drivers/firmware/imx/Kconfig'),
             # CONFIG_INFINIBAND_HNS_HIP08 as a module is invalid before https://git.kernel.org/linus/8977b561216c7e693d61c6442657e33f134bfeb5
