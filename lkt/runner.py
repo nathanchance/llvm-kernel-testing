@@ -397,10 +397,11 @@ class LLVMKernelRunner:
             ('TEST_MISC_MINOR', 'lib/Kconfig.debug'),
             # CONFIG_GPIO_DAVINCI as a module is invalid before https://git.kernel.org/linus/8dab99c9eab3162bfb4326c35579a3388dbf68f2
             # CONFIG_GPIO_MXC as a module is invalid before https://git.kernel.org/linus/12d16b397ce0a999d13762c4c0cae2fb82eb60ee
+            # CONFIG_GPIO_PALMAS as a modules is invalid before https://git.kernel.org/linus/cfbbf275ffcf05c82994b8787b0d1974aa1569d8
             # CONFIG_GPIO_PL061 as a module is invalid before https://git.kernel.org/linus/616844408de7f21546c3c2a71ea7f8d364f45e0d
             # CONFIG_GPIO_TPS68470 as a module is invalid before https://git.kernel.org/linus/a1ce76e89907a69713f729ff21db1efa00f3bb47
             *[(f"GPIO_{val}", 'drivers/gpio/Kconfig')
-              for val in ('DAVINCI', 'MXC', 'PL061', 'TPS68470')],
+              for val in ('DAVINCI', 'MXC', 'PALMAS', 'PL061', 'TPS68470')],
             # CONFIG_HAVE_KVM_IRQ_BYPASS as a module is invalid before https://git.kernel.org/linus/459a35111b0a890172a78d51c01b204e13a34a18
             ('HAVE_KVM_IRQ_BYPASS', 'virt/kvm/Kconfig'),
             # CONFIG_HYPERV as a module is invalid after https://git.kernel.org/next/linux-next/c/e3ec97c3abaf2fb68cc755cae3229288696b9f3d
