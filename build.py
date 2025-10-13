@@ -192,19 +192,19 @@ if __name__ == '__main__':
     results = []
 
     if lsm.version < MINIMUM_SUPPORTED_LINUX_VERSION:
-        result = {
+        RESULT = {
             'name': 'build matrix',
             'build': 'skipped',
             'reason': f"found Linux version ('{lsm.version}') is older than the minimum supported version ('{MINIMUM_SUPPORTED_LINUX_VERSION}') of llvm-kernel-testing",
         }  # yapf: disable
-        results.append(result)
+        results.append(RESULT)
     elif (llvm_ver := ClangVersion()) < (min_llvm_ver := lsm.get_min_llvm_ver()):
-        result = {
+        RESULT = {
             'name': 'build matrix',
             'build': 'skipped',
             'reason': f"found LLVM version ('{llvm_ver}') less than minimum LLVM version ('{min_llvm_ver}') for supplied tree",
         }  # yapf: disable
-        results.append(result)
+        results.append(RESULT)
 
     if len(results) == 0:
         make_vars = {}
