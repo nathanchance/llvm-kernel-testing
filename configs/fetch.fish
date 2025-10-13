@@ -60,7 +60,7 @@ cfg.write_text(''.join(cfg_parts), encoding='utf-8')"
                 s390x
 
             for arch in $deb_arches
-                set package_version_signed 6.16.9
+                set package_version_signed 6.16.11
                 if string match -qr -- -rc $package_version_signed
                     set kernel_version_signed (string replace - '~' $package_version_signed)-1~exp1
                 else
