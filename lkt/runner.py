@@ -525,6 +525,8 @@ class LLVMKernelRunner:
         changed_type_cfgs = [
             # CONFIG_BASE_SMALL changed from bool to int in https://git.kernel.org/linus/b3e90f375b3c7ab85aef631ebb0ad8ce66cbf3fd
             ('BASE_SMALL', 'init/Kconfig'),
+            # CONFIG_BOOTPARAM_HUNG_TASK_PANIC changed from bool to int in https://git.kernel.org/next/linux-next/c/501581cc0fba319ffad4c801c12a616aaa05a34b
+            ('BOOTPARAM_HUNG_TASK_PANIC', 'lib/Kconfig.debug'),
         ]
         for cfg, file in changed_type_cfgs:
             file_text = ''.join(Path(self.folders.source, file).read_text(encoding='utf-8').split())
