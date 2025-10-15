@@ -522,15 +522,18 @@ class LLVMKernelRunner:
         if mfd_arizona_is_m and 'arizona-objs' not in file_text:
             configs.append('CONFIG_MFD_ARIZONA=y')
 
-        # Handle type of CONFIG_BASE_SMALL changing: https://lore.kernel.org/20240505080343.1471198-1-yoann.congal@smile.fr/
-        file_text = ''.join(
-            Path(self.folders.source, 'init/Kconfig').read_text(encoding='utf-8').split())
-        base_small_val = lkt.utils.get_config_val(self.folders.source, self.folders.build,
-                                                  'BASE_SMALL')
-        if 'configBASE_SMALLint' in file_text and base_small_val == 'n':
-            configs.append('CONFIG_BASE_SMALL=0')
-        if 'configBASE_SMALLbool' in file_text and base_small_val == '0':
-            configs.append('CONFIG_BASE_SMALL=n')
+        changed_type_cfgs = [
+            # CONFIG_BASE_SMALL changed from bool to int in https://git.kernel.org/linus/b3e90f375b3c7ab85aef631ebb0ad8ce66cbf3fd
+            ('BASE_SMALL', 'init/Kconfig'),
+        ]
+        for cfg, file in changed_type_cfgs:
+            file_text = ''.join(Path(self.folders.source, file).read_text(encoding='utf-8').split())
+            val = lkt.utils.get_config_val(self.folders.source, self.folders.build, cfg)
+
+            if f"config{cfg}int" in file_text and val == 'n':
+                configs.append(f"CONFIG_{cfg}=0")
+            if f"config{cfg}bool" in file_text and val == '0':
+                configs.append(f"CONFIG_{cfg}=n")
 
         file_text = Path(self.folders.source, 'lib/Kconfig.ubsan').read_text(encoding='utf-8')
         check_cfg = f"UBSAN_{'SIGNED' if 'config UBSAN_INTEGER_WRAP' in file_text else 'INTEGER'}_WRAP"
