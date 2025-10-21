@@ -60,8 +60,8 @@ cfg.write_text(''.join(cfg_parts), encoding='utf-8')"
                 s390x
 
             for arch in $deb_arches
-                set package_version_signed 6.16.11
-                if string match -qr -- -rc $package_version_signed
+                set package_version_signed 6.17.2
+                if string match -qr -- -rc $package_version_signed; or test "$package_version_signed" = 6.17.2
                     set kernel_version_signed (string replace - '~' $package_version_signed)-1~exp1
                 else
                     set kernel_version_signed $package_version_signed-1
@@ -91,7 +91,7 @@ cfg.write_text(''.join(cfg_parts), encoding='utf-8')"
                         set url_suffix linux/linux-image-"$package_version_unsigned"-"$deb_arch_config"_"$kernel_version_unsigned"_"$deb_arch_final".deb
 
                     case '*'
-                        print_error "Unhandled architecture: $arch"
+                        __print_error "Unhandled architecture: $arch"
                         return 1
                 end
 
@@ -106,7 +106,7 @@ cfg.write_text(''.join(cfg_parts), encoding='utf-8')"
                 end
                 or begin
                     rm -fr $tmp_dir
-                    print_error "Issue processing Debian configuration for $arch!"
+                    __print_error "Issue processing Debian configuration for $arch!"
                     return 1
                 end
             end
