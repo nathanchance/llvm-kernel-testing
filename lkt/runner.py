@@ -544,6 +544,18 @@ class LLVMKernelRunner:
                 f"CONFIG_UBSAN_{'INTEGER' if check_cfg == 'UBSAN_SIGNED_WRAP' else 'SIGNED'}_WRAP=n",
             )
 
+        # CONFIG_ARM_GT_INITIAL_PRESCALER_VAL=0 is not valid before https://git.kernel.org/linus/1c4b87c921fb158d853adcb8fd48c2dc07fc6f91
+        if lkt.utils.is_set(self.folders.source, self.folders.build, 'ARM_GLOBAL_TIMER'):
+            file_text = ''.join(
+                Path(self.folders.source,
+                     'drivers/clocksource/Kconfig').read_text(encoding='utf-8').split())
+            have_1c4b87c921fb1 = 'config ARM_GT_INITIAL_PRESCALER_VALint "ARM global timer initial prescaler value"default 0' in file_text
+            have_zero_prescalar_val = lkt.utils.get_config_val(
+                self.folders.source, self.folders.build, cfg :=
+                'ARM_GT_INITIAL_PRESCALER_VAL') == '0'
+            if not have_1c4b87c921fb1 and have_zero_prescalar_val:
+                configs.append(f"CONFIG_{cfg}=1")
+
         return configs
 
     def _initial_distro_prep(self):
