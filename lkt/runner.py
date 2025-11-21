@@ -458,8 +458,10 @@ class LLVMKernelRunner:
             # CONFIG_RATIONAL as a module is invalid before https://git.kernel.org/linus/bcda5fd34417c89f653cc0912cc0608b36ea032c
             ('RATIONAL', 'lib/math/Kconfig'),
             # CONFIG_RESET_IMX7 as a module is invalid before https://git.kernel.org/linus/a442abbbe186e14128d18bc3e42fb0fbf1a62210
+            ('RESET_IMX7', 'drivers/reset/Kconfig'),
             # CONFIG_RESET_MESON as a module is invalid before https://git.kernel.org/linus/3bfe8933f9d187f93f0d0910b741a59070f58c4c
-            *[(f"RESET_{val}", 'drivers/reset/Kconfig') for val in ('IMX7', 'MESON')],
+            # This configuration was moved to drivers/reset/amlogic/Kconfig in https://git.kernel.org/linus/2c138ee3354f8088769d05701a2e16d1cb4cc22d
+            ('RESET_MESON', ('drivers/reset/amlogic/Kconfig', 'drivers/reset/Kconfig')),
             # CONFIG_RTW88_8822BE as a module is invalid before https://git.kernel.org/linus/416e87fcc780cae8d72cb9370fa0f46007faa69a
             # CONFIG_RTW88_8822CE as a module is invalid before https://git.kernel.org/linus/ba0fbe236fb8a7b992e82d6eafb03a600f5eba43
             *[(f"RTW88_8822{val}E", 'drivers/net/wireless/realtek/rtw88/Kconfig')
