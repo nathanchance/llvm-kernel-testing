@@ -450,7 +450,9 @@ class LLVMKernelRunner:
             ('QCOM_IPCC', 'drivers/mailbox/Kconfig'),
             # CONFIG_QCOM_RPMPD as a module is invalid before https://git.kernel.org/linus/f29808b2fb85a7ff2d4830aa1cb736c8c9b986f4
             # CONFIG_QCOM_RPMHPD as a module is invalid before https://git.kernel.org/linus/d4889ec1fc6ac6321cc1e8b35bb656f970926a09
-            *[(f"QCOM_RPM{val}PD", 'drivers/soc/qcom/Kconfig') for val in ('', 'H')],
+            # These configurations were moved to drivers/pmdomain/qcom/Kconfig in https://git.kernel.org/linus/4eb42e5bd86da528be604845f52732742ef74e6b
+            *[(f"QCOM_RPM{val}PD", ('drivers/pmdomain/qcom/Kconfig', 'drivers/soc/qcom/Kconfig'))
+              for val in ('', 'H')],
             # CONFIG_RADIO_ADAPTERS as a module is invalid before https://git.kernel.org/linus/215d49a41709610b9e82a49b27269cfaff1ef0b6
             ('RADIO_ADAPTERS', 'drivers/media/radio/Kconfig'),
             # CONFIG_RATIONAL as a module is invalid before https://git.kernel.org/linus/bcda5fd34417c89f653cc0912cc0608b36ea032c
