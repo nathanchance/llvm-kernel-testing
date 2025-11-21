@@ -502,16 +502,25 @@ class LLVMKernelRunner:
             # CONFIG_XEN_PVCALLS_BACKEND as a module is invalid before https://git.kernel.org/linus/45da234467f381239d87536c86597149f189d375
             ('XEN_PVCALLS_BACKEND', 'drivers/xen/Kconfig'),
         ]
-        for config_sym, file in compat_changes:
+        for config_sym, locations in compat_changes:
             # Check if the symbol is modular in the current configuration and move on if not
             if not lkt.utils.is_modular(self.folders.source, self.folders.build, config_sym):
                 continue
 
+            if isinstance(locations, str):
+                files = (locations, )
+            elif isinstance(locations, tuple):
+                files = locations
+            else:
+                raise ValueError('locations neither a string nor a tuple?')
+
             can_be_m = False
-            if (kconfig_file := Path(self.folders.source, file)).exists():
-                kconfig_text = ''.join(kconfig_file.read_text(encoding='utf-8').split())
-                if f"config{config_sym}tristate" in kconfig_text:
-                    can_be_m = True
+            for file in files:
+                if (kconfig_file := Path(self.folders.source, file)).exists():
+                    kconfig_text = ''.join(kconfig_file.read_text(encoding='utf-8').split())
+                    if f"config{config_sym}tristate" in kconfig_text:
+                        can_be_m = True
+                        break
 
             if not can_be_m:
                 configs.append(f"CONFIG_{config_sym}=y")
