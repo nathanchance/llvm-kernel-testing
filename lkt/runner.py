@@ -347,7 +347,7 @@ class LLVMKernelRunner:
             # CONFIG_CHARGER_MANAGER as a module is invalid before https://git.kernel.org/linus/241eaabc3c315cdfea505725a43de848f498527f
             ('CHARGER_MANAGER', 'drivers/power/supply/Kconfig'),
             # CONFIG_CHELSIO_IPSEC_INLINE as a module is invalid before https://git.kernel.org/linus/1b77be463929e6d3cefbc929f710305714a89723
-            ('CHELSIO_IPSEC_INLINE', 'drivers/crypto/chelsio/Kconfig'),
+            ('CHELSIO_IPSEC_INLINE', 'drivers/net/ethernet/chelsio/inline_crypto/Kconfig'),
             # Several Mediatek common clock drivers were converted to modules over time
             *[(f"COMMON_CLK_{mt_rev}{cfg_suffix}", 'drivers/clk/mediatek/Kconfig')
               for mt_rev, cfg_suffixes in mtk_common_clk_cfgs.items()
