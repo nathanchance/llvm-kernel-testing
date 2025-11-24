@@ -60,9 +60,9 @@ cfg.write_text(''.join(cfg_parts), encoding='utf-8')"
                 s390x
 
             for arch in $deb_arches
-                set package_version_signed 6.18-rc4
+                set package_version_signed 6.18-rc6
                 if string match -qr -- -rc $package_version_signed
-                    set kernel_version_signed (string replace - '~' $package_version_signed)-1~exp2
+                    set kernel_version_signed (string replace - '~' $package_version_signed)-1~exp1
                     set package_version_signed (string split -f 1 - $package_version_signed)
                 else
                     set kernel_version_signed $package_version_signed-1
@@ -100,7 +100,7 @@ cfg.write_text(''.join(cfg_parts), encoding='utf-8')"
                 begin
                     echo "Fetching $distro $arch configuration..."
                     and mkdir $work_dir
-                    and crl -o $deb http://ftp.us.debian.org/debian/pool/main/l/$url_suffix
+                    and wget -O $deb http://ftp.us.debian.org/debian/pool/main/l/$url_suffix
                     and ar x --output $work_dir $deb
                     and tar -C $work_dir -xJf $work_dir/data.tar.xz
                     and cp -v $work_dir/boot/config-*-$deb_arch_config $dest/$arch.config
