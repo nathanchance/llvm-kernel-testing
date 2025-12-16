@@ -344,6 +344,8 @@ class LLVMKernelRunner:
             ('ARM_SCMI_TRANSPORT_OPTEE', 'drivers/firmware/arm_scmi/transports/Kconfig'),
             # CONFIG_BCM7120_L2_IRQ as a module is invalid before https://git.kernel.org/linus/3ac268d5ed2233d4a2db541d8fd744ccc13f46b0
             ('BCM7120_L2_IRQ', 'drivers/irqchip/Kconfig'),
+            # CONFIG_CAN_DEV=m as a module is invalid after https://git.kernel.org/linus/6abd4577bccc66f83edfdb24dc484723ae99cbe8
+            ('CAN_DEV', 'drivers/net/can/Kconfig'),
             # CONFIG_CHARGER_MANAGER as a module is invalid before https://git.kernel.org/linus/241eaabc3c315cdfea505725a43de848f498527f
             ('CHARGER_MANAGER', 'drivers/power/supply/Kconfig'),
             # CONFIG_CHELSIO_IPSEC_INLINE as a module is invalid before https://git.kernel.org/linus/1b77be463929e6d3cefbc929f710305714a89723
