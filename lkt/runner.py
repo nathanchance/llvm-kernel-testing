@@ -336,7 +336,7 @@ class LLVMKernelRunner:
             'MT8516': ('', '_AUDSYS'),
         }
         compat_changes = [
-            # CONFIG_ACPI_HED as a module is invalid after https://git.kernel.org/next/linux-next/c/cccf6ee090c8c133072d5d5b52ae25f3bc907a16
+            # CONFIG_ACPI_HED as a module is invalid after https://git.kernel.org/linus/cccf6ee090c8c133072d5d5b52ae25f3bc907a16
             ('ACPI_HED', 'drivers/acpi/Kconfig'),
             # CONFIG_ARM_TEGRA124_CPUFREQ as a module is invalid before https://git.kernel.org/linus/0ae93389b6c84fbbc6414a5c78f50d65eea8cf35
             ('ARM_TEGRA124_CPUFREQ', 'drivers/cpufreq/Kconfig.arm'),
@@ -370,10 +370,10 @@ class LLVMKernelRunner:
             ('CPUFREQ_DT_PLATDEV', 'drivers/cpufreq/Kconfig'),
             # CONFIG_CROS_EC_PROTO as a module is invalid before https://git.kernel.org/linus/ccf395bde6aeefac139f4f250287feb139e3355d
             ('CROS_EC_PROTO', 'drivers/platform/chrome/Kconfig'),
-            # CONFIG_CRYPTO_ARCH_HAVE_LIB_{CHACHA,CURVE25519,POLY1305} as modules is invalid after https://git.kernel.org/next/linux-next/c/56b8e4bb76226c2ae784192cc1330d09f1c37384
+            # CONFIG_CRYPTO_ARCH_HAVE_LIB_{CHACHA,CURVE25519,POLY1305} as modules is invalid after https://git.kernel.org/linus/1047e21aecdf17c8a9ab9fd4bd24c6647453f93d
             *[(f"CRYPTO_ARCH_HAVE_LIB_{alg}", 'lib/crypto/Kconfig')
               for alg in ('CHACHA', 'CURVE25519', 'POLY1305')],
-            # CONFIG_CRYPTO_LIB_CURVE25519_GENERIC as a module is invalid after https://git.kernel.org/next/linux-next/c/68546e5632c0b982663af575ae12cc5d81facc91
+            # CONFIG_CRYPTO_LIB_CURVE25519_GENERIC as a module is invalid after https://git.kernel.org/linus/68546e5632c0b982663af575ae12cc5d81facc91
             ('CRYPTO_LIB_CURVE25519_GENERIC', 'lib/crypto/Kconfig'),
             # CONFIG_CRYPTO_LIB_POLY1305_GENERIC as a module is invalid after https://git.kernel.org/linus/1e0b2c907d1c86de72108624a8e633dd6cebb0a0
             ('CRYPTO_LIB_POLY1305_GENERIC', 'lib/crypto/Kconfig'),
@@ -389,7 +389,7 @@ class LLVMKernelRunner:
             *[(f"DRM_GEM_{val}_HELPER", 'drivers/gpu/drm/Kconfig') for val in ('CMA', 'SHMEM')],
             # CONFIG_FB_BACKLIGHT as a module is invalid after https://git.kernel.org/linus/8fc38062be3f692ff8816da84fde71972530bcc4
             ('FB_BACKLIGHT', 'drivers/video/fbdev/core/Kconfig'),
-            # CONFIG_FSCACHE as a module is invalid after https://git.kernel.org/next/linux-next/c/9896c4f367fcc44213d15fe7210e9305df8063f2
+            # CONFIG_FSCACHE as a module is invalid after https://git.kernel.org/linus/915cd30cdea8811cddd8f59e57dd9dd0a814b76c
             # While the new configuration location is fs/netfs/Kconfig, we
             # check for whether or not FSCACHE can be a module in
             # fs/fscache/Kconfig; if it does not exist, we know it cannot be
@@ -406,7 +406,7 @@ class LLVMKernelRunner:
               for val in ('DAVINCI', 'MXC', 'PALMAS', 'PL061', 'TPS68470')],
             # CONFIG_HAVE_KVM_IRQ_BYPASS as a module is invalid before https://git.kernel.org/linus/459a35111b0a890172a78d51c01b204e13a34a18
             ('HAVE_KVM_IRQ_BYPASS', 'virt/kvm/Kconfig'),
-            # CONFIG_HYPERV as a module is invalid after https://git.kernel.org/next/linux-next/c/e3ec97c3abaf2fb68cc755cae3229288696b9f3d
+            # CONFIG_HYPERV as a module is invalid after https://git.kernel.org/linus/e3ec97c3abaf2fb68cc755cae3229288696b9f3d
             ('HYPERV', 'drivers/hv/Kconfig'),
             # CONFIG_IMX_DSP as a module is invalid before https://git.kernel.org/linus/f52cdcce9197fef9d4a68792dd3b840ad2b77117
             ('IMX_DSP', 'drivers/firmware/imx/Kconfig'),
@@ -501,7 +501,7 @@ class LLVMKernelRunner:
             *[(f"TI_SCI_INT{val}_IRQCHIP", 'drivers/irqchip/Kconfig') for val in ('A', 'R')],
             # CONFIG_UNICODE as a module is invalid before https://git.kernel.org/linus/5298d4bfe80f6ae6ae2777bcd1357b0022d98573
             ('UNICODE', 'fs/unicode/Kconfig'),
-            # CONFIG_VFIO_VIRQFD as a module is invalid after https://git.kernel.org/next/linux-next/c/e2d55709398e62cf53e5c7df3758ae52cc62d63a
+            # CONFIG_VFIO_VIRQFD as a module is invalid after https://git.kernel.org/linus/e2d55709398e62cf53e5c7df3758ae52cc62d63a
             ('VFIO_VIRQFD', 'drivers/vfio/Kconfig'),
             # CONFIG_VIRTIO_IOMMU as a module is invalid before https://git.kernel.org/linus/fa4afd78ea12cf31113f8b146b696c500d6a9dc3
             ('VIRTIO_IOMMU', 'drivers/iommu/Kconfig'),
@@ -544,7 +544,7 @@ class LLVMKernelRunner:
         changed_type_cfgs = [
             # CONFIG_BASE_SMALL changed from bool to int in https://git.kernel.org/linus/b3e90f375b3c7ab85aef631ebb0ad8ce66cbf3fd
             ('BASE_SMALL', 'init/Kconfig'),
-            # CONFIG_BOOTPARAM_HUNG_TASK_PANIC changed from bool to int in https://git.kernel.org/next/linux-next/c/501581cc0fba319ffad4c801c12a616aaa05a34b
+            # CONFIG_BOOTPARAM_HUNG_TASK_PANIC changed from bool to int in https://git.kernel.org/linus/9544f9e6947f6508d29f0d0cc2dacaa749fc1613
             ('BOOTPARAM_HUNG_TASK_PANIC', 'lib/Kconfig.debug'),
             # CONFIG_BOOTPARAM_SOFTLOCKUP_PANIC changed from bool to int in https://git.kernel.org/next/linux-next/c/f950bf50d70254b6e948ff55de6062c37ac2ad62
             ('BOOTPARAM_SOFTLOCKUP_PANIC', 'lib/Kconfig.debug'),
