@@ -546,6 +546,8 @@ class LLVMKernelRunner:
             ('BASE_SMALL', 'init/Kconfig'),
             # CONFIG_BOOTPARAM_HUNG_TASK_PANIC changed from bool to int in https://git.kernel.org/next/linux-next/c/501581cc0fba319ffad4c801c12a616aaa05a34b
             ('BOOTPARAM_HUNG_TASK_PANIC', 'lib/Kconfig.debug'),
+            # CONFIG_BOOTPARAM_SOFTLOCKUP_PANIC changed from bool to int in https://git.kernel.org/next/linux-next/c/f950bf50d70254b6e948ff55de6062c37ac2ad62
+            ('BOOTPARAM_SOFTLOCKUP_PANIC', 'lib/Kconfig.debug'),
         ]
         for cfg, file in changed_type_cfgs:
             file_text = ''.join(Path(self.folders.source, file).read_text(encoding='utf-8').split())
