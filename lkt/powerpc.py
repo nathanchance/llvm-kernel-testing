@@ -263,18 +263,16 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
             ('opensuse', 'ppc64le'),
         ]
         for distro, config_name in configs:
-            if distro == 'opensuse':
-                reason = None
-                if self.lsm.version < (5, 17, 0):
-                    reason = 'https://github.com/ClangBuiltLinux/continuous-integration2/pull/775'
-                elif ('231b232df8f67' in self.lsm.commits
-                      and '6fcb574125e67' not in self.lsm.commits
-                      and self._llvm_version <= (12, 0, 0)):
-                    reason = 'https://github.com/ClangBuiltLinux/linux/issues/1160'
+            reason = None
+            if distro in ('fedora', 'opensuse') and self.lsm.version < (5, 17, 0):
+                reason = 'https://github.com/ClangBuiltLinux/continuous-integration2/pull/775'
+            elif (distro == 'opensuse' and '231b232df8f67' in self.lsm.commits
+                  and '6fcb574125e67' not in self.lsm.commits and self._llvm_version <= (12, 0, 0)):
+                reason = 'https://github.com/ClangBuiltLinux/linux/issues/1160'
 
-                if reason:
-                    self._skip_one(f"{KERNEL_ARCH} {distro} config", reason)
-                    continue
+            if reason:
+                self._skip_one(f"{KERNEL_ARCH} {distro} config", reason)
+                continue
 
             runner = PowerPCLLVMKernelRunner()
             runner.configs = [Path(self.folders.configs, distro, f"{config_name}.config")]
