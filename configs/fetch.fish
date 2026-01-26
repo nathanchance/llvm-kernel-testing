@@ -50,11 +50,13 @@ for distro in $distros
                 s390x
 
             for arch in $deb_arches
-                set package_version_signed 6.18.5
+                set package_version_signed 6.19-rc6
                 if string match -qr -- -rc $package_version_signed
+                    set pkgbase linux-base
                     set kernel_version_signed (string replace - '~' $package_version_signed)-1~exp1
                     set package_version_signed (string split -f 1 - $package_version_signed)
                 else
+                    set pkgbase linux-image
                     set kernel_version_signed $package_version_signed-1
                     set package_version_signed $package_version_signed+deb14
                 end
@@ -67,7 +69,12 @@ for distro in $distros
 
                 switch $arch
                     case amd64 arm64
-                        set url_suffix linux-signed-$arch/linux-image-"$package_version_signed"-"$deb_arch_config"_"$kernel_version_signed"_"$deb_arch_final".deb
+                        if test "$pkgbase" = linux-base
+                            set top_folder linux
+                        else
+                            set top_folder linux-signed-$arch
+                        end
+                        set url_suffix $top_folder/$pkgbase-"$package_version_signed"-"$deb_arch_config"_"$kernel_version_signed"_"$deb_arch_final".deb
 
                     case armmp i386 powerpc64le riscv64 s390x
                         switch $arch
@@ -79,7 +86,7 @@ for distro in $distros
                                 set deb_arch_final ppc64el
                         end
 
-                        set url_suffix linux/linux-image-"$package_version_unsigned"-"$deb_arch_config"_"$kernel_version_unsigned"_"$deb_arch_final".deb
+                        set url_suffix linux/$pkgbase-"$package_version_unsigned"-"$deb_arch_config"_"$kernel_version_unsigned"_"$deb_arch_final".deb
 
                     case '*'
                         __print_error "Unhandled architecture: $arch"
