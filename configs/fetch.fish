@@ -50,7 +50,7 @@ for distro in $distros
                 s390x
 
             for arch in $deb_arches
-                set package_version_signed 6.19-rc6
+                set package_version_signed 6.19-rc8
                 if string match -qr -- -rc $package_version_signed
                     set pkgbase linux-base
                     set kernel_version_signed (string replace - '~' $package_version_signed)-1~exp1
