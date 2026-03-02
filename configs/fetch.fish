@@ -54,7 +54,7 @@ for distro in $distros
                 if string match -qr -- -rc $package_version_signed; or test $package_version_signed = 6.19
                     set pkgbase linux-base
                     if test $package_version_signed = 6.19
-                        set kernel_version_signed (string replace - '~' $package_version_signed).2-1~exp1
+                        set kernel_version_signed (string replace - '~' $package_version_signed).5-1~exp1
                     else
                         set kernel_version_signed (string replace - '~' $package_version_signed)-1~exp1
                         set package_version_signed (string split -f 1 - $package_version_signed)
