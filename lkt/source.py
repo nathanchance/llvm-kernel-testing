@@ -130,7 +130,10 @@ class LinuxSourceManager:
         # Commit: lib/xor: make xor prototypes more friendly to compiler vectorization
         # Link: https://git.kernel.org/linus/297565aa22cfa80ab0f88c3569693aea0b6afb6d
         # First appeared: v5.18-rc1~199^2~76
-        self._add_commit('297565aa22cfa', '__restrict', 'arch/powerpc/lib/xor_vmx.c')
+        if Path(self.folder, 'lib/raid/xor/powerpc/xor_vmx.c').exists():
+            self.commits.append('297565aa22cfa')
+        else:
+            self._add_commit('297565aa22cfa', '__restrict', 'arch/powerpc/lib/xor_vmx.c')
 
         # Commit: powerpc/irq: Inline call_do_irq() and call_do_softirq()
         # Link: https://git.kernel.org/linus/48cf12d88969bd4238b8769767eb476970319d93
