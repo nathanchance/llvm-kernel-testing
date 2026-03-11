@@ -422,6 +422,8 @@ class LLVMKernelRunner:
             ('MTK_MMSYS', 'drivers/soc/mediatek/Kconfig'),
             # CONFIG_MTK_SMI as a module is invalid before https://git.kernel.org/linus/50fc8d9232cdc64b9e9d1b9488452f153de52b69
             ('MTK_SMI', 'drivers/memory/Kconfig'),
+            # CONFIG_MULTIPLEXER as a module is invalid after https://git.kernel.org/linus/ce5c7c17e70640fc5635fd2252d0bdf4664d452b
+            ('MULTIPLEXER', 'drivers/mux/Kconfig'),
             # CONFIG_NET_9P_USBG as a module is invalid before https://git.kernel.org/linus/e0260d530b73ee969ae971d14daa02376dcfc93f
             ('NET_9P_USBG', 'net/9p/Kconfig'),
             # CONFIG_NET_DSA_REALTEK_{MDIO,SMI} as modules is invalid after https://git.kernel.org/netdev/net-next/c/98b75c1c149c653ad11a440636213eb070325158
