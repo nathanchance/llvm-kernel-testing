@@ -48,19 +48,14 @@ for distro in $distros
                 powerpc64le \
                 riscv64 \
                 s390x
+            set pkgbase linux-base
 
             for arch in $deb_arches
-                set package_version_signed 6.19
-                if string match -qr -- -rc $package_version_signed; or test $package_version_signed = 6.19
-                    set pkgbase linux-base
-                    if test $package_version_signed = 6.19
-                        set kernel_version_signed (string replace - '~' $package_version_signed).5-1~exp1
-                    else
-                        set kernel_version_signed (string replace - '~' $package_version_signed)-1~exp1
-                        set package_version_signed (string split -f 1 - $package_version_signed)
-                    end
+                set package_version_signed 6.19.8
+                if string match -qr -- -rc $package_version_signed
+                    set kernel_version_signed (string replace - '~' $package_version_signed)-1~exp1
+                    set package_version_signed (string split -f 1 - $package_version_signed)
                 else
-                    set pkgbase linux-image
                     set kernel_version_signed $package_version_signed-1
                     set package_version_signed $package_version_signed+deb14
                 end
