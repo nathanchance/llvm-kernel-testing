@@ -96,7 +96,7 @@ for distro in $distros
                 begin
                     echo "Fetching $distro $arch configuration..."
                     and mkdir $work_dir
-                    and wget -O $deb http://ftp.us.debian.org/debian/pool/main/l/$url_suffix
+                    and curl -Lo $deb http://ftp.us.debian.org/debian/pool/main/l/$url_suffix
                     and ar x --output $work_dir $deb
                     and tar -C $work_dir -xJf $work_dir/data.tar.xz
                     and cp -v $work_dir/boot/config-*-$deb_arch_config $dest/$arch.config
