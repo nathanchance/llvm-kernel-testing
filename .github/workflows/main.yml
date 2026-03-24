@@ -1,5 +1,5 @@
 name: Lint checks
-on: [push, pull_request]
+on: [push, pull_request, workflow_dispatch]
 jobs:
   fish:
     uses: nathanchance/actions-workflows/.github/workflows/fish_format.yml@main
