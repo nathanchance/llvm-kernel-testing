@@ -30,7 +30,6 @@ MIN_IAS_LNX_VER = LinuxVersion(5, 19, 0)
 
 
 class S390LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
-
     def __init__(self):
         super().__init__()
 
@@ -40,7 +39,6 @@ class S390LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 
 
 class S390LKTRunner(lkt.runner.LKTRunner):
-
     def __init__(self):
         super().__init__(KERNEL_ARCH, CLANG_TARGET)
 
@@ -63,7 +61,11 @@ class S390LKTRunner(lkt.runner.LKTRunner):
         for config_target in other_cfgs:
             runner = S390LLVMKernelRunner()
             runner.configs = [config_target]
-            if config_target == 'allmodconfig' and '925d046e7e52' in self.lsm.commits and '876e480da2f74' not in self.lsm.commits:
+            if (
+                config_target == 'allmodconfig'
+                and '925d046e7e52' in self.lsm.commits
+                and '876e480da2f74' not in self.lsm.commits
+            ):
                 runner.configs.append('CONFIG_INFINIBAND_ADDR_TRANS=n')
             self._runners.append(runner)
 
@@ -90,14 +92,17 @@ class S390LKTRunner(lkt.runner.LKTRunner):
             )
             return self._skip_all(
                 f"missing fixes from {MIN_LNX_VER} (https://lore.kernel.org/r/your-ad-here.call-01580230449-ext-6884@work.hours/)",
-                print_text)
+                print_text,
+            )
         if self._binutils_version >= (2, 39, 50) and '80ddf5ce1c929' not in self.lsm.commits:
             print_text = (
                 's390 kernels may fail to link with binutils 2.40+ and CONFIG_RELOCATABLE=n\n'
-                '        https://github.com/ClangBuiltLinux/linux/issues/1747')
+                '        https://github.com/ClangBuiltLinux/linux/issues/1747'
+            )
             return self._skip_all(
                 'linker error with CONFIG_RELOCATABLE=n (https://github.com/ClangBuiltLinux/linux/issues/1747)',
-                print_text)
+                print_text,
+            )
 
         if (min_llvm_ver := self.lsm.get_min_llvm_ver(KERNEL_ARCH)) < HARD_MIN_LLVM_VER:
             min_llvm_ver = HARD_MIN_LLVM_VER
@@ -116,8 +121,9 @@ class S390LKTRunner(lkt.runner.LKTRunner):
         lld_res = lkt.utils.chronic([shutil.which('ld.lld'), '-m', 'elf64_s390'], check=False)
         no_s390_support_in_lld = 'error: unknown emulation:' in lld_res.stderr
         # https://lore.kernel.org/20240207-s390-lld-and-orphan-warn-v1-11-8a665b3346ab@kernel.org/
-        s390_makefile_txt = Path(self.folders.source,
-                                 'arch/s390/Makefile').read_text(encoding='utf-8')
+        s390_makefile_txt = Path(self.folders.source, 'arch/s390/Makefile').read_text(
+            encoding='utf-8'
+        )
         no_s390_kernel_support_for_lld = '-z notext' not in s390_makefile_txt
         if no_s390_support_in_lld or no_s390_kernel_support_for_lld:
             gnu_vars.append('LD')
@@ -125,13 +131,16 @@ class S390LKTRunner(lkt.runner.LKTRunner):
         objcopy_res = lkt.utils.chronic(
             [shutil.which('llvm-objcopy'), '-I', 'binary', '-O', 'elf64-s390', '-', '/dev/null'],
             check=False,
-            input='')
+            input='',
+        )
         no_s390_support_in_llvm_objcopy = 'error: invalid output format:' in objcopy_res.stderr
         # https://github.com/ClangBuiltLinux/linux/issues/1996
         s390_boot_makefile_txt = ''
         if (s390_boot_makefile := Path(self.folders.source, 'arch/s390/boot/Makefile')).exists():
             s390_boot_makefile_txt = s390_boot_makefile.read_text(encoding='utf-8')
-        have_broken_info_bin = '--set-section-flags .vmlinux.info=alloc,load' not in s390_boot_makefile_txt
+        have_broken_info_bin = (
+            '--set-section-flags .vmlinux.info=alloc,load' not in s390_boot_makefile_txt
+        )
         if no_s390_support_in_llvm_objcopy or have_broken_info_bin:
             gnu_vars.append('OBJCOPY')
         # https://github.com/ClangBuiltLinux/linux/issues/859
@@ -158,7 +167,8 @@ class S390LKTRunner(lkt.runner.LKTRunner):
             for runner in self._runners:
                 if runner.bootable:
                     runner.bootable = False
-                    runner.result[
-                        'boot'] = f"skipped due to QEMU < {MIN_QEMU_VER} (found '{self._qemu_version}')"
+                    runner.result['boot'] = (
+                        f"skipped due to QEMU < {MIN_QEMU_VER} (found '{self._qemu_version}')"
+                    )
 
         return super().run()

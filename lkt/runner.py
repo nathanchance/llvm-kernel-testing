@@ -15,11 +15,10 @@ import lkt.utils
 from lkt.version import ClangVersion
 
 HAVE_DEV_KVM_ACCESS = os.access('/dev/kvm', os.R_OK | os.W_OK)
-KNOWN_SUBSYS_WERROR_CONFIGS = ('DRM_WERROR', )
+KNOWN_SUBSYS_WERROR_CONFIGS = ('DRM_WERROR',)
 
 
 class Folders:
-
     def __init__(self):
         self.boot_utils = None
         self.build = None
@@ -29,7 +28,6 @@ class Folders:
 
 
 class LLVMKernelRunner:
-
     def __init__(self):
         self.bootable = False
         self.boot_arch = ''
@@ -98,11 +96,9 @@ class LLVMKernelRunner:
         sys.stderr.flush()
         sys.stdout.flush()
         with self.result['log'].open('a') as file:
-            proc = lkt.utils.run(boot_utils_cmd,
-                                 check=False,
-                                 errors='replace',
-                                 stderr=STDOUT,
-                                 stdout=PIPE)
+            proc = lkt.utils.run(
+                boot_utils_cmd, check=False, errors='replace', stderr=STDOUT, stdout=PIPE
+            )
             file.write(proc.stdout)
             if proc.returncode == 0:
                 self.result['boot'] = 'successful'
@@ -126,8 +122,10 @@ class LLVMKernelRunner:
         # Remove LLVM_IAS if the value is the default
         llvm_ias = self.make_vars['LLVM_IAS']
         makefile_clang = Path(self.folders.source, 'scripts/Makefile.clang')
-        llvm_ias_def_on = makefile_clang.exists() and \
-                          'ifeq ($(LLVM_IAS),0)' in makefile_clang.read_text(encoding='utf-8')
+        llvm_ias_def_on = (
+            makefile_clang.exists()
+            and 'ifeq ($(LLVM_IAS),0)' in makefile_clang.read_text(encoding='utf-8')
+        )
         if (llvm_ias_def_on and llvm_ias == 1) or (not llvm_ias_def_on and llvm_ias == 0):
             del self.make_vars['LLVM_IAS']
 
@@ -185,7 +183,8 @@ class LLVMKernelRunner:
             # changes the default image target, which boot-utils does not expect,
             # so explicitly add the bootable image target to the end of the command
             if base_config.stem in ('aarch64', 'arm64', 'riscv64') and lkt.utils.is_set(
-                    self.folders.source, base_config, 'EFI_ZBOOT'):
+                self.folders.source, base_config, 'EFI_ZBOOT'
+            ):
                 self.make_targets.append(self.image_target)
 
         if extra_configs:
@@ -229,11 +228,12 @@ class LLVMKernelRunner:
         start_time = time.time()
         sys.stderr.flush()
         sys.stdout.flush()
-        with Popen(base_make_cmd, stderr=STDOUT,
-                   stdout=PIPE) as proc, self.result['log'].open('bw') as file:
+        with Popen(base_make_cmd, stderr=STDOUT, stdout=PIPE) as proc, self.result['log'].open(
+            'bw'
+        ) as file:
             cmd_log_str = '\n'.join(f"{lkt.utils.cmd_str(cmd)}\n" for cmd in cmds_to_log)
             file.write(cmd_log_str.encode('utf-8'))
-            while (byte := proc.stdout.read(1)):
+            while byte := proc.stdout.read(1):
                 sys.stdout.buffer.write(byte)
                 sys.stdout.flush()
                 file.write(byte)
@@ -300,21 +300,52 @@ class LLVMKernelRunner:
 
         if 'ppc64le' in config.name or 'powerpc64le' in config.name:
             text = Path(self.folders.source, 'arch/powerpc/Kconfig').read_text(encoding='utf-8')
-            search = ('int "Order of maximal physically contiguous allocations"\n'
-                      '\tdefault "8" if PPC64 && PPC_64K_PAGES')
+            search = (
+                'int "Order of maximal physically contiguous allocations"\n'
+                '\tdefault "8" if PPC64 && PPC_64K_PAGES'
+            )
             configs.append(f"CONFIG_ARCH_FORCE_MAX_ORDER={8 if search in text else 9}")
 
         mtk_common_clk_cfgs = {
             # https://git.kernel.org/linus/650fcdf9181e4551cd22d651a8e637c800045c97
-            'MT2712':
-            ('', '_BDPSYS', '_IMGSYS', '_JPGDECSYS', '_MFGCFG', '_MMSYS', '_VDECSYS', '_VENCSYS'),
+            'MT2712': (
+                '',
+                '_BDPSYS',
+                '_IMGSYS',
+                '_JPGDECSYS',
+                '_MFGCFG',
+                '_MMSYS',
+                '_VDECSYS',
+                '_VENCSYS',
+            ),
             # https://git.kernel.org/linus/cfe2c864f0cc80ef292c0b01bb7b83b4cc393516
-            'MT6765':
-            ('_AUDIOSYS', '_CAMSYS', '_GCESYS', '_MMSYS', '_IMGSYS', '_VCODECSYS', '_MFGSYS',
-             '_MIPI0ASYS', '_MIPI0BSYS', '_MIPI1ASYS', '_MIPI1BSYS', '_MIPI2ASYS', '_MIPI2BSYS'),
+            'MT6765': (
+                '_AUDIOSYS',
+                '_CAMSYS',
+                '_GCESYS',
+                '_MMSYS',
+                '_IMGSYS',
+                '_VCODECSYS',
+                '_MFGSYS',
+                '_MIPI0ASYS',
+                '_MIPI0BSYS',
+                '_MIPI1ASYS',
+                '_MIPI1BSYS',
+                '_MIPI2ASYS',
+                '_MIPI2BSYS',
+            ),
             # https://git.kernel.org/linus/f09b9460a5e448dac8fb4f645828c0668144f9e6
-            'MT6779': ('', '_AUDSYS', '_CAMSYS', '_IMGSYS', '_IPESYS', '_MFGCFG', '_MMSYS',
-                       '_VDECSYS', '_VENCSYS'),
+            'MT6779': (
+                '',
+                '_AUDSYS',
+                '_CAMSYS',
+                '_IMGSYS',
+                '_IPESYS',
+                '_MFGCFG',
+                '_MMSYS',
+                '_VDECSYS',
+                '_VENCSYS',
+            ),
             # https://git.kernel.org/linus/6f0d2e07f2dbcafdc4018839bc99971dd1a7232d
             'MT6797': ('_MMSYS', '_IMGSYS', '_VDECSYS', '_VENCSYS'),
             # https://git.kernel.org/linus/c8f0ef997329728a136d07967b7a97cba3f07f7b
@@ -325,13 +356,38 @@ class LLVMKernelRunner:
             # https://git.kernel.org/linus/4c02c9af3cb9449cd176300b288e8addb5083934
             'MT8173': ('', '_MMSYS'),
             # https://git.kernel.org/linus/95ffe65437b239db3f5a570b31cd79629c851743
-            'MT8183': ('', '_AUDIOSYS', '_CAMSYS', '_IMGSYS', '_IPU_CORE0', '_IPU_CORE1',
-                       '_IPU_ADL', '_IPU_CONN', '_MFGCFG', '_MMSYS', '_VDECSYS', '_VENCSYS'),
+            'MT8183': (
+                '',
+                '_AUDIOSYS',
+                '_CAMSYS',
+                '_IMGSYS',
+                '_IPU_CORE0',
+                '_IPU_CORE1',
+                '_IPU_ADL',
+                '_IPU_CONN',
+                '_MFGCFG',
+                '_MMSYS',
+                '_VDECSYS',
+                '_VENCSYS',
+            ),
             # https://git.kernel.org/linus/5baf38e06a570a2a4ed471a996aff6d6ba69cceb
-            'MT8186': ('', ),
+            'MT8186': ('',),
             # https://git.kernel.org/linus/9bfa4fb1e0d6de678a79ec5a05fac464edcee91d
-            'MT8192': ('', '_AUDSYS', '_CAMSYS', '_IMGSYS', '_IMP_IIC_WRAP', '_IPESYS', '_MDPSYS',
-                       '_MFGCFG', '_MMSYS', '_MSDC', '_SCP_ADSP', '_VDECSYS', '_VENCSYS'),
+            'MT8192': (
+                '',
+                '_AUDSYS',
+                '_CAMSYS',
+                '_IMGSYS',
+                '_IMP_IIC_WRAP',
+                '_IPESYS',
+                '_MDPSYS',
+                '_MFGCFG',
+                '_MMSYS',
+                '_MSDC',
+                '_SCP_ADSP',
+                '_VDECSYS',
+                '_VENCSYS',
+            ),
             # https://git.kernel.org/linus/876d4e21aad8b60e155dbc5bbfb8c8e75c4d9f4b
             'MT8516': ('', '_AUDSYS'),
         }
@@ -351,28 +407,35 @@ class LLVMKernelRunner:
             # CONFIG_CHELSIO_IPSEC_INLINE as a module is invalid before https://git.kernel.org/linus/1b77be463929e6d3cefbc929f710305714a89723
             ('CHELSIO_IPSEC_INLINE', 'drivers/net/ethernet/chelsio/inline_crypto/Kconfig'),
             # Several Mediatek common clock drivers were converted to modules over time
-            *[(f"COMMON_CLK_{mt_rev}{cfg_suffix}", 'drivers/clk/mediatek/Kconfig')
-              for mt_rev, cfg_suffixes in mtk_common_clk_cfgs.items()
-              for cfg_suffix in cfg_suffixes],
+            *[
+                (f"COMMON_CLK_{mt_rev}{cfg_suffix}", 'drivers/clk/mediatek/Kconfig')
+                for mt_rev, cfg_suffixes in mtk_common_clk_cfgs.items()
+                for cfg_suffix in cfg_suffixes
+            ],
             # CONFIG_CORESIGHT (and all of its drivers) as a module is invalid before https://git.kernel.org/linus/8e264c52e1dab8a7c1e036222ef376c8920c3423
-            *[(f"CORESIGHT{val}", 'drivers/hwtracing/coresight/Kconfig') for val in (
-                '',
-                '_LINKS_AND_SINKS',
-                '_LINK_AND_SINK_TMC',
-                '_CATU',
-                '_SINK_TPIU',
-                '_SINK_ETBV10',
-                '_SOURCE_ETM3X',
-                '_SOURCE_ETM4X',
-                '_STM',
-            )],
+            *[
+                (f"CORESIGHT{val}", 'drivers/hwtracing/coresight/Kconfig')
+                for val in (
+                    '',
+                    '_LINKS_AND_SINKS',
+                    '_LINK_AND_SINK_TMC',
+                    '_CATU',
+                    '_SINK_TPIU',
+                    '_SINK_ETBV10',
+                    '_SOURCE_ETM3X',
+                    '_SOURCE_ETM4X',
+                    '_STM',
+                )
+            ],
             # CONFIG_CPUFREQ_DT_PLATDEV as a module is invalid before https://git.kernel.org/linus/3b062a086984d35a3c6d3a1c7841d0aa73aa76af
             ('CPUFREQ_DT_PLATDEV', 'drivers/cpufreq/Kconfig'),
             # CONFIG_CROS_EC_PROTO as a module is invalid before https://git.kernel.org/linus/ccf395bde6aeefac139f4f250287feb139e3355d
             ('CROS_EC_PROTO', 'drivers/platform/chrome/Kconfig'),
             # CONFIG_CRYPTO_ARCH_HAVE_LIB_{CHACHA,CURVE25519,POLY1305} as modules is invalid after https://git.kernel.org/linus/1047e21aecdf17c8a9ab9fd4bd24c6647453f93d
-            *[(f"CRYPTO_ARCH_HAVE_LIB_{alg}", 'lib/crypto/Kconfig')
-              for alg in ('CHACHA', 'CURVE25519', 'POLY1305')],
+            *[
+                (f"CRYPTO_ARCH_HAVE_LIB_{alg}", 'lib/crypto/Kconfig')
+                for alg in ('CHACHA', 'CURVE25519', 'POLY1305')
+            ],
             # CONFIG_CRYPTO_LIB_CURVE25519_GENERIC as a module is invalid after https://git.kernel.org/linus/68546e5632c0b982663af575ae12cc5d81facc91
             ('CRYPTO_LIB_CURVE25519_GENERIC', 'lib/crypto/Kconfig'),
             # CONFIG_CRYPTO_LIB_POLY1305_GENERIC as a module is invalid after https://git.kernel.org/linus/1e0b2c907d1c86de72108624a8e633dd6cebb0a0
@@ -402,8 +465,10 @@ class LLVMKernelRunner:
             # CONFIG_GPIO_PALMAS as a modules is invalid before https://git.kernel.org/linus/cfbbf275ffcf05c82994b8787b0d1974aa1569d8
             # CONFIG_GPIO_PL061 as a module is invalid before https://git.kernel.org/linus/616844408de7f21546c3c2a71ea7f8d364f45e0d
             # CONFIG_GPIO_TPS68470 as a module is invalid before https://git.kernel.org/linus/a1ce76e89907a69713f729ff21db1efa00f3bb47
-            *[(f"GPIO_{val}", 'drivers/gpio/Kconfig')
-              for val in ('DAVINCI', 'MXC', 'PALMAS', 'PL061', 'TPS68470')],
+            *[
+                (f"GPIO_{val}", 'drivers/gpio/Kconfig')
+                for val in ('DAVINCI', 'MXC', 'PALMAS', 'PL061', 'TPS68470')
+            ],
             # CONFIG_HAVE_KVM_IRQ_BYPASS as a module is invalid before https://git.kernel.org/linus/459a35111b0a890172a78d51c01b204e13a34a18
             ('HAVE_KVM_IRQ_BYPASS', 'virt/kvm/Kconfig'),
             # CONFIG_HYPERV as a module is invalid after https://git.kernel.org/linus/e3ec97c3abaf2fb68cc755cae3229288696b9f3d
@@ -427,8 +492,10 @@ class LLVMKernelRunner:
             # CONFIG_NET_9P_USBG as a module is invalid before https://git.kernel.org/linus/e0260d530b73ee969ae971d14daa02376dcfc93f
             ('NET_9P_USBG', 'net/9p/Kconfig'),
             # CONFIG_NET_DSA_REALTEK_{MDIO,SMI} as modules is invalid after https://git.kernel.org/netdev/net-next/c/98b75c1c149c653ad11a440636213eb070325158
-            *[(f"NET_DSA_REALTEK_{val}", 'drivers/net/dsa/realtek/Kconfig')
-              for val in ('MDIO', 'SMI')],
+            *[
+                (f"NET_DSA_REALTEK_{val}", 'drivers/net/dsa/realtek/Kconfig')
+                for val in ('MDIO', 'SMI')
+            ],
             # CONFIG_NVME_AUTH as a module is invalid before https://git.kernel.org/linus/6affe08aea5f3b630565676e227b41d55a6f009c
             ('NVME_AUTH', 'drivers/nvme/common/Kconfig'),
             # CONFIG_NVMEM_ZYNQMP as a module is invalid before https://git.kernel.org/linus/bcd1fe07def0f070eb5f31594620aaee6f81d31a
@@ -436,8 +503,10 @@ class LLVMKernelRunner:
             # CONFIG_PCI_DRA7XX{,_HOST,_EP} as modules is invalid before https://git.kernel.org/linus/3b868d150efd3c586762cee4410cfc75f46d2a07
             # CONFIG_PCI_EXYNOS as a module is invalid before https://git.kernel.org/linus/778f7c194b1dac351d345ce723f8747026092949
             # CONFIG_PCI_MESON as a module is invalid before https://git.kernel.org/linus/a98d2187efd9e6d554efb50e3ed3a2983d340fe5
-            *[(f"PCI_{val}", 'drivers/pci/controller/dwc/Kconfig')
-              for val in ('DRA7XX', 'DRA7XX_EP', 'DRA7XX_HOST', 'EXYNOS', 'MESON')],
+            *[
+                (f"PCI_{val}", 'drivers/pci/controller/dwc/Kconfig')
+                for val in ('DRA7XX', 'DRA7XX_EP', 'DRA7XX_HOST', 'EXYNOS', 'MESON')
+            ],
             # CONFIG_PCI_MVEBU as a module is invalid before https://git.kernel.org/linus/0746ae1be12177ebda0666eefa82583cbaeeefd6
             ('PCI_MVEBU', 'drivers/pci/controller/Kconfig'),
             # CONFIG_PINCTRL_ROCKCHIP as a module is invalid before https://git.kernel.org/linus/be786ac5a6c4bf4ef3e4c569a045d302c1e60fe6
@@ -455,8 +524,10 @@ class LLVMKernelRunner:
             # CONFIG_QCOM_RPMPD as a module is invalid before https://git.kernel.org/linus/f29808b2fb85a7ff2d4830aa1cb736c8c9b986f4
             # CONFIG_QCOM_RPMHPD as a module is invalid before https://git.kernel.org/linus/d4889ec1fc6ac6321cc1e8b35bb656f970926a09
             # These configurations were moved to drivers/pmdomain/qcom/Kconfig in https://git.kernel.org/linus/4eb42e5bd86da528be604845f52732742ef74e6b
-            *[(f"QCOM_RPM{val}PD", ('drivers/pmdomain/qcom/Kconfig', 'drivers/soc/qcom/Kconfig'))
-              for val in ('', 'H')],
+            *[
+                (f"QCOM_RPM{val}PD", ('drivers/pmdomain/qcom/Kconfig', 'drivers/soc/qcom/Kconfig'))
+                for val in ('', 'H')
+            ],
             # CONFIG_RADIO_ADAPTERS as a module is invalid before https://git.kernel.org/linus/215d49a41709610b9e82a49b27269cfaff1ef0b6
             ('RADIO_ADAPTERS', 'drivers/media/radio/Kconfig'),
             # CONFIG_RATIONAL as a module is invalid before https://git.kernel.org/linus/bcda5fd34417c89f653cc0912cc0608b36ea032c
@@ -468,8 +539,10 @@ class LLVMKernelRunner:
             ('RESET_MESON', ('drivers/reset/amlogic/Kconfig', 'drivers/reset/Kconfig')),
             # CONFIG_RTW88_8822BE as a module is invalid before https://git.kernel.org/linus/416e87fcc780cae8d72cb9370fa0f46007faa69a
             # CONFIG_RTW88_8822CE as a module is invalid before https://git.kernel.org/linus/ba0fbe236fb8a7b992e82d6eafb03a600f5eba43
-            *[(f"RTW88_8822{val}E", 'drivers/net/wireless/realtek/rtw88/Kconfig')
-              for val in ('B', 'C')],
+            *[
+                (f"RTW88_8822{val}E", 'drivers/net/wireless/realtek/rtw88/Kconfig')
+                for val in ('B', 'C')
+            ],
             # CONFIG_SERIAL_SC16IS7XX_{I2C,SPI} as modules is invalid before https://git.kernel.org/linus/d49216438139bca0454e69b6c4ab8a01af2b72ed
             *[(f"SERIAL_SC16IS7XX_{val}", 'drivers/tty/serial/Kconfig') for val in ('I2C', 'SPI')],
             # CONFIG_SERIAL_LANTIQ as a module is invalid before https://git.kernel.org/linus/ad406341bdd7d22ba9497931c2df5dde6bb9440e
@@ -516,7 +589,7 @@ class LLVMKernelRunner:
                 continue
 
             if isinstance(locations, str):
-                files = (locations, )
+                files = (locations,)
             elif isinstance(locations, tuple):
                 files = locations
             else:
@@ -537,8 +610,9 @@ class LLVMKernelRunner:
 
         # CONFIG_MFD_ARIZONA as a module is invalid before https://git.kernel.org/linus/33d550701b915938bd35ca323ee479e52029adf2
         # Done manually because 'tristate'/'bool' is not right after 'config MFD_ARIZONA'...
-        mfd_arizona_is_m = lkt.utils.is_modular(self.folders.source, self.folders.build,
-                                                'MFD_ARIZONA')
+        mfd_arizona_is_m = lkt.utils.is_modular(
+            self.folders.source, self.folders.build, 'MFD_ARIZONA'
+        )
         file_text = Path(self.folders.source, 'drivers/mfd/Makefile').read_text(encoding='utf-8')
         if mfd_arizona_is_m and 'arizona-objs' not in file_text:
             configs.append('CONFIG_MFD_ARIZONA=y')
@@ -561,7 +635,9 @@ class LLVMKernelRunner:
                 configs.append(f"CONFIG_{cfg}=n")
 
         file_text = Path(self.folders.source, 'lib/Kconfig.ubsan').read_text(encoding='utf-8')
-        check_cfg = f"UBSAN_{'SIGNED' if 'config UBSAN_INTEGER_WRAP' in file_text else 'INTEGER'}_WRAP"
+        check_cfg = (
+            f"UBSAN_{'SIGNED' if 'config UBSAN_INTEGER_WRAP' in file_text else 'INTEGER'}_WRAP"
+        )
         if not lkt.utils.is_set(self.folders.source, self.folders.build, check_cfg):
             configs.append(
                 f"CONFIG_UBSAN_{'INTEGER' if check_cfg == 'UBSAN_SIGNED_WRAP' else 'SIGNED'}_WRAP=n",
@@ -570,12 +646,20 @@ class LLVMKernelRunner:
         # CONFIG_ARM_GT_INITIAL_PRESCALER_VAL=0 is not valid before https://git.kernel.org/linus/1c4b87c921fb158d853adcb8fd48c2dc07fc6f91
         if lkt.utils.is_set(self.folders.source, self.folders.build, 'ARM_GLOBAL_TIMER'):
             file_text = ''.join(
-                Path(self.folders.source,
-                     'drivers/clocksource/Kconfig').read_text(encoding='utf-8').split())
-            have_1c4b87c921fb1 = 'config ARM_GT_INITIAL_PRESCALER_VALint "ARM global timer initial prescaler value"default 0' in file_text
-            have_zero_prescalar_val = lkt.utils.get_config_val(
-                self.folders.source, self.folders.build, cfg :=
-                'ARM_GT_INITIAL_PRESCALER_VAL') == '0'
+                Path(self.folders.source, 'drivers/clocksource/Kconfig')
+                .read_text(encoding='utf-8')
+                .split()
+            )
+            have_1c4b87c921fb1 = (
+                'config ARM_GT_INITIAL_PRESCALER_VALint "ARM global timer initial prescaler value"default 0'
+                in file_text
+            )
+            have_zero_prescalar_val = (
+                lkt.utils.get_config_val(
+                    self.folders.source, self.folders.build, cfg := 'ARM_GT_INITIAL_PRESCALER_VAL'
+                )
+                == '0'
+            )
             if not have_1c4b87c921fb1 and have_zero_prescalar_val:
                 configs.append(f"CONFIG_{cfg}=1")
 
@@ -599,21 +683,28 @@ class LLVMKernelRunner:
         if debug_info_btf_y and not (pahole_available and self.lsm.version >= (5, 7, 0)):
             self.configs.append('CONFIG_DEBUG_INFO_BTF=n')
 
-        if 'e96f2d64c812d' not in self.lsm.commits and 'CONFIG_BPF_PRELOAD' in self.lsm.configs and lkt.utils.is_set(
-                self.folders.source, config, 'BPF_PRELOAD'):
+        if (
+            'e96f2d64c812d' not in self.lsm.commits
+            and 'CONFIG_BPF_PRELOAD' in self.lsm.configs
+            and lkt.utils.is_set(self.folders.source, config, 'BPF_PRELOAD')
+        ):
             self.configs.append('CONFIG_BPF_PRELOAD=n')
 
-        if distro == 'archlinux' and lkt.utils.is_set(self.folders.source, config,
-                                                      'EXTRA_FIRMWARE'):
+        if distro == 'archlinux' and lkt.utils.is_set(
+            self.folders.source, config, 'EXTRA_FIRMWARE'
+        ):
             self.configs.append('CONFIG_EXTRA_FIRMWARE=""')
 
-        if distro == 'debian' and lkt.utils.is_set(self.folders.source, config,
-                                                   'SYSTEM_TRUSTED_KEYS'):
+        if distro == 'debian' and lkt.utils.is_set(
+            self.folders.source, config, 'SYSTEM_TRUSTED_KEYS'
+        ):
             self.configs.append('CONFIG_SYSTEM_TRUSTED_KEYS=n')
 
-        if distro == 'fedora' and config.stem in ('aarch64', 'riscv64',
-                                                  'x86_64') and lkt.utils.is_set(
-                                                      self.folders.source, config, 'EFI_SBAT_FILE'):
+        if (
+            distro == 'fedora'
+            and config.stem in ('aarch64', 'riscv64', 'x86_64')
+            and lkt.utils.is_set(self.folders.source, config, 'EFI_SBAT_FILE')
+        ):
             self.configs.append('CONFIG_EFI_SBAT_FILE=""')
 
         for val in KNOWN_SUBSYS_WERROR_CONFIGS:
@@ -641,7 +732,8 @@ class LLVMKernelRunner:
             # We should not add configurations that do not exist in the
             # tree that we are testing.
             self.configs += [
-                f"{full_cfg}=n" for val in KNOWN_SUBSYS_WERROR_CONFIGS
+                f"{full_cfg}=n"
+                for val in KNOWN_SUBSYS_WERROR_CONFIGS
                 if (full_cfg := f"CONFIG_{val}") in self.lsm.configs
             ]
 
@@ -669,7 +761,6 @@ class LLVMKernelRunner:
 
 
 class LKTRunner:
-
     def __init__(self, arch, clang_target):
         self.folders = Folders()
         self.lsm = None
@@ -708,12 +799,15 @@ class LKTRunner:
 
     def run(self):
         if not lkt.utils.clang_supports_target(self._clang_target):
-            return self._skip_all('missing clang target',
-                                  f"Missing {self._clang_target} target in clang")
+            return self._skip_all(
+                'missing clang target', f"Missing {self._clang_target} target in clang"
+            )
 
-        if 'CROSS_COMPILE' in self.make_vars and \
-           self.make_vars.get('LLVM_IAS', 1) == 0 and \
-            not shutil.which(f"{self.make_vars['CROSS_COMPILE']}as"):
+        if (
+            'CROSS_COMPILE' in self.make_vars
+            and self.make_vars.get('LLVM_IAS', 1) == 0
+            and not shutil.which(f"{self.make_vars['CROSS_COMPILE']}as")
+        ):
             return self._skip_all('missing binutils', 'Cannot find binutils')
 
         lkt.utils.header(f"Building {self.make_vars['ARCH']} kernels", end='')

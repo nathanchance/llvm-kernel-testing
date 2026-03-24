@@ -7,12 +7,13 @@ from lkt.version import LinuxVersion, MinToolVersion
 
 
 class LinuxSourceManager:
-
     def __init__(self, linux_source):
         # Perform same check as Linux for clean source tree to catch early failures
-        if (Path(linux_source, '.config').is_file()
-                or Path(linux_source, 'include/config').is_dir()
-                or list(linux_source.glob('arch/*/include/generated'))):
+        if (
+            Path(linux_source, '.config').is_file()
+            or Path(linux_source, 'include/config').is_dir()
+            or list(linux_source.glob('arch/*/include/generated'))
+        ):
             raise RuntimeError(f"Supplied Linux source ('{linux_source}') is not clean!")
 
         self.commits = []
@@ -90,14 +91,20 @@ class LinuxSourceManager:
         # Commit: powerpc: Add "-z notext" flag to disable diagnostic
         # Link: https://git.kernel.org/linus/0355785313e2191be4e1108cdbda94ddb0238c48
         # First appeared: v5.15-rc1~100^2~70
-        self._add_commit('0355785313e21', r"LDFLAGS_vmlinux-\$\(CONFIG_RELOCATABLE\) \+= -z notext",
-                         'arch/powerpc/Makefile')
+        self._add_commit(
+            '0355785313e21',
+            r"LDFLAGS_vmlinux-\$\(CONFIG_RELOCATABLE\) \+= -z notext",
+            'arch/powerpc/Makefile',
+        )
 
         # Introduced by: powerpc/pmac32: enable serial options by default in defconfig
         # Link: https://git.kernel.org/linus/0b5e06e9cb156e7e97bfb4e1ebf6acd62497eaf5
         # First appeared: next-20230815~142^2~5
-        self._add_commit('0b5e06e9cb156', 'CONFIG_SERIAL_PMACZILOG_CONSOLE=y',
-                         'arch/powerpc/configs/pmac32_defconfig')
+        self._add_commit(
+            '0b5e06e9cb156',
+            'CONFIG_SERIAL_PMACZILOG_CONSOLE=y',
+            'arch/powerpc/configs/pmac32_defconfig',
+        )
 
         # Introduced by: arm64: Restrict CPU_BIG_ENDIAN to GNU as or LLVM IAS 15.x or newer
         # Link: https://git.kernel.org/linus/146a15b873353f8ac28dc281c139ff611a3c4848
@@ -105,14 +112,17 @@ class LinuxSourceManager:
         self._add_commit(
             '146a15b873353',
             'https://github.com/llvm/llvm-project/commit/1379b150991f70a5782e9a143c2ba5308da1161c',
-            'arch/arm64/Kconfig')
+            'arch/arm64/Kconfig',
+        )
 
         # Introduced by: powerpc/64: Make VDSO32 track COMPAT on 64-bit
         # Link: https://git.kernel.org/linus/231b232df8f67e7d37af01259c21f2a131c3911e
         # First appeared: v5.10-rc1~105^2~141
-        self._add_commit('231b232df8f67',
-                         'config VDSO32\n\tdef_bool y\n\tdepends on PPC32 || COMPAT',
-                         'arch/powerpc/platforms/Kconfig.cputype')
+        self._add_commit(
+            '231b232df8f67',
+            'config VDSO32\n\tdef_bool y\n\tdepends on PPC32 || COMPAT',
+            'arch/powerpc/platforms/Kconfig.cputype',
+        )
 
         # Commit: powerpc/44x: Fix build failure with GCC 12 (unrecognized opcode: `wrteei')
         # Link: https://git.kernel.org/linus/2255411d1d0f0661d1e5acd5f6edf4e6652a345a
@@ -120,7 +130,8 @@ class LinuxSourceManager:
         self._add_commit(
             '2255411d1d0f0',
             'config POWERPC_CPU\n\tbool "Generic 32 bits powerpc"\n\tdepends on PPC_BOOK3S_32',
-            'arch/powerpc/platforms/Kconfig.cputype')
+            'arch/powerpc/platforms/Kconfig.cputype',
+        )
 
         # Commit: LoongArch: Allow building with kcov coverage
         # Link: https://git.kernel.org/linus/2363088eba2ecccfb643725e4864af73c4226a04
@@ -138,21 +149,27 @@ class LinuxSourceManager:
         # Commit: powerpc/irq: Inline call_do_irq() and call_do_softirq()
         # Link: https://git.kernel.org/linus/48cf12d88969bd4238b8769767eb476970319d93
         # First appeared: v5.13-rc1~90^2~191
-        self._add_commit('48cf12d88969b',
-                         r"static __always_inline void call_do_softirq\(const void \*sp\)",
-                         'arch/powerpc/kernel/irq.c')
+        self._add_commit(
+            '48cf12d88969b',
+            r"static __always_inline void call_do_softirq\(const void \*sp\)",
+            'arch/powerpc/kernel/irq.c',
+        )
 
         # Commit: KVM: PPC: Book3S HV: Workaround high stack usage with clang
         # Link: https://git.kernel.org/linus/51696f39cbee5bb684e7959c0c98b5f54548aa34
         # First appeared: v5.14-rc1~104^2~71^2
-        self._add_commit('51696f39cbee5', 'noinline_for_stack void byteswap_pt_regs',
-                         'arch/powerpc/kvm/book3s_hv_nested.c')
+        self._add_commit(
+            '51696f39cbee5',
+            'noinline_for_stack void byteswap_pt_regs',
+            'arch/powerpc/kvm/book3s_hv_nested.c',
+        )
 
         # Commit: x86, lto: Enable Clang LTO for 32-bit as well
         # Link: https://git.kernel.org/linus/583bfd484bcc85e9371e7205fa9e827c18ae34fb
         # First appeared: v5.14-rc1~126^2~4
-        self._add_commit('583bfd484bcc8', 'select ARCH_SUPPORTS_LTO_CLANG_THIN\n',
-                         'arch/x86/Kconfig')
+        self._add_commit(
+            '583bfd484bcc8', 'select ARCH_SUPPORTS_LTO_CLANG_THIN\n', 'arch/x86/Kconfig'
+        )
 
         # Introduced by: powerpc: Kconfig: disable CONFIG_COMPAT for clang < 12
         # Link: https://git.kernel.org/linus/6fcb574125e673f33ff058caa54b4e65629f3a08
@@ -160,13 +177,15 @@ class LinuxSourceManager:
         self._add_commit(
             '6fcb574125e67',
             'config COMPAT\n\tbool "[a-zA-Z0-9 ]+"\n\tdepends on PPC64\n\tdepends on !CC_IS_CLANG',
-            'arch/powerpc/Kconfig')
+            'arch/powerpc/Kconfig',
+        )
 
         # Commit: Hexagon: fix build errors
         # Link: https://git.kernel.org/linus/788dcee0306e1bdbae1a76d1b3478bb899c5838e
         # First appeared: v5.13-rc1~37^2~3
-        self._add_commit('788dcee0306e1', r"KBUILD_CFLAGS \+= -mlong-calls",
-                         'arch/hexagon/Makefile')
+        self._add_commit(
+            '788dcee0306e1', r"KBUILD_CFLAGS \+= -mlong-calls", 'arch/hexagon/Makefile'
+        )
 
         # Commit: Makefile: Add loongarch target flag for Clang compilation
         # Link: https://git.kernel.org/linus/65eea6b44a5dd332c50390fdaeda7e197802c484
@@ -182,9 +201,11 @@ class LinuxSourceManager:
         # Commit: RDMA/cma: Distinguish between sockaddr_in and sockaddr_in6 by size
         # Link: https://git.kernel.org/linus/876e480da2f74715fc70e37723e77ca16a631e35
         # First appeared: v6.3-rc1~102^2~8
-        self._add_commit('876e480da2f74',
-                         r"__builtin_object_size\(sa, 0\) >= sizeof\(struct sockaddr_in",
-                         'drivers/infiniband/core/cma.c')
+        self._add_commit(
+            '876e480da2f74',
+            r"__builtin_object_size\(sa, 0\) >= sizeof\(struct sockaddr_in",
+            'drivers/infiniband/core/cma.c',
+        )
 
         # Commit: cfi: Switch to -fsanitize=kcfi
         # Link: https://git.kernel.org/linus/89245600941e4e0f87d77f60ee269b5e61ef4e49
@@ -194,14 +215,16 @@ class LinuxSourceManager:
         # Commit: RDMA/core: Add a netevent notifier to cma
         # Link: https://git.kernel.org/linus/925d046e7e52c71c3531199ce137e141807ef740
         # First appeared: v6.0-rc1~113^2~84
-        self._add_commit('925d046e7e52', 'static void cma_netevent_work_handler',
-                         'drivers/infiniband/core/cma.c')
+        self._add_commit(
+            '925d046e7e52', 'static void cma_netevent_work_handler', 'drivers/infiniband/core/cma.c'
+        )
 
         # Introduced by: powerpc/pmac/smp: Avoid unused-variable warnings
         # Link: https://git.kernel.org/linus/9451c79bc39e610882bdd12370f01af5004a3c4f
         # First appeared: v5.7-rc1~81^2~107
-        smp_c_txt = Path(self.folder,
-                         'arch/powerpc/platforms/powermac/smp.c').read_text(encoding='utf-8')
+        smp_c_txt = Path(self.folder, 'arch/powerpc/platforms/powermac/smp.c').read_text(
+            encoding='utf-8'
+        )
         if not re.search('^volatile static long int core99_l2_cache;$', smp_c_txt, flags=re.M):
             self.commits.append('9451c79bc39e')
 
@@ -213,8 +236,11 @@ class LinuxSourceManager:
         # Commit: x86/Kconfig: Do not allow CONFIG_X86_X32_ABI=y with llvm-objcopy
         # Link: https://git.kernel.org/linus/aaeed6ecc1253ce1463fa1aca0b70a4ccbc9fa75
         # First appeared: v5.18-rc1~94^2~7
-        self._add_commit('aaeed6ecc1253', 'https://github.com/ClangBuiltLinux/linux/issues/514',
-                         'arch/x86/Kconfig')
+        self._add_commit(
+            'aaeed6ecc1253',
+            'https://github.com/ClangBuiltLinux/linux/issues/514',
+            'arch/x86/Kconfig',
+        )
 
         # Commit: x86/build: Treat R_386_PLT32 relocation as R_386_PC32
         # Link: https://git.kernel.org/linus/bb73d07148c405c293e576b40af37737faf23a6a
@@ -224,8 +250,9 @@ class LinuxSourceManager:
         # Commit: MIPS: Malta: Enable BLK_DEV_INITRD
         # Link: https://git.kernel.org/linus/c47c7ab9b53635860c6b48736efdd22822d726d7
         # First appeared: v5.18-rc1~125^2~26
-        self._add_commit('c47c7ab9b5363', 'CONFIG_BLK_DEV_INITRD=y',
-                         'arch/mips/configs/malta_defconfig')
+        self._add_commit(
+            'c47c7ab9b5363', 'CONFIG_BLK_DEV_INITRD=y', 'arch/mips/configs/malta_defconfig'
+        )
 
         # Commit: x86/boot: Add $(CLANG_FLAGS) to compressed KBUILD_CFLAGS
         # Link: https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f
@@ -240,8 +267,9 @@ class LinuxSourceManager:
         # Commit: bpf: Drop libbpf, libelf, libz dependency from bpf preload.
         # Link: https://git.kernel.org/linus/e96f2d64c812d9c20adea38a9b5e08feaa21fcf5
         # First appeared: v5.18-rc1~136^2~392^2~36
-        if (preload_make := Path(self.folder, 'kernel/bpf/preload/Makefile')
-            ).exists() and 'LIBBPF_OUT' not in preload_make.read_text(encoding='utf-8'):
+        if (
+            preload_make := Path(self.folder, 'kernel/bpf/preload/Makefile')
+        ).exists() and 'LIBBPF_OUT' not in preload_make.read_text(encoding='utf-8'):
             self.commits.append('e96f2d64c812d')
 
         # Commit: riscv: Use -mno-relax when using lld linker
@@ -252,14 +280,16 @@ class LinuxSourceManager:
         if self.version >= LinuxVersion(5, 13, 0):
             self.commits.append('ec3a5cb61146c')
         else:
-            self._add_commit('ec3a5cb61146c', r"KBUILD_CFLAGS \+= -mno-relax",
-                             'arch/riscv/Makefile')
+            self._add_commit(
+                'ec3a5cb61146c', r"KBUILD_CFLAGS \+= -mno-relax", 'arch/riscv/Makefile'
+            )
 
         # Commit: riscv: set default pm_power_off to NULL
         # Link: https://git.kernel.org/linus/f2928e224d85e7cc139009ab17cefdfec2df5d11
         # First appeared: v5.16-rc1~32^2~13
-        self._add_commit('f2928e224d85e', r"void \(\*pm_power_off\)\(void\) = NULL;",
-                         'arch/riscv/kernel/reset.c')
+        self._add_commit(
+            'f2928e224d85e', r"void \(\*pm_power_off\)\(void\) = NULL;", 'arch/riscv/kernel/reset.c'
+        )
 
         # Commit: hexagon: export raw I/O routines for modules
         # Link: https://git.kernel.org/linus/ffb92ce826fd801acb0f4e15b75e4ddf0d189bde

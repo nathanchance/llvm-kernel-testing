@@ -38,7 +38,6 @@ def get_linux_version(linux):
 
 
 class LKTReport:
-
     def __init__(self):
         self.env_info = {}
         self.folders = lkt.runner.Folders()
@@ -61,7 +60,7 @@ class LKTReport:
         self.env_info['binutils version'], self.env_info['binutils location'] = get_cmd_info('as')
         self.env_info['Linux source version'] = get_linux_version(self.folders.source)
         self.env_info['Linux source location'] = self.folders.source
-        self.env_info['Host uname'] = f"{uname.system} {uname.node} {uname.release} {uname.version} {uname.machine}"  # yapf: disable
+        self.env_info['Host uname'] = f"{uname.system} {uname.node} {uname.release} {uname.version} {uname.machine}"  # fmt: off
         self.env_info['PATH'] = os.environ['PATH']
 
     def generate_report(self, results):

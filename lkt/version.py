@@ -13,7 +13,6 @@ DEFAULT_VERSION = (0, 0, 0)
 
 @total_ordering
 class Version:
-
     def __init__(self, *args, **kwargs):
 
         if len(args) > 0:
@@ -60,7 +59,6 @@ class Version:
 
 
 class BinutilsVersion(Version):
-
     def _gen_ver_iter(self, binary='as'):
         if not shutil.which(binary):
             return DEFAULT_VERSION
@@ -76,7 +74,6 @@ class BinutilsVersion(Version):
 
 
 class ClangVersion(Version):
-
     def _gen_ver_iter(self, binary='clang'):
         if not shutil.which(binary):
             return DEFAULT_VERSION
@@ -88,21 +85,20 @@ class ClangVersion(Version):
 
 
 class LinuxVersion(Version):
-
     def _gen_ver_iter(self, folder=None):
         if not folder:
             folder = Path.cwd()
 
         if not Path(folder, 'Makefile').exists():
             raise RuntimeError(
-                f"Provided kernel source ('{folder}') does not look like a Linux kernel tree?")
+                f"Provided kernel source ('{folder}') does not look like a Linux kernel tree?"
+            )
 
         output = lkt.utils.chronic(['make', '-s', 'kernelversion'], cwd=folder).stdout.strip()
         return output.split('-', 1)[0].split('.')
 
 
 class MinToolVersion(Version):
-
     def _gen_ver_iter(self, **kwargs):
         folder = kwargs.get('folder', Path.cwd())
         arch = kwargs.get('arch')
@@ -115,14 +111,20 @@ class MinToolVersion(Version):
         if arch:
             cmd_env['SRCARCH'] = arch
 
-        return lkt.utils.chronic([min_tool_ver, tool], env={
-            **os.environ,
-            **cmd_env,
-        }).stdout.strip().split('.')
+        return (
+            lkt.utils.chronic(
+                [min_tool_ver, tool],
+                env={
+                    **os.environ,
+                    **cmd_env,
+                },
+            )
+            .stdout.strip()
+            .split('.')
+        )
 
 
 class QemuVersion(Version):
-
     def _gen_ver_iter(self, arch='x86_64'):
         if not shutil.which(binary := f"qemu-system-{arch}"):
             return DEFAULT_VERSION

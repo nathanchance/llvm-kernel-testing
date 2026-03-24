@@ -8,7 +8,6 @@ CLANG_TARGET = 'hexagon-linux-musl'
 
 
 class HexagonLKTRunner(lkt.runner.LKTRunner):
-
     def __init__(self):
         super().__init__(KERNEL_ARCH, CLANG_TARGET)
 
@@ -24,7 +23,9 @@ class HexagonLKTRunner(lkt.runner.LKTRunner):
         # (https://git.kernel.org/arnd/asm-generic/c/a8cb1e92d29096b1fe58ef6fdcee699196eac1bd),
         # which breaks the check in lkt/source.py.
         ffb92ce826fd8_ver = LinuxVersion(5, 16, 0)
-        have_ffb92ce826fd8 = self.lsm.version >= ffb92ce826fd8_ver or 'ffb92ce826fd8' in self.lsm.commits
+        have_ffb92ce826fd8 = (
+            self.lsm.version >= ffb92ce826fd8_ver or 'ffb92ce826fd8' in self.lsm.commits
+        )
         # https://github.com/ClangBuiltLinux/linux/issues/1407
         min_llvm_ver_for_allmod = ClangVersion(13, 0, 0)
         if have_ffb92ce826fd8 and self._llvm_version >= min_llvm_ver_for_allmod:
@@ -55,8 +56,9 @@ class HexagonLKTRunner(lkt.runner.LKTRunner):
                 'Provide a kernel tree with Linux 5.13+ or one with these fixes to build Hexagon kernels.'
             )
             return self._skip_all(
-                f"missing 788dcee0306e, 6fff7410f6be, and/or f1f99adf05f2 (from {LinuxVersion(5, 13 ,0)})",
-                print_text)
+                f"missing 788dcee0306e, 6fff7410f6be, and/or f1f99adf05f2 (from {LinuxVersion(5, 13, 0)})",
+                print_text,
+            )
 
         if '6f5b41a2f5a63' not in self.lsm.commits:
             self.make_vars['CROSS_COMPILE'] = CLANG_TARGET

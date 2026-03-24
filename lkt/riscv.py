@@ -31,7 +31,6 @@ EXPECTED_LNX_VER_LTO = LinuxVersion(6, 9, 0)
 
 
 class RISCVLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
-
     def __init__(self):
         super().__init__()
 
@@ -41,7 +40,6 @@ class RISCVLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 
 
 class RISCVLKTRunner(lkt.runner.LKTRunner):
-
     def __init__(self):
         super().__init__(KERNEL_ARCH, CLANG_TARGET)
 
@@ -128,8 +126,9 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
             runner = RISCVLLVMKernelRunner()
             runner.bootable = 'f2928e224d85e' in self.lsm.commits
             if not runner.bootable:
-                runner.result[
-                    'boot'] = f"skipped due to lack of f2928e224d85e (from {LinuxVersion(5, 16, 0)})"
+                runner.result['boot'] = (
+                    f"skipped due to lack of f2928e224d85e (from {LinuxVersion(5, 16, 0)})"
+                )
             runner.configs = [Path(self.folders.configs, distro, 'riscv64.config')]
             self._runners.append(runner)
 
@@ -142,26 +141,39 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
                 '        * https://git.kernel.org/linus/fdff9911f266951b14b20e25557278b5b3f0d90d\n'
                 '        * https://git.kernel.org/linus/abc71bf0a70311ab294f97a7f16e8de03718c05a\n'
                 '\n'
-                f"Provide a kernel tree with Linux {MIN_LNX_VER} or newer to build RISC-V kernels.")
+                f"Provide a kernel tree with Linux {MIN_LNX_VER} or newer to build RISC-V kernels."
+            )
             return self._skip_all(
                 f"missing 52e7c52d2ded, fdff9911f266, and/or abc71bf0a703 (from {MIN_LNX_VER})",
-                print_text)
+                print_text,
+            )
 
         if '6f5b41a2f5a63' not in self.lsm.commits:
             self.make_vars['CROSS_COMPILE'] = CROSS_COMPILE
         if self._llvm_version < MIN_IAS_LLVM_VER:
             self.make_vars['LLVM_IAS'] = 0
 
-        if (self._llvm_version < (13, 0, 0) or 'ec3a5cb61146c' not in self.lsm.commits
-                or self.lsm.version <= (5, 10, 999)):
+        if (
+            self._llvm_version < (13, 0, 0)
+            or 'ec3a5cb61146c' not in self.lsm.commits
+            or self.lsm.version <= (5, 10, 999)
+        ):
             self.make_vars['LD'] = f"{CROSS_COMPILE}ld"
 
-        riscv_kconfig_txt = Path(self.folders.source,
-                                 'arch/riscv/Kconfig').read_text(encoding='utf-8')
+        riscv_kconfig_txt = Path(self.folders.source, 'arch/riscv/Kconfig').read_text(
+            encoding='utf-8'
+        )
         self._has_cfi = self._llvm_version >= MIN_LLVM_VER_CFI and self.lsm.arch_supports_kcfi(
-            KERNEL_ARCH)
-        self._has_lto = self._llvm_version >= MIN_LLVM_VER_LTO and 'ARCH_SUPPORTS_LTO_CLANG' in riscv_kconfig_txt
-        self._has_scs = self._llvm_version >= MIN_LLVM_VER_SCS and 'ARCH_SUPPORTS_SHADOW_CALL_STACK' in riscv_kconfig_txt
+            KERNEL_ARCH
+        )
+        self._has_lto = (
+            self._llvm_version >= MIN_LLVM_VER_LTO
+            and 'ARCH_SUPPORTS_LTO_CLANG' in riscv_kconfig_txt
+        )
+        self._has_scs = (
+            self._llvm_version >= MIN_LLVM_VER_SCS
+            and 'ARCH_SUPPORTS_SHADOW_CALL_STACK' in riscv_kconfig_txt
+        )
 
         if 'def' in self.targets:
             self._add_defconfig_runners()

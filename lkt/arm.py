@@ -28,7 +28,6 @@ def disable_be(linux):
 
 
 class ArmLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
-
     def __init__(self):
         super().__init__()
 
@@ -38,7 +37,6 @@ class ArmLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 
 
 class ArmLKTRunner(lkt.runner.LKTRunner):
-
     def __init__(self):
         super().__init__(KERNEL_ARCH, CLANG_TARGET)
 
@@ -55,8 +53,11 @@ class ArmLKTRunner(lkt.runner.LKTRunner):
             runner.configs = [config_target]
             if self.only_test_boot:
                 # https://git.kernel.org/linus/724ba6751532055db75992fc6ae21c3e322e94a7
-                dtb_prefix = 'aspeed/' if Path(self.folders.source,
-                                               'arch/arm/boot/dts/aspeed').is_dir() else ''
+                dtb_prefix = (
+                    'aspeed/'
+                    if Path(self.folders.source, 'arch/arm/boot/dts/aspeed').is_dir()
+                    else ''
+                )
                 if config_target == 'multi_v5_defconfig':
                     runner.make_targets.append(f"{dtb_prefix}aspeed-bmc-opp-palmetto.dtb")
                 elif config_target == 'aspeed_g5_defconfig':
@@ -64,7 +65,10 @@ class ArmLKTRunner(lkt.runner.LKTRunner):
             runners.append(runner)
 
         # https://github.com/ClangBuiltLinux/linux/issues/325
-        if '9d417cbe36eee' in self.lsm.commits or 'CONFIG_HAVE_FUTEX_CMPXCHG' not in self.lsm.configs:
+        if (
+            '9d417cbe36eee' in self.lsm.commits
+            or 'CONFIG_HAVE_FUTEX_CMPXCHG' not in self.lsm.configs
+        ):
             runner = ArmLLVMKernelRunner()
             runner.configs = ['multi_v7_defconfig', 'CONFIG_THUMB2_KERNEL=y']
             runners.append(runner)

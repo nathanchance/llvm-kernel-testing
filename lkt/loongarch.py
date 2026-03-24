@@ -23,7 +23,6 @@ MIN_QEMU_VER = QemuVersion(8, 0, 0)
 
 
 class LoongArchLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
-
     def __init__(self):
         super().__init__()
 
@@ -33,7 +32,6 @@ class LoongArchLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 
 
 class LoongArchLKTRunner(lkt.runner.LKTRunner):
-
     def __init__(self):
         super().__init__(KERNEL_ARCH, CLANG_TARGET)
 
@@ -82,7 +80,7 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
         if self._broken_configs:
             return
 
-        distros = ('alpine', )
+        distros = ('alpine',)
         for distro in distros:
             runner = LoongArchLLVMKernelRunner()
             # For some reason, booting fails on 6.6; use 6.12 (the next LTS series) as a baseline for booting
@@ -113,8 +111,9 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
             )
             return self._skip_all(f"missing 65eea6b44a5dd (from {MIN_LNX_VER})", print_text)
 
-        loongarch_makefile_text = Path(self.lsm.folder,
-                                       'arch/loongarch/Makefile').read_text(encoding='utf-8')
+        loongarch_makefile_text = Path(self.lsm.folder, 'arch/loongarch/Makefile').read_text(
+            encoding='utf-8'
+        )
         if '--apply-dynamic-relocs' not in loongarch_makefile_text:
             self._broken_configs += [
                 'CONFIG_CRASH_DUMP=n',  # selects RELOCATABLE
@@ -148,7 +147,8 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
             for runner in self._runners:
                 if runner.bootable:
                     runner.bootable = False
-                    runner.result[
-                        'boot'] = f"skipped due to QEMU < {MIN_QEMU_VER} (found '{self._qemu_version}')"
+                    runner.result['boot'] = (
+                        f"skipped due to QEMU < {MIN_QEMU_VER} (found '{self._qemu_version}')"
+                    )
 
         return super().run()

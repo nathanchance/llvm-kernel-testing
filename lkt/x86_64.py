@@ -20,7 +20,6 @@ MIN_IAS_LNX_VER = LinuxVersion(5, 10, 0)
 
 
 class X8664LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
-
     def __init__(self):
         super().__init__()
 
@@ -30,7 +29,6 @@ class X8664LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 
 
 class X8664LKTRunner(lkt.runner.LKTRunner):
-
     def __init__(self):
         super().__init__(KERNEL_ARCH, CLANG_TARGET)
 

@@ -16,7 +16,8 @@ def chronic(*args, **kwargs):
 
 def clang_supports_target(target):
     return run_check_rc_zero(
-        ['clang', f"--target={target}", '-c', '-x', 'c', '-o', '/dev/null', '/dev/null'])
+        ['clang', f"--target={target}", '-c', '-x', 'c', '-o', '/dev/null', '/dev/null']
+    )
 
 
 def cmd_str(cmd):

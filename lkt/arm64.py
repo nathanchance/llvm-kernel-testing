@@ -25,7 +25,9 @@ def can_build_arm64_big_endian(lsm, llvm_version):
     # 2. That commit with https://lore.kernel.org/aNU-sG84vqPj7p7G@sirena.org.uk/ addressed
     # 3. A future where CONFIG_CPU_BIG_ENDIAN does not even exist
     state_one = 'config CPU_BIG_ENDIAN\n\tbool "Build big-endian kernel"\n\t# https://github.com/llvm/llvm-project/commit/1379b150991f70a5782e9a143c2ba5308da1161c\n\tdepends on (AS_IS_GNU || AS_VERSION >= 150000) && BROKEN\n\thelp'
-    state_two = 'config CPU_BIG_ENDIAN\n\tbool "Build big-endian kernel"\n\tdepends on BROKEN\n\thelp'
+    state_two = (
+        'config CPU_BIG_ENDIAN\n\tbool "Build big-endian kernel"\n\tdepends on BROKEN\n\thelp'
+    )
     be_broken = state_one in arm64_kconfig_txt or state_two in arm64_kconfig_txt
     be_exists = 'config CPU_BIG_ENDIAN' in arm64_kconfig_txt
 
@@ -34,7 +36,6 @@ def can_build_arm64_big_endian(lsm, llvm_version):
 
 
 class Arm64LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
-
     def __init__(self):
         super().__init__()
 
@@ -44,7 +45,6 @@ class Arm64LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 
 
 class Arm64LKTRunner(lkt.runner.LKTRunner):
-
     def __init__(self):
         super().__init__(KERNEL_ARCH, CLANG_TARGET)
 

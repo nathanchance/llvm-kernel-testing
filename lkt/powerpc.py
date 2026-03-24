@@ -38,7 +38,6 @@ def ppc64_be_defaults_to_elfv2(lsm):
 
 
 class PowerPCLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
-
     def __init__(self):
         super().__init__()
 
@@ -51,7 +50,6 @@ class PowerPCLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 
 
 class PowerPCLKTRunner(lkt.runner.LKTRunner):
-
     def __init__(self):
         super().__init__(KERNEL_ARCH, CLANG_TARGET)
 
@@ -70,9 +68,12 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         ##########
         # 32-bit #
         ##########
-        kconfig_text = Path(self.folders.source,
-                            'arch/powerpc/platforms/Kconfig.cputype').read_text(encoding='utf-8')
-        has_44x_hack = '"440 (44x family)"\n\tdepends on 44x\n\tdepends on !CC_IS_CLANG' in kconfig_text
+        kconfig_text = Path(
+            self.folders.source, 'arch/powerpc/platforms/Kconfig.cputype'
+        ).read_text(encoding='utf-8')
+        has_44x_hack = (
+            '"440 (44x family)"\n\tdepends on 44x\n\tdepends on !CC_IS_CLANG' in kconfig_text
+        )
 
         cbl_1814 = '2255411d1d0f0' in self.lsm.commits and not has_44x_hack
         cbl_1679 = self._llvm_version < (cbl_1679_fixed_ver := ClangVersion(16, 0, 0)) and cbl_1814
@@ -112,11 +113,13 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
             runner = PowerPCLLVMKernelRunner()
             runner.boot_arch = 'ppc32_mac'
             # https://github.com/llvm/llvm-project/commit/1e3c6fc7cb9d2ee6a5328881f95d6643afeadbff
-            runner.bootable = self._llvm_version >= (pmac_min_llvm_ver_for_boot :=
-                                                     ClangVersion(14, 0, 0))
+            runner.bootable = self._llvm_version >= (
+                pmac_min_llvm_ver_for_boot := ClangVersion(14, 0, 0)
+            )
             if not runner.bootable:
-                runner.result[
-                    'boot'] = f"skipped due to LLVM < {pmac_min_llvm_ver_for_boot} (using '{self._llvm_version}')"
+                runner.result['boot'] = (
+                    f"skipped due to LLVM < {pmac_min_llvm_ver_for_boot} (using '{self._llvm_version}')"
+                )
             runner.configs = ['pmac32_defconfig']
             if '0b5e06e9cb156' not in self.lsm.commits:
                 runner.configs += [
@@ -190,8 +193,11 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         runner = PowerPCLLVMKernelRunner()
         # See comment in _add_distroconfig_runners(), RELOCATABLE is always set
         # for this configuration.
-        runner.bootable = 'LD' in self._ppc64le_vars or self._llvm_version >= (
-            12, 0, 0) or 'CONFIG_MODULE_REL_CRCS' not in self.lsm.configs
+        runner.bootable = (
+            'LD' in self._ppc64le_vars
+            or self._llvm_version >= (12, 0, 0)
+            or 'CONFIG_MODULE_REL_CRCS' not in self.lsm.configs
+        )
         if not runner.bootable:
             parts = [
                 'skipped due to',
@@ -235,7 +241,10 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         # without its dependencies (breaking that), so just check for the
         # mainline version that it actually landed in.
         min_lnx_ver_for_elfv2_select = LinuxVersion(6, 4, 0)
-        can_select_elfv2 = self.lsm.version >= min_lnx_ver_for_elfv2_select and self._llvm_version >= min_llvm_ver_for_elfv2_select
+        can_select_elfv2 = (
+            self.lsm.version >= min_lnx_ver_for_elfv2_select
+            and self._llvm_version >= min_llvm_ver_for_elfv2_select
+        )
         elfv2_on_by_default = ppc64_be_defaults_to_elfv2(self.lsm)
         if can_select_elfv2 or elfv2_on_by_default:
             runner = PowerPCLLVMKernelRunner()
@@ -266,8 +275,12 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
             reason = None
             if distro in ('fedora', 'opensuse') and self.lsm.version < (5, 17, 0):
                 reason = 'https://github.com/ClangBuiltLinux/continuous-integration2/pull/775'
-            elif (distro == 'opensuse' and '231b232df8f67' in self.lsm.commits
-                  and '6fcb574125e67' not in self.lsm.commits and self._llvm_version <= (12, 0, 0)):
+            elif (
+                distro == 'opensuse'
+                and '231b232df8f67' in self.lsm.commits
+                and '6fcb574125e67' not in self.lsm.commits
+                and self._llvm_version <= (12, 0, 0)
+            ):
                 reason = 'https://github.com/ClangBuiltLinux/linux/issues/1160'
 
             if reason:
@@ -283,9 +296,11 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
             # at final link, removing CONFIG_MODULE_REL_CRCS"). Just skip boot
             # testing in this case.
             runner.bootable = not (
-                'LD' not in self._ppc64le_vars and self._llvm_version < (12, 0, 0)
+                'LD' not in self._ppc64le_vars
+                and self._llvm_version < (12, 0, 0)
                 and 'CONFIG_MODULE_REL_CRCS' in self.lsm.configs
-                and lkt.utils.is_set(self.folders.source, runner.configs[0], 'RELOCATABLE'))
+                and lkt.utils.is_set(self.folders.source, runner.configs[0], 'RELOCATABLE')
+            )
             if not runner.bootable:
                 parts = [
                     'skipped due to',

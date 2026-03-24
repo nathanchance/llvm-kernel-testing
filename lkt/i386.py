@@ -13,7 +13,6 @@ QEMU_ARCH = 'i386'
 
 
 class I386LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
-
     def __init__(self):
         super().__init__()
 
@@ -23,7 +22,6 @@ class I386LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 
 
 class I386LKTRunner(lkt.runner.LKTRunner):
-
     def __init__(self):
         super().__init__(KERNEL_ARCH, CLANG_TARGET)
 
@@ -74,15 +72,18 @@ class I386LKTRunner(lkt.runner.LKTRunner):
         broken_configs = []
 
         sec_kconf_text = Path(self.folders.source, 'security/Kconfig').read_text(encoding='utf-8')
-        fortify_broken = 'https://bugs.llvm.org/show_bug.cgi?id=50322' in sec_kconf_text or \
-                         'https://llvm.org/pr50322' in sec_kconf_text or \
-                         'https://github.com/llvm/llvm-project/issues/53645' in sec_kconf_text
+        fortify_broken = (
+            'https://bugs.llvm.org/show_bug.cgi?id=50322' in sec_kconf_text
+            or 'https://llvm.org/pr50322' in sec_kconf_text
+            or 'https://github.com/llvm/llvm-project/issues/53645' in sec_kconf_text
+        )
 
         if fortify_broken:
             # https://github.com/ClangBuiltLinux/linux/issues/1932
             if 'CONFIG_BCACHEFS_FS' in self.lsm.configs:
-                replicas_text = Path(self.folders.source,
-                                     'fs/bcachefs/replicas.c').read_text(encoding='utf-8')
+                replicas_text = Path(self.folders.source, 'fs/bcachefs/replicas.c').read_text(
+                    encoding='utf-8'
+                )
                 # https://git.kernel.org/next/linux-next/c/00593c344bf3eda115c3bdbc712ba2038747c8cf
                 if 'bch2_memcmp' not in replicas_text:
                     broken_configs.append('CONFIG_BCACHEFS_FS=n')
@@ -103,8 +104,10 @@ class I386LKTRunner(lkt.runner.LKTRunner):
                 f"missing 158807de5822 (from {min_lnx_ver})",
                 f"i386 kernels do not build properly prior to Linux {min_lnx_ver}: https://github.com/ClangBuiltLinux/linux/issues/194",
             )
-        if self._llvm_version >= (min_llvm_ver := ClangVersion(
-                12, 0, 0)) and 'bb73d07148c40' not in self.lsm.commits:
+        if (
+            self._llvm_version >= (min_llvm_ver := ClangVersion(12, 0, 0))
+            and 'bb73d07148c40' not in self.lsm.commits
+        ):
             return self._skip_all(
                 f"missing bb73d07148c4 (from {LinuxVersion(5, 12, 0)}) with LLVM > {min_llvm_ver} (using '{self._llvm_version}')",
                 f"x86 kernels do not build properly with LLVM {min_llvm_ver}+ without R_386_PLT32 handling: https://github.com/ClangBuiltLinux/linux/issues/1210",

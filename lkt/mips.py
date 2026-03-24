@@ -16,7 +16,6 @@ MIN_IAS_LNX_VER = LinuxVersion(5, 15, 0)
 
 
 class MipsLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
-
     def __init__(self):
         super().__init__()
 
@@ -26,7 +25,6 @@ class MipsLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 
 
 class MipsLKTRunner(lkt.runner.LKTRunner):
-
     def __init__(self):
         super().__init__(KERNEL_ARCH, CLANG_TARGET)
 
