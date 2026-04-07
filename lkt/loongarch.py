@@ -23,22 +23,22 @@ MIN_QEMU_VER = QemuVersion(8, 0, 0)
 
 
 class LoongArchLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-        self.boot_arch = KERNEL_ARCH
-        self.image_target = 'vmlinuz.efi'
-        self.qemu_arch = QEMU_ARCH
+        self.boot_arch: str = KERNEL_ARCH
+        self.image_target: str = 'vmlinuz.efi'
+        self.qemu_arch: str = QEMU_ARCH
 
 
 class LoongArchLKTRunner(lkt.runner.LKTRunner):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(KERNEL_ARCH, CLANG_TARGET)
 
-        self._broken_configs = []
-        self._qemu_version = QemuVersion(arch=QEMU_ARCH)
+        self._broken_configs: list[str] = []
+        self._qemu_version: QemuVersion = QemuVersion(arch=QEMU_ARCH)
 
-    def _add_defconfig_runners(self):
+    def _add_defconfig_runners(self) -> None:
         runner = LoongArchLLVMKernelRunner()
         runner.bootable = True
         runner.configs = ['defconfig', *self._broken_configs]
@@ -51,8 +51,8 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
         runner.only_test_boot = self.only_test_boot
         self._runners.append(runner)
 
-    def _add_otherconfig_runners(self):
-        base_all_cfgs = [
+    def _add_otherconfig_runners(self) -> None:
+        base_all_cfgs: list[Path | str] = [
             'allyesconfig' if 'CONFIG_MODULES=n' in self._broken_configs else 'allmodconfig',
             *self._broken_configs,
         ]
@@ -73,7 +73,7 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
         ]
         self._runners.append(runner)
 
-    def _add_distroconfig_runners(self):
+    def _add_distroconfig_runners(self) -> None:
         # Do not bother attempting to build distribution configurations if
         # there are known broken configurations, as turning those off is going
         # to potentially taint the result.
@@ -88,7 +88,7 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
             runner.configs = [Path(self.folders.configs, distro, 'loongarch64.config')]
             self._runners.append(runner)
 
-    def run(self):
+    def run(self) -> list[lkt.runner.Result]:
         if (min_llvm_ver := self.lsm.get_min_llvm_ver(KERNEL_ARCH)) < HARD_MIN_LLVM_VER:
             min_llvm_ver = HARD_MIN_LLVM_VER
             reason = 'to build properly with LLVM=1'
@@ -147,7 +147,7 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
             for runner in self._runners:
                 if runner.bootable:
                     runner.bootable = False
-                    runner.result['boot'] = (
+                    runner.result.boot = (
                         f"skipped due to QEMU < {MIN_QEMU_VER} (found '{self._qemu_version}')"
                     )
 

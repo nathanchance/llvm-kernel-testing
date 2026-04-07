@@ -20,7 +20,7 @@ MIN_IAS_LNX_VER = LinuxVersion(5, 10, 0)
 
 
 class X8664LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
         self.boot_arch = KERNEL_ARCH
@@ -29,11 +29,11 @@ class X8664LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
 
 
 class X8664LKTRunner(lkt.runner.LKTRunner):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(KERNEL_ARCH, CLANG_TARGET)
 
-    def _add_defconfig_runners(self):
-        runners = []
+    def _add_defconfig_runners(self) -> None:
+        runners: list[X8664LLVMKernelRunner] = []
 
         runner = X8664LLVMKernelRunner()
         runner.configs = ['defconfig']
@@ -77,7 +77,7 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
             runner.only_test_boot = self.only_test_boot
         self._runners += runners
 
-    def _add_otherconfig_runners(self):
+    def _add_otherconfig_runners(self) -> None:
         runner = X8664LLVMKernelRunner()
         runner.configs = ['allmodconfig']
         # https://github.com/ClangBuiltLinux/linux/issues/515
@@ -95,8 +95,8 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
             ]
             self._runners.append(runner)
 
-    def _add_distroconfig_runners(self):
-        configs = [
+    def _add_distroconfig_runners(self) -> None:
+        configs: list[tuple[str, str]] = [
             ('alpine', KERNEL_ARCH),
             ('archlinux', KERNEL_ARCH),
             ('debian', 'amd64'),
@@ -120,8 +120,8 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
                         runner.configs.append(f"CONFIG_{sym}=n")
             self._runners.append(runner)
 
-    def run(self):
-        cross_compile = None
+    def run(self) -> list[lkt.runner.Result]:
+        cross_compile: str = ''
         if platform.machine() != KERNEL_ARCH:
             if 'd5cbd80e302df' not in self.lsm.commits:
                 return self._skip_all(
@@ -134,7 +134,7 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
         if '6f5b41a2f5a63' not in self.lsm.commits and cross_compile:
             self.make_vars['CROSS_COMPILE'] = cross_compile
         if self.lsm.version < MIN_IAS_LNX_VER:
-            self.make_vars['LLVM_IAS'] = 0
+            self.make_vars['LLVM_IAS'] = '0'
 
         if 'def' in self.targets:
             self._add_defconfig_runners()

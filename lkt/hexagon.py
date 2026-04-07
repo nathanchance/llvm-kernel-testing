@@ -8,15 +8,15 @@ CLANG_TARGET = 'hexagon-linux-musl'
 
 
 class HexagonLKTRunner(lkt.runner.LKTRunner):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(KERNEL_ARCH, CLANG_TARGET)
 
-    def _add_defconfig_runners(self):
+    def _add_defconfig_runners(self) -> None:
         runner = lkt.runner.LLVMKernelRunner()
         runner.configs = ['defconfig']
         self._runners.append(runner)
 
-    def _add_otherconfig_runners(self):
+    def _add_otherconfig_runners(self) -> None:
         # ffb92ce826fd8 landed in 5.16 but it had 'Cc: stable', so we need to
         # check for its presence. However, just checking for that is no longer
         # sufficient, as arch/hexagon/lib/io.c is getting removed in 6.13
@@ -41,7 +41,7 @@ class HexagonLKTRunner(lkt.runner.LKTRunner):
                 f"either lack of ffb92ce826fd8 (from {ffb92ce826fd8_ver}) or LLVM < {min_llvm_ver_for_allmod} (using '{self._llvm_version}')",
             )
 
-    def run(self):
+    def run(self) -> list[lkt.runner.Result]:
         if self.only_test_boot:
             return self._skip_all('only testing boot', 'Only boot testing was requested')
 

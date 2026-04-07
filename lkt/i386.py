@@ -13,19 +13,19 @@ QEMU_ARCH = 'i386'
 
 
 class I386LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-        self.boot_arch = 'x86'
-        self.image_target = 'bzImage'
-        self.qemu_arch = QEMU_ARCH
+        self.boot_arch: str = 'x86'
+        self.image_target: str = 'bzImage'
+        self.qemu_arch: str = QEMU_ARCH
 
 
 class I386LKTRunner(lkt.runner.LKTRunner):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(KERNEL_ARCH, CLANG_TARGET)
 
-    def _add_defconfig_runners(self):
+    def _add_defconfig_runners(self) -> None:
         runners = []
 
         runner = I386LLVMKernelRunner()
@@ -48,7 +48,7 @@ class I386LKTRunner(lkt.runner.LKTRunner):
             runner.only_test_boot = self.only_test_boot
         self._runners += runners
 
-    def _add_otherconfig_runners(self):
+    def _add_otherconfig_runners(self) -> None:
         for config_target in ('allmodconfig', 'allnoconfig', 'tinyconfig'):
             runner = I386LLVMKernelRunner()
             runner.configs = [config_target]
@@ -56,7 +56,7 @@ class I386LKTRunner(lkt.runner.LKTRunner):
                 runner.configs += self._disable_broken_configs_with_fortify()
             self._runners.append(runner)
 
-    def _add_distroconfig_runners(self):
+    def _add_distroconfig_runners(self) -> None:
         runner = I386LLVMKernelRunner()
         runner.configs = [Path(self.folders.configs, 'opensuse/i386.config')]
         runner.configs += self._disable_broken_configs_with_fortify()
@@ -68,7 +68,7 @@ class I386LKTRunner(lkt.runner.LKTRunner):
         self._runners.append(runner)
 
     # https://github.com/ClangBuiltLinux/linux/issues/1442
-    def _disable_broken_configs_with_fortify(self):
+    def _disable_broken_configs_with_fortify(self) -> list[str]:
         broken_configs = []
 
         sec_kconf_text = Path(self.folders.source, 'security/Kconfig').read_text(encoding='utf-8')
@@ -98,7 +98,7 @@ class I386LKTRunner(lkt.runner.LKTRunner):
 
         return broken_configs
 
-    def run(self):
+    def run(self) -> list[lkt.runner.Result]:
         if self.lsm.version < (min_lnx_ver := LinuxVersion(5, 9, 0)):
             return self._skip_all(
                 f"missing 158807de5822 (from {min_lnx_ver})",

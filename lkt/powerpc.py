@@ -4,6 +4,7 @@ from pathlib import Path
 import shutil
 
 import lkt.runner
+from lkt.source import LinuxSourceManager
 import lkt.utils
 from lkt.version import ClangVersion, LinuxVersion
 
@@ -17,7 +18,7 @@ MIN_IAS_LNX_VER = LinuxVersion(5, 18, 0)
 MIN_IAS_LLVM_VER = ClangVersion(14, 0, 2)
 
 
-def ppc64_be_defaults_to_elfv2(lsm):
+def ppc64_be_defaults_to_elfv2(lsm: LinuxSourceManager) -> bool:
     # If CONFIG_PPC64_BIG_ENDIAN_ELF_ABI_V2 does not exist in the current tree,
     # the meaning changes depending on the Linux version. If the tree is newer
     # than 6.2.0 (which first shipped CONFIG_PPC64_BIG_ENDIAN_ELF_ABI_V2), it
@@ -38,19 +39,19 @@ def ppc64_be_defaults_to_elfv2(lsm):
 
 
 class PowerPCLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-        self.boot_arch = 'ppc64le'
-        self.image_target = 'zImage.epapr'
-        self.qemu_arch = 'ppc64'
+        self.boot_arch: str = 'ppc64le'
+        self.image_target: str = 'zImage.epapr'
+        self.qemu_arch: str = 'ppc64'
 
         # Support will be enabled based on known working combinations
-        self.make_vars['LLVM_IAS'] = 0
+        self.make_vars['LLVM_IAS'] = '0'
 
 
 class PowerPCLKTRunner(lkt.runner.LKTRunner):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(KERNEL_ARCH, CLANG_TARGET)
 
         for cross_compile in ('powerpc64-linux-gnu-', f"{CLANG_TARGET}-", 'powerpc64le-linux-gnu-'):
@@ -61,10 +62,10 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
             if shutil.which(f"{cross_compile}as"):
                 break
 
-        self._ppc64_vars = {}
-        self._ppc64le_vars = {}
+        self._ppc64_vars: lkt.runner.MakeVars = {}
+        self._ppc64le_vars: lkt.runner.MakeVars = {}
 
-    def _add_defconfig_runners(self):
+    def _add_defconfig_runners(self) -> None:
         ##########
         # 32-bit #
         ##########
@@ -100,7 +101,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
                         'due to "-mcpu=440"',
                         '(https://github.com/ClangBuiltLinux/linux/issues/1814)',
                     ]
-                runner.result['boot'] = ' '.join(parts)
+                runner.result.boot = ' '.join(parts)
             runner.configs = ['ppc44x_defconfig']
             runner.image_target = 'uImage'
             if not self.only_test_boot:
@@ -117,9 +118,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
                 pmac_min_llvm_ver_for_boot := ClangVersion(14, 0, 0)
             )
             if not runner.bootable:
-                runner.result['boot'] = (
-                    f"skipped due to LLVM < {pmac_min_llvm_ver_for_boot} (using '{self._llvm_version}')"
-                )
+                runner.result.boot = f"skipped due to LLVM < {pmac_min_llvm_ver_for_boot} (using '{self._llvm_version}')"
             runner.configs = ['pmac32_defconfig']
             if '0b5e06e9cb156' not in self.lsm.commits:
                 runner.configs += [
@@ -173,7 +172,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
             # https://github.com/llvm/llvm-project/commit/3452a0d8c17f7166f479706b293caf6ac76ffd90.
             # Just use GNU as in this case, as that is how this configuration
             # has been built until recently.
-            runner.make_vars['LLVM_IAS'] = 0
+            runner.make_vars['LLVM_IAS'] = '0'
         runner.only_test_boot = self.only_test_boot
         self._runners.append(runner)
 
@@ -205,7 +204,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
                 'LLVM < 12.0.0 (2fc704a0a529d),',
                 'and Linux < 5.19 (7b4537199a4a)',
             ]
-            runner.result['boot'] = ' '.join(parts)
+            runner.result.boot = ' '.join(parts)
         runner.configs = ['ppc64le_guest_defconfig']
         runner.make_vars.update(self._ppc64le_vars)
         runner.only_test_boot = self.only_test_boot
@@ -227,7 +226,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
             # https://github.com/ClangBuiltLinux/linux/issues/602
             runner.make_vars['LD'] = f"{self.make_vars['CROSS_COMPILE']}ld"
             # See comment in ppc64_guest_defconfig
-            runner.make_vars['LLVM_IAS'] = 0
+            runner.make_vars['LLVM_IAS'] = '0'
         self._runners.append(runner)
 
         runner = PowerPCLLVMKernelRunner()
@@ -235,7 +234,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         runner.make_vars.update(self._ppc64le_vars)
         self._runners.append(runner)
 
-    def _add_otherconfig_runners(self):
+    def _add_otherconfig_runners(self) -> None:
         min_llvm_ver_for_elfv2_select = ClangVersion(15, 0, 0)
         # This used to be a dynamic check but stable backported a11334d8327b3f
         # without its dependencies (breaking that), so just check for the
@@ -264,7 +263,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
             runner.configs = [cfg_target]
             self._runners.append(runner)
 
-    def _add_distroconfig_runners(self):
+    def _add_distroconfig_runners(self) -> None:
         configs = [
             ('alpine', 'ppc64le'),
             ('debian', 'powerpc64le'),
@@ -308,16 +307,16 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
                     'LLVM < 12.0.0 (2fc704a0a529d),',
                     'and Linux < 5.19 (7b4537199a4a)',
                 ]
-                runner.result['boot'] = ' '.join(parts)
+                runner.result.boot = ' '.join(parts)
             runner.make_vars.update(self._ppc64le_vars)
             self._runners.append(runner)
 
-    def run(self):
+    def run(self) -> list[lkt.runner.Result]:
         if '0355785313e21' not in self.lsm.commits and 'CROSS_COMPILE' in self.make_vars:
             self._ppc64le_vars['LD'] = f"{self.make_vars['CROSS_COMPILE']}ld"
         if self.lsm.version >= MIN_IAS_LNX_VER and self._llvm_version >= MIN_IAS_LLVM_VER:
-            self._ppc64_vars['LLVM_IAS'] = 1
-            self._ppc64le_vars['LLVM_IAS'] = 1
+            self._ppc64_vars['LLVM_IAS'] = '1'
+            self._ppc64le_vars['LLVM_IAS'] = '1'
 
         if 'def' in self.targets:
             self._add_defconfig_runners()

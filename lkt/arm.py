@@ -20,7 +20,7 @@ MIN_IAS_LLVM_VER = ClangVersion(13, 0, 0)
 MIN_LLVM_VER_CFI = ClangVersion(16, 0, 0)
 
 
-def disable_be(linux):
+def disable_be(linux: Path) -> bool:
     text = Path(linux, 'arch/arm/mm/Kconfig').read_text(encoding='utf-8')
     first_pattern = 'bool "Build big-endian kernel"'
     second_pattern = 'depends on ARCH_SUPPORTS_BIG_ENDIAN'
@@ -28,21 +28,21 @@ def disable_be(linux):
 
 
 class ArmLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-        self.boot_arch = 'arm32_v7'
-        self.image_target = 'zImage'
-        self.qemu_arch = QEMU_ARCH
+        self.boot_arch: str = 'arm32_v7'
+        self.image_target: str = 'zImage'
+        self.qemu_arch: str = QEMU_ARCH
 
 
 class ArmLKTRunner(lkt.runner.LKTRunner):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(KERNEL_ARCH, CLANG_TARGET)
 
-    def _add_defconfig_runners(self):
-        runners = []
-        defconfigs = [
+    def _add_defconfig_runners(self) -> None:
+        runners: list[lkt.runner.LLVMKernelRunner] = []
+        defconfigs: list[tuple[str, str]] = [
             ('multi_v5_defconfig', 'arm32_v5'),
             ('aspeed_g5_defconfig', 'arm32_v6'),
             ('multi_v7_defconfig', 'arm32_v7'),
@@ -94,7 +94,7 @@ class ArmLKTRunner(lkt.runner.LKTRunner):
             runner.only_test_boot = self.only_test_boot
         self._runners += runners
 
-    def _add_otherconfig_runners(self):
+    def _add_otherconfig_runners(self) -> None:
         for config_target in ('allmodconfig', 'allnoconfig', 'tinyconfig'):
             runner = ArmLLVMKernelRunner()
             runner.configs = [config_target]
@@ -102,8 +102,8 @@ class ArmLKTRunner(lkt.runner.LKTRunner):
                 runner.configs.append('CONFIG_CPU_BIG_ENDIAN=n')
             self._runners.append(runner)
 
-    def _add_distroconfig_runners(self):
-        configs = [
+    def _add_distroconfig_runners(self) -> None:
+        configs: list[tuple[str, str]] = [
             ('alpine', 'armv7'),
             ('archlinux', 'armv7'),
             ('debian', 'armmp'),
@@ -115,7 +115,7 @@ class ArmLKTRunner(lkt.runner.LKTRunner):
             runner.configs = [Path(self.folders.configs, distro, f"{config_name}.config")]
             self._runners.append(runner)
 
-    def run(self):
+    def run(self) -> list[lkt.runner.Result]:
         for cross_compile in ('arm-linux-gnu-', 'arm-linux-gnueabihf-', f"{CLANG_TARGET}-"):
             if shutil.which(f"{cross_compile}as"):
                 break
@@ -123,7 +123,7 @@ class ArmLKTRunner(lkt.runner.LKTRunner):
         if '6f5b41a2f5a63' not in self.lsm.commits:
             self.make_vars['CROSS_COMPILE'] = cross_compile
         if self._llvm_version < MIN_IAS_LLVM_VER or self.lsm.version < MIN_IAS_LNX_VER:
-            self.make_vars['LLVM_IAS'] = 0
+            self.make_vars['LLVM_IAS'] = '0'
 
         if 'def' in self.targets:
             self._add_defconfig_runners()

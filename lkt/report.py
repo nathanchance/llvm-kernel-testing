@@ -7,17 +7,19 @@ import re
 import shutil
 import time
 
-import lkt.runner
+from lkt.runner import Folders, Result
 import lkt.utils
 
 
-def get_cmd_info(cmd):
-    version = lkt.utils.chronic([cmd, '--version']).stdout.splitlines()[0]
-    location = Path(shutil.which(cmd)).parent
+def get_cmd_info(cmd: str) -> tuple[str, Path]:
+    if not (full_cmd := shutil.which(cmd)):
+        raise RuntimeError(f"{cmd} is not in PATH?")
+    version = lkt.utils.chronic([full_cmd, '--version']).stdout.splitlines()[0]
+    location = Path(full_cmd).parent
     return version, location
 
 
-def get_linux_version(linux):
+def get_linux_version(linux: Path) -> str:
     (include_config := Path(linux, 'include/config')).mkdir(exist_ok=True, parents=True)
     Path(include_config, 'auto.conf').write_text('CONFIG_LOCALVERSION_AUTO=y\n', encoding='utf-8')
     (include_generated := Path(linux, 'include/generated')).mkdir(exist_ok=True, parents=True)
@@ -38,18 +40,18 @@ def get_linux_version(linux):
 
 
 class LKTReport:
-    def __init__(self):
-        self.env_info = {}
-        self.folders = lkt.runner.Folders()
-        self.results = {
+    def __init__(self) -> None:
+        self.env_info: dict[str, Path | str] = {}
+        self.folders: Folders = Folders()
+        self.results: dict[str, list[str]] = {
             'good': [],
             'bad': [],
             'skip': [],
         }
-        self.start_time = time.time()
+        self.start_time: float = time.time()
 
-    def _generate_env_info(self):
-        if not self.folders.source:
+    def _generate_env_info(self) -> None:
+        if self.folders.source == lkt.utils.DEFAULT_PATH:
             raise RuntimeError('Cannot generate environment information without source location!')
         if not self.folders.source.exists():
             raise FileNotFoundError('Provided source location does not exist?')
@@ -63,44 +65,44 @@ class LKTReport:
         self.env_info['Host uname'] = f"{uname.system} {uname.node} {uname.release} {uname.version} {uname.machine}"  # fmt: off
         self.env_info['PATH'] = os.environ['PATH']
 
-    def generate_report(self, results):
+    def generate_report(self, results: list[Result]) -> None:
         for result in results:
             kernel_result = []
-            kernel = [result['name'], result['build']]
-            if 'duration' in result:
-                kernel += ['in', result['duration']]
-            if 'reason' in result:
-                kernel += ['due to', result['reason']]
+            kernel = [result.name, result.build]
+            if result.duration:
+                kernel += ['in', result.duration]
+            if result.reason:
+                kernel += ['due to', result.reason]
             kernel_result.append(' '.join(kernel))
 
-            if result['build'] == 'failed':
+            if result.build == 'failed':
                 issues = []
-                for line in result['log'].read_text(encoding='utf-8').splitlines():
+                for line in result.log.read_text(encoding='utf-8').splitlines():
                     if re.search('error:|warning:|undefined', line):
                         issues.append(line.replace(f"{self.folders.source}/", ''))
                 if issues:
                     kernel_result.append('\n'.join(issues))
 
-            if result['build'] == 'failed':
+            if result.build == 'failed':
                 dst = self.results['bad']
-            elif result['build'] == 'skipped':
+            elif result.build == 'skipped':
                 dst = self.results['skip']
-            elif result['build'] == 'successful':
+            elif result.build == 'successful':
                 dst = self.results['good']
             else:
-                raise ValueError(f"Could not handle build result '{result['build']}'!")
+                raise ValueError(f"Could not handle build result '{result.build}'!")
             dst.append('\n'.join(kernel_result))
 
-            if 'boot' in result:
-                if result['boot'].startswith('failed'):
+            if result.boot:
+                if result.boot.startswith('failed'):
                     dst = self.results['bad']
-                elif result['boot'].startswith('skipped'):
+                elif result.boot.startswith('skipped'):
                     dst = self.results['skip']
-                elif result['boot'].startswith('successful'):
+                elif result.boot.startswith('successful'):
                     dst = self.results['good']
                 else:
-                    raise ValueError(f"Could not handle boot result '{result['boot']}'!")
-                dst.append(f"{result['name']} qemu boot {result['boot']}")
+                    raise ValueError(f"Could not handle boot result '{result.boot}'!")
+                dst.append(f"{result.name} qemu boot {result.boot}")
 
         total_duration = f"Total script duration: {lkt.utils.get_time_diff(self.start_time)}"
 
@@ -140,7 +142,7 @@ class LKTReport:
             txt = '\n\n'.join(self.results['skip']) + '\n'
             Path(self.folders.log, 'skipped.log').write_text(txt, encoding='utf-8')
 
-    def show_env_info(self):
+    def show_env_info(self) -> None:
         if not self.env_info:
             self._generate_env_info()
 

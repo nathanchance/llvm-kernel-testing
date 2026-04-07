@@ -31,24 +31,24 @@ EXPECTED_LNX_VER_LTO = LinuxVersion(6, 9, 0)
 
 
 class RISCVLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-        self.boot_arch = 'riscv'
-        self.image_target = 'Image'
-        self.qemu_arch = QEMU_ARCH
+        self.boot_arch: str = 'riscv'
+        self.image_target: str = 'Image'
+        self.qemu_arch: str = QEMU_ARCH
 
 
 class RISCVLKTRunner(lkt.runner.LKTRunner):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(KERNEL_ARCH, CLANG_TARGET)
 
-        self._has_cfi = False
-        self._has_lto = False
-        self._has_scs = False
+        self._has_cfi: bool = False
+        self._has_lto: bool = False
+        self._has_scs: bool = False
 
-    def _add_defconfig_runners(self):
-        runners = []
+    def _add_defconfig_runners(self) -> None:
+        runners: list[RISCVLLVMKernelRunner] = []
 
         runner = RISCVLLVMKernelRunner()
         runner.configs = ['defconfig']
@@ -72,7 +72,7 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
         if self._has_scs:
             # SCS implies CFI because it came first and they perform the same
             # function, so they are worth testing together.
-            base_cfgs = ['defconfig', cfi_y_config, 'CONFIG_SHADOW_CALL_STACK=y']
+            base_cfgs: list[Path | str] = ['defconfig', cfi_y_config, 'CONFIG_SHADOW_CALL_STACK=y']
 
             runner = RISCVLLVMKernelRunner()
             runner.configs = base_cfgs.copy()
@@ -97,8 +97,8 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
             runner.only_test_boot = self.only_test_boot
         self._runners += runners
 
-    def _add_otherconfig_runners(self):
-        runners = []
+    def _add_otherconfig_runners(self) -> None:
+        runners: list[RISCVLLVMKernelRunner] = []
 
         runner = RISCVLLVMKernelRunner()
         runner.configs = ['allmodconfig']
@@ -120,19 +120,19 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
 
         self._runners += runners
 
-    def _add_distroconfig_runners(self):
+    def _add_distroconfig_runners(self) -> None:
         distros = ('alpine', 'debian', 'fedora', 'opensuse')
         for distro in distros:
             runner = RISCVLLVMKernelRunner()
             runner.bootable = 'f2928e224d85e' in self.lsm.commits
             if not runner.bootable:
-                runner.result['boot'] = (
+                runner.result.boot = (
                     f"skipped due to lack of f2928e224d85e (from {LinuxVersion(5, 16, 0)})"
                 )
             runner.configs = [Path(self.folders.configs, distro, 'riscv64.config')]
             self._runners.append(runner)
 
-    def run(self):
+    def run(self) -> list[lkt.runner.Result]:
         if self.lsm.version < MIN_LNX_VER:
             print_text = (
                 f"RISC-V needs the following fixes from Linux {MIN_LNX_VER} to build properly:\n"
@@ -151,7 +151,7 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
         if '6f5b41a2f5a63' not in self.lsm.commits:
             self.make_vars['CROSS_COMPILE'] = CROSS_COMPILE
         if self._llvm_version < MIN_IAS_LLVM_VER:
-            self.make_vars['LLVM_IAS'] = 0
+            self.make_vars['LLVM_IAS'] = '0'
 
         if (
             self._llvm_version < (13, 0, 0)

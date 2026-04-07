@@ -9,57 +9,63 @@ import shutil
 import lkt.utils
 
 DEFAULT_VERSION = (0, 0, 0)
+VersionTuple = tuple[int, ...]
+VersionIterator = list[str] | VersionTuple
 
 
 @total_ordering
 class Version:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
 
         if len(args) > 0:
-            self._key = tuple(args)
+            self._key: VersionTuple = tuple(args)
         else:
-            self._key = self._gen_key(**kwargs)
+            self._key: VersionTuple = self._gen_key(**kwargs)
 
-    def _is_valid_operand(self, other):
+    def _is_valid_operand(self, other: object) -> bool:
         return isinstance(other, (tuple, Version))
 
-    def _get_key(self, other):
+    def _get_key(self, other: object) -> tuple:
         if isinstance(other, tuple):
             return other
-        # pylint: disable-next=protected-access
-        return other._key  # noqa: SLF001
+        if isinstance(other, Version):
+            # pylint: disable-next=protected-access
+            return other._key  # noqa: SLF001
+        raise ValueError('Cannot get _key?')
 
-    def _gen_key(self, **kwargs):
+    def _gen_key(self, **kwargs) -> VersionTuple:
         return tuple(map(int, self._gen_ver_iter(**kwargs)))
 
-    def _gen_ver_iter(self):
+    def _gen_ver_iter(self, **kwargs) -> VersionIterator:
         raise NotImplementedError('Version has no generate version iterator method')
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if not self._is_valid_operand(other):
             return NotImplemented
         return self._key == self._get_key(other)
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: int) -> int:
         return self._key[item]
 
     def __hash__(self):
         return hash(self._key)
 
-    def __lt__(self, other):
+    def __lt__(self, other: object) -> bool:
         if not self._is_valid_operand(other):
             return NotImplemented
         return self._key < self._get_key(other)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{type(self).__name__}{self._key}"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '.'.join(map(str, self._key))
 
 
 class BinutilsVersion(Version):
-    def _gen_ver_iter(self, binary='as'):
+    def _gen_ver_iter(self, **kwargs) -> VersionIterator:
+        binary: Path | str = kwargs.get('binary', 'as')
+
         if not shutil.which(binary):
             return DEFAULT_VERSION
 
@@ -74,7 +80,9 @@ class BinutilsVersion(Version):
 
 
 class ClangVersion(Version):
-    def _gen_ver_iter(self, binary='clang'):
+    def _gen_ver_iter(self, **kwargs) -> VersionIterator:
+        binary: Path | str = kwargs.get('binary', 'clang')
+
         if not shutil.which(binary):
             return DEFAULT_VERSION
 
@@ -85,9 +93,8 @@ class ClangVersion(Version):
 
 
 class LinuxVersion(Version):
-    def _gen_ver_iter(self, folder=None):
-        if not folder:
-            folder = Path.cwd()
+    def _gen_ver_iter(self, **kwargs) -> VersionIterator:
+        folder: Path = kwargs.get('folder', Path.cwd())
 
         if not Path(folder, 'Makefile').exists():
             raise RuntimeError(
@@ -99,10 +106,10 @@ class LinuxVersion(Version):
 
 
 class MinToolVersion(Version):
-    def _gen_ver_iter(self, **kwargs):
-        folder = kwargs.get('folder', Path.cwd())
-        arch = kwargs.get('arch')
-        tool = kwargs.get('tool', 'llvm')
+    def _gen_ver_iter(self, **kwargs) -> VersionIterator:
+        folder: Path = kwargs.get('folder', Path.cwd())
+        arch: str = kwargs['arch']
+        tool: str = kwargs.get('tool', 'llvm')
 
         if not (min_tool_ver := Path(folder, 'scripts/min-tool-version.sh')).exists():
             return DEFAULT_VERSION  # minimum versions were not codified yet
@@ -125,7 +132,9 @@ class MinToolVersion(Version):
 
 
 class QemuVersion(Version):
-    def _gen_ver_iter(self, arch='x86_64'):
+    def _gen_ver_iter(self, **kwargs) -> VersionIterator:
+        arch: str = kwargs.get('arch', 'x86_64')
+
         if not shutil.which(binary := f"qemu-system-{arch}"):
             return DEFAULT_VERSION
 

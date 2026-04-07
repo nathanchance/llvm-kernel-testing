@@ -12,62 +12,74 @@ import tempfile
 import time
 
 import lkt.utils
+from lkt.source import LinuxSourceManager
 from lkt.version import ClangVersion
 
 HAVE_DEV_KVM_ACCESS = os.access('/dev/kvm', os.R_OK | os.W_OK)
 KNOWN_SUBSYS_WERROR_CONFIGS = ('DRM_WERROR',)
+MakeVars = dict[str, Path | str]
 
 
 class Folders:
-    def __init__(self):
-        self.boot_utils = None
-        self.build = None
-        self.configs = None
-        self.log = None
-        self.source = None
+    def __init__(self) -> None:
+        self.boot_utils: Path = lkt.utils.DEFAULT_PATH
+        self.build: Path = lkt.utils.DEFAULT_PATH
+        self.configs: Path = lkt.utils.DEFAULT_PATH
+        self.log: Path = lkt.utils.DEFAULT_PATH
+        self.source: Path = lkt.utils.DEFAULT_PATH
+
+
+class Result:
+    def __init__(self) -> None:
+        self.boot: str = ''
+        self.build: str = ''
+        self.duration: str = ''
+        self.log: Path = lkt.utils.DEFAULT_PATH
+        self.name: str = ''
+        self.reason: str = ''
 
 
 class LLVMKernelRunner:
-    def __init__(self):
-        self.bootable = False
-        self.boot_arch = ''
-        self.configs = []
-        self.folders = Folders()
-        self.lsm = None
-        self.image_target = ''
-        self.make_args = [f"-skj{os.cpu_count()}"]
-        self.make_targets = []
-        self.make_vars = {
+    def __init__(self) -> None:
+        self.bootable: bool = False
+        self.boot_arch: str = ''
+        self.configs: list[lkt.utils.PathString] = []
+        self.folders: Folders = Folders()
+        self.lsm: LinuxSourceManager = LinuxSourceManager()
+        self.image_target: str = ''
+        self.make_args: list[lkt.utils.PathString] = [f"-skj{os.cpu_count()}"]
+        self.make_targets: list[str] = []
+        self.make_vars: MakeVars = {
             'HOSTLDFLAGS': '-fuse-ld=lld',
-            'LLVM': 1,
-            'LLVM_IAS': 1,
+            'LLVM': '1',
+            'LLVM_IAS': '1',
             'LOCALVERSION': '-cbl',
         }
-        self.only_test_boot = False
-        self.override_make_vars = {}
-        self.qemu_arch = ''
-        self.result = {}
+        self.only_test_boot: bool = False
+        self.override_make_vars: MakeVars = {}
+        self.qemu_arch: str = ''
+        self.result: Result = Result()
 
-        self._config = None
+        self._config: Path = lkt.utils.DEFAULT_PATH
 
-    def _boot_kernel(self):
+    def _boot_kernel(self) -> None:
         if not self.bootable:
             return
-        if self.result['build'] == 'failed':
-            self.result['boot'] = 'skipped'
+        if self.result.build == 'failed':
+            self.result.boot = 'skipped'
             return
         if not self.boot_arch:
             raise RuntimeError('No boot-utils architecture set?')
         if not self.qemu_arch:
             raise RuntimeError('No QEMU architecture set?')
         if not shutil.which(qemu_bin := f"qemu-system-{self.qemu_arch}"):
-            self.result['boot'] = f"skipped due to missing {qemu_bin}"
+            self.result.boot = f"skipped due to missing {qemu_bin}"
             return
         if not self.folders.boot_utils.exists():
             raise RuntimeError('boot-utils could not be found?')
         if not (boot_qemu := Path(self.folders.boot_utils, 'boot-qemu.py')).exists():
             raise RuntimeError('boot-qemu.py could not be found?')
-        boot_utils_cmd = [
+        boot_utils_cmd: lkt.utils.CmdList = [
             boot_qemu,
             '-a',
             self.boot_arch,
@@ -95,18 +107,18 @@ class LLVMKernelRunner:
         lkt.utils.show_cmd(boot_utils_cmd)
         sys.stderr.flush()
         sys.stdout.flush()
-        with self.result['log'].open('a') as file:
+        with self.result.log.open('a', encoding='utf-8') as file:
             proc = lkt.utils.run(
                 boot_utils_cmd, check=False, errors='replace', stderr=STDOUT, stdout=PIPE
             )
             file.write(proc.stdout)
             if proc.returncode == 0:
-                self.result['boot'] = 'successful'
+                self.result.boot = 'successful'
             else:
-                self.result['boot'] = 'failed'
+                self.result.boot = 'failed'
                 print(proc.stdout, end='')
 
-    def _build_kernel(self):
+    def _build_kernel(self) -> None:
         self.make_args += ['-C', self.folders.source]
         self.make_vars.update(self.override_make_vars)
 
@@ -126,10 +138,10 @@ class LLVMKernelRunner:
             makefile_clang.exists()
             and 'ifeq ($(LLVM_IAS),0)' in makefile_clang.read_text(encoding='utf-8')
         )
-        if (llvm_ias_def_on and llvm_ias == 1) or (not llvm_ias_def_on and llvm_ias == 0):
+        if (llvm_ias_def_on and llvm_ias == '1') or (not llvm_ias_def_on and llvm_ias == '0'):
             del self.make_vars['LLVM_IAS']
 
-        base_make_cmd = [
+        base_make_cmd: lkt.utils.CmdList = [
             'make',
             *self.make_args,
             *[f"{var}={self.make_vars[var]}" for var in sorted(self.make_vars)],
@@ -138,10 +150,12 @@ class LLVMKernelRunner:
         ##########################
         # configuration handling #
         ##########################
-        base_config = self.configs[0]
-        requested_fragments = []
-        requested_options = []
+        base_config: lkt.utils.PathString = self.configs[0]
+        requested_fragments: list[str] = []
+        requested_options: list[str] = []
         for item in self.configs[1:]:
+            if not isinstance(item, str):
+                raise ValueError(f"{item} is not a string?")
             if item.endswith('.config'):
                 requested_fragments.append(item)
             elif item.startswith('CONFIG_'):
@@ -153,12 +167,12 @@ class LLVMKernelRunner:
         extra_configs = requested_options.copy()
         need_olddefconfig = False
 
-        cmds_to_log = []
+        cmds_to_log: list[lkt.utils.ValidCmd] = []
 
         if isinstance(base_config, str):
             if extra_configs:
                 # Generate .config for merge_config.sh
-                make_cmd = [*base_make_cmd, base_config, *requested_fragments]
+                make_cmd: lkt.utils.CmdList = [*base_make_cmd, base_config, *requested_fragments]
                 cmds_to_log.append(make_cmd)
                 lkt.utils.chronic(make_cmd, show_cmd=True)
             else:
@@ -171,7 +185,7 @@ class LLVMKernelRunner:
 
             self.folders.build.mkdir(parents=True)
 
-            copy_cmd = ['cp', base_config, self._config]
+            copy_cmd: lkt.utils.CmdList = ['cp', base_config, self._config]
             lkt.utils.show_cmd(copy_cmd)
             cmds_to_log.append(copy_cmd)
             shutil.copy(base_config, self._config)
@@ -204,7 +218,7 @@ class LLVMKernelRunner:
             cmds_to_log.append(f"cat {config_path}\n{extra_config_txt.strip()}")
             Path(config_path).write_text(extra_config_txt, encoding='utf-8')
 
-            merge_config = [
+            merge_config: lkt.utils.CmdList = [
                 Path(self.folders.source, 'scripts/kconfig/merge_config.sh'),
                 '-m',
                 '-O',
@@ -228,11 +242,13 @@ class LLVMKernelRunner:
         start_time = time.time()
         sys.stderr.flush()
         sys.stdout.flush()
-        with Popen(base_make_cmd, stderr=STDOUT, stdout=PIPE) as proc, self.result['log'].open(
+        with Popen(base_make_cmd, stderr=STDOUT, stdout=PIPE) as proc, self.result.log.open(
             'bw'
         ) as file:
             cmd_log_str = '\n'.join(f"{lkt.utils.cmd_str(cmd)}\n" for cmd in cmds_to_log)
             file.write(cmd_log_str.encode('utf-8'))
+            if not proc.stdout:
+                raise RuntimeError('proc.stdout is None??')
             while byte := proc.stdout.read(1):
                 sys.stdout.buffer.write(byte)
                 sys.stdout.flush()
@@ -263,21 +279,23 @@ class LLVMKernelRunner:
             if missing_configs:
                 warning_msg = f"\nWARNING: {type(self).__name__}(): Missing requested configurations after olddefconfig: {', '.join(missing_configs)}"
                 print(warning_msg)
-                with self.result['log'].open('a') as file:
+                with self.result.log.open('a', encoding='utf-8') as file:
                     file.write(f"{warning_msg}\n")
 
-        self.result['build'] = 'successful' if proc.returncode == 0 else 'failed'
+        self.result.build = 'successful' if proc.returncode == 0 else 'failed'
 
-        self.result['duration'] = lkt.utils.get_time_diff(start_time)
-        time_str = f"\nReal\t{self.result['duration']}\n"
+        self.result.duration = lkt.utils.get_time_diff(start_time)
+        time_str = f"\nReal\t{self.result.duration}\n"
         print(time_str, end='')
-        with self.result['log'].open('a') as file:
+        with self.result.log.open('a', encoding='utf-8') as file:
             file.write(time_str)
 
-    def _distro_adjustments(self):
-        configs = []
+    def _distro_adjustments(self) -> list[str]:
+        configs: list[str] = []
 
         config = self.configs[0]
+        if not isinstance(config, Path):
+            raise ValueError(f"{config} must be a Path object!")
         distro = config.parts[-2]
 
         if distro == 'alpine':
@@ -306,7 +324,7 @@ class LLVMKernelRunner:
             )
             configs.append(f"CONFIG_ARCH_FORCE_MAX_ORDER={8 if search in text else 9}")
 
-        mtk_common_clk_cfgs = {
+        mtk_common_clk_cfgs: dict[str, tuple[str, ...]] = {
             # https://git.kernel.org/linus/650fcdf9181e4551cd22d651a8e637c800045c97
             'MT2712': (
                 '',
@@ -391,7 +409,7 @@ class LLVMKernelRunner:
             # https://git.kernel.org/linus/876d4e21aad8b60e155dbc5bbfb8c8e75c4d9f4b
             'MT8516': ('', '_AUDSYS'),
         }
-        compat_changes = [
+        compat_changes: list[tuple[str, str] | tuple[str, tuple[str, str]]] = [
             # CONFIG_ACPI_HED as a module is invalid after https://git.kernel.org/linus/cccf6ee090c8c133072d5d5b52ae25f3bc907a16
             ('ACPI_HED', 'drivers/acpi/Kconfig'),
             # CONFIG_ARM_TEGRA124_CPUFREQ as a module is invalid before https://git.kernel.org/linus/0ae93389b6c84fbbc6414a5c78f50d65eea8cf35
@@ -617,7 +635,7 @@ class LLVMKernelRunner:
         if mfd_arizona_is_m and 'arizona-objs' not in file_text:
             configs.append('CONFIG_MFD_ARIZONA=y')
 
-        changed_type_cfgs = [
+        changed_type_cfgs: list[tuple[str, str]] = [
             # CONFIG_BASE_SMALL changed from bool to int in https://git.kernel.org/linus/b3e90f375b3c7ab85aef631ebb0ad8ce66cbf3fd
             ('BASE_SMALL', 'init/Kconfig'),
             # CONFIG_BOOTPARAM_HUNG_TASK_PANIC changed from bool to int in https://git.kernel.org/linus/9544f9e6947f6508d29f0d0cc2dacaa749fc1613
@@ -665,8 +683,10 @@ class LLVMKernelRunner:
 
         return configs
 
-    def _initial_distro_prep(self):
+    def _initial_distro_prep(self) -> None:
         config = self.configs[0]
+        if not isinstance(config, Path):
+            raise ValueError(f"{config} must be a Path object!")
         distro = config.parts[-2]
 
         # CONFIG_DEBUG_INFO_BTF has two conditions:
@@ -711,10 +731,10 @@ class LLVMKernelRunner:
             if lkt.utils.is_set(self.folders.source, config, val):
                 self.configs.append(f"CONFIG_{val}=n")
 
-    def run(self):
-        if not self.folders.source:
+    def run(self) -> Result:
+        if self.folders.source == lkt.utils.DEFAULT_PATH:
             raise RuntimeError('No source location set?')
-        if not self.folders.build:
+        if self.folders.build == lkt.utils.DEFAULT_PATH:
             raise RuntimeError('No build folder set?')
         if not self.configs:
             raise RuntimeError('No configuration to build?')
@@ -741,18 +761,18 @@ class LLVMKernelRunner:
         # configurations to build properly, as those configuration
         # changes should be visible in the log.
         if isinstance(self.configs[0], Path):
-            configs = [f"{self.configs[0].parts[-2]} config"]
+            configs: list[str] = [f"{self.configs[0].parts[-2]} config"]
             self._initial_distro_prep()
             if len(self.configs) > 1:
-                configs += self.configs[1:]
+                configs += map(str, self.configs[1:])
         else:
-            configs = self.configs
-        self.result['name'] = f"{self.make_vars['ARCH']} {' + '.join(configs)}"
-        print(f"\nBuilding {self.result['name']}...")
+            configs: list[str] = list(map(str, self.configs))
+        self.result.name = f"{self.make_vars['ARCH']} {' + '.join(configs)}"
+        print(f"\nBuilding {self.result.name}...")
 
         self.folders.log.mkdir(exist_ok=True, parents=True)
-        log_name = self.result['name'].replace(' ', '-').replace('-+-', '-').replace('""', '')
-        self.result['log'] = Path(self.folders.log, f"{log_name[0:251]}.log")
+        log_name = self.result.name.replace(' ', '-').replace('-+-', '-').replace('""', '')
+        self.result.log = Path(self.folders.log, f"{log_name[0:251]}.log")
 
         self._build_kernel()
         self._boot_kernel()
@@ -761,43 +781,41 @@ class LLVMKernelRunner:
 
 
 class LKTRunner:
-    def __init__(self, arch, clang_target):
-        self.folders = Folders()
-        self.lsm = None
-        self.make_vars = {'ARCH': arch}
-        self.only_test_boot = False
-        self.targets = []
-        self.save_objects = False
+    def __init__(self, arch: str, clang_target: str) -> None:
+        self.folders: Folders = Folders()
+        self.lsm: LinuxSourceManager = LinuxSourceManager()
+        self.make_vars: MakeVars = {'ARCH': arch}
+        self.only_test_boot: bool = False
+        self.targets: list[str] = []
+        self.save_objects: bool = False
 
-        self._llvm_version = ClangVersion()
+        self._llvm_version: ClangVersion = ClangVersion()
 
-        self._clang_target = clang_target
-        self._results = []
-        self._runners = []
+        self._clang_target: str = clang_target
+        self._results: list[Result] = []
+        self._runners: list[LLVMKernelRunner] = []
 
-    def _skip_all(self, log_reason, print_reason):
-        result = {
-            'name': f"{self.make_vars['ARCH']} kernels",
-            'build': 'skipped',
-            'reason': log_reason,
-        }
+    def _skip_all(self, log_reason: str, print_reason: str) -> list[Result]:
+        result = Result()
+        result.name = f"{self.make_vars['ARCH']} kernels"
+        result.build = 'skipped'
+        result.reason = log_reason
         self._results = [result]
 
-        lkt.utils.header(f"Skipping {result['name']}")
+        lkt.utils.header(f"Skipping {result.name}")
         print(f"Reason: {print_reason}")
 
         return self._results
 
-    def _skip_one(self, name, reason):
-        result = {
-            'name': name,
-            'build': 'skipped',
-            'reason': reason,
-        }
+    def _skip_one(self, name: str, reason: str) -> None:
+        result = Result()
+        result.name = name
+        result.build = 'skipped'
+        result.reason = reason
         self._results.append(result)
         print(f"Skipping {name} due to {reason}")
 
-    def run(self):
+    def run(self) -> list[Result]:
         if not lkt.utils.clang_supports_target(self._clang_target):
             return self._skip_all(
                 'missing clang target', f"Missing {self._clang_target} target in clang"
@@ -805,7 +823,7 @@ class LKTRunner:
 
         if (
             'CROSS_COMPILE' in self.make_vars
-            and self.make_vars.get('LLVM_IAS', 1) == 0
+            and self.make_vars.get('LLVM_IAS', '1') == '0'
             and not shutil.which(f"{self.make_vars['CROSS_COMPILE']}as")
         ):
             return self._skip_all('missing binutils', 'Cannot find binutils')
@@ -816,7 +834,9 @@ class LKTRunner:
 
         for runner in self._runners:
             runner.folders = self.folders
-            if not runner.lsm and self.lsm:
+            if runner.lsm.folder == lkt.utils.DEFAULT_PATH:
+                if self.lsm.folder == lkt.utils.DEFAULT_PATH:
+                    raise RuntimeError('LinuxSourceManager is completely uninitialized!')
                 runner.lsm = self.lsm
             runner.make_vars.update(self.make_vars)
             self._results.append(runner.run())

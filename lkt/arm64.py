@@ -4,6 +4,8 @@ from pathlib import Path
 import platform
 
 import lkt.runner
+from lkt.source import LinuxSourceManager
+import lkt.utils
 from lkt.version import ClangVersion, LinuxVersion
 
 KERNEL_ARCH = 'arm64'
@@ -15,7 +17,7 @@ QEMU_ARCH = 'aarch64'
 MIN_IAS_LNX_VER = LinuxVersion(5, 9, 0)
 
 
-def can_build_arm64_big_endian(lsm, llvm_version):
+def can_build_arm64_big_endian(lsm: LinuxSourceManager, llvm_version: ClangVersion) -> bool:
     arm64_kconfig_txt = Path(lsm.folder, 'arch/arm64/Kconfig').read_text(encoding='utf-8')
 
     # Detect if big endian support is present and working in the kernel
@@ -36,19 +38,19 @@ def can_build_arm64_big_endian(lsm, llvm_version):
 
 
 class Arm64LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-        self.boot_arch = KERNEL_ARCH
-        self.image_target = 'Image.gz'
-        self.qemu_arch = QEMU_ARCH
+        self.boot_arch: str = KERNEL_ARCH
+        self.image_target: str = 'Image.gz'
+        self.qemu_arch: str = QEMU_ARCH
 
 
 class Arm64LKTRunner(lkt.runner.LKTRunner):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(KERNEL_ARCH, CLANG_TARGET)
 
-    def _add_defconfig_runners(self):
+    def _add_defconfig_runners(self) -> None:
         runners = []
 
         if Path(self.folders.source, 'arch/arm64/configs/virt.config').exists():
@@ -122,7 +124,7 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
             runner.only_test_boot = self.only_test_boot
         self._runners += runners
 
-    def _add_otherconfig_runners(self):
+    def _add_otherconfig_runners(self) -> None:
         runner = Arm64LLVMKernelRunner()
         runner.configs = ['allmodconfig']
         if 'd8e85e144bbe1' not in self.lsm.commits:
@@ -144,8 +146,8 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
             runner.configs = [config_target]
             self._runners.append(runner)
 
-    def _add_distroconfig_runners(self):
-        configs = [
+    def _add_distroconfig_runners(self) -> None:
+        configs: list[tuple[str, str]] = [
             ('alpine', 'aarch64'),
             ('archlinux', 'aarch64'),
             ('debian', KERNEL_ARCH),
@@ -162,12 +164,12 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
                         runner.configs.append(f"CONFIG_{sym}={val}")
             self._runners.append(runner)
 
-    def run(self):
-        cross_compile = '' if platform.machine() == 'aarch64' else CROSS_COMPILE
+    def run(self) -> list[lkt.runner.Result]:
+        cross_compile: str = '' if platform.machine() == 'aarch64' else CROSS_COMPILE
         if '6f5b41a2f5a63' not in self.lsm.commits and cross_compile:
             self.make_vars['CROSS_COMPILE'] = cross_compile
         if self.lsm.version < MIN_IAS_LNX_VER:
-            self.make_vars['LLVM_IAS'] = 0
+            self.make_vars['LLVM_IAS'] = '0'
 
         if 'def' in self.targets:
             self._add_defconfig_runners()

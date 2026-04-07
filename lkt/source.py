@@ -2,27 +2,32 @@
 
 from pathlib import Path
 import re
+from typing import Optional
 
+from lkt.utils import DEFAULT_PATH
 from lkt.version import LinuxVersion, MinToolVersion
 
 
 class LinuxSourceManager:
-    def __init__(self, linux_source):
+    def __init__(self, linux_source: Optional[Path] = None) -> None:
+        self.folder: Path = linux_source if linux_source else DEFAULT_PATH
+        if self.folder == DEFAULT_PATH:
+            return
+
         # Perform same check as Linux for clean source tree to catch early failures
         if (
-            Path(linux_source, '.config').is_file()
-            or Path(linux_source, 'include/config').is_dir()
-            or list(linux_source.glob('arch/*/include/generated'))
+            Path(self.folder, '.config').is_file()
+            or Path(self.folder, 'include/config').is_dir()
+            or list(self.folder.glob('arch/*/include/generated'))
         ):
-            raise RuntimeError(f"Supplied Linux source ('{linux_source}') is not clean!")
+            raise RuntimeError(f"Supplied Linux source ('{self.folder}') is not clean!")
 
-        self.commits = []
-        self.configs = []
-        self.folder = linux_source
+        self.commits: list[str] = []
+        self.configs: list[str] = []
 
-        self.version = LinuxVersion(folder=linux_source)
+        self.version: LinuxVersion = LinuxVersion(folder=self.folder)
 
-        self._cfi_y_config = ''
+        self._cfi_y_config: str = ''
 
         # Introduced by: bcachefs: Initial commit
         # Link: https://git.kernel.org/linus/1c6fdbd8f2465ddfb73a01ec620cbf3d14044e1a
@@ -303,14 +308,14 @@ class LinuxSourceManager:
         if not re.search('"(o|n|x)i\t%0,%b1\\\\n"', text):
             self.commits.append('efe5e0fea4b24')
 
-    def _add_commit(self, commit, regex, file_path):
+    def _add_commit(self, commit: str, regex: str, file_path: Path | str) -> None:
         if not (file := Path(self.folder, file_path)).exists():
             return
         file_text = file.read_text(encoding='utf-8')
         if re.search(regex, file_text):
             self.commits.append(commit)
 
-    def _add_config(self, config, file_path):
+    def _add_config(self, config: str, file_path: Path | str) -> None:
         if not (file := Path(self.folder, file_path)).exists():
             return
         definition = config.replace('CONFIG_', 'config ')
@@ -318,12 +323,12 @@ class LinuxSourceManager:
         if definition in file_text:
             self.configs.append(config)
 
-    def arch_supports_kcfi(self, srcarch):
+    def arch_supports_kcfi(self, srcarch: str) -> bool:
         arch_kconfig_txt = Path(self.folder, 'arch', srcarch, 'Kconfig').read_text(encoding='utf-8')
         return 'select ARCH_SUPPORTS_CFI' in arch_kconfig_txt
 
     # Handle rename from CONFIG_CFI_CLANG to CONFIG_CFI
-    def get_cfi_y_config(self):
+    def get_cfi_y_config(self) -> str:
         if not self._cfi_y_config:
             arch_kconfig_txt = Path(self.folder, 'arch/Kconfig').read_text(encoding='utf-8')
             if match := re.search(r"config (CFI(?:_CLANG)?)$", arch_kconfig_txt, flags=re.M):
@@ -332,5 +337,5 @@ class LinuxSourceManager:
                 self._cfi_y_config = 'CONFIG_CFI_CLANG=y'
         return self._cfi_y_config
 
-    def get_min_llvm_ver(self, arch=None):
+    def get_min_llvm_ver(self, arch=None) -> MinToolVersion:
         return MinToolVersion(folder=self.folder, arch=arch, tool='llvm')

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from collections.abc import Sequence
 import copy
 import os
 from pathlib import Path
@@ -7,32 +8,38 @@ import shlex
 import subprocess
 import time
 
+DEFAULT_PATH = Path('/intentionally/does/not/exist')
+PathString = Path | str
+ValidSingleCmd = str | bytes | os.PathLike
+ValidCmd = ValidSingleCmd | Sequence[ValidSingleCmd]
+CmdList = list[ValidSingleCmd]
 
-def chronic(*args, **kwargs):
+
+def chronic(args: ValidCmd, **kwargs) -> subprocess.CompletedProcess:
     kwargs.setdefault('capture_output', True)
 
-    return run(*args, **kwargs)
+    return run(args, **kwargs)
 
 
-def clang_supports_target(target):
+def clang_supports_target(target: str) -> bool:
     return run_check_rc_zero(
         ['clang', f"--target={target}", '-c', '-x', 'c', '-o', '/dev/null', '/dev/null']
     )
 
 
-def cmd_str(cmd):
-    if isinstance(cmd, (str, os.PathLike)):
+def cmd_str(cmd: ValidCmd) -> str:
+    if isinstance(cmd, ValidSingleCmd):
         cmd_to_print = cmd
     else:
         cmd_to_print = ' '.join(shlex.quote(str(elem)) for elem in cmd)
     return f"$ {cmd_to_print}"
 
 
-def get_config_val(linux, path, config):
-    config_file = path if path.is_file() else Path(path, '.config')
+def get_config_val(linux: Path, path: Path, config: str) -> str:
+    config_file: Path = path if path.is_file() else Path(path, '.config')
     if not path.exists():
         raise FileNotFoundError('Could not find configuration?')
-    scripts_config_cmd = [
+    scripts_config_cmd: CmdList = [
         Path(linux, 'scripts/config'),
         '--file',
         config_file,
@@ -43,15 +50,15 @@ def get_config_val(linux, path, config):
     return chronic(scripts_config_cmd).stdout.strip()
 
 
-def is_modular(*args):
+def is_modular(*args) -> bool:
     return get_config_val(*args) == 'm'
 
 
-def is_set(*args):
+def is_set(*args) -> bool:
     return get_config_val(*args) not in ('', 'n', 'undef')
 
 
-def get_time_diff(start_time, end_time=None):
+def get_time_diff(start_time: float, end_time: float | None = None) -> str:
     if not end_time:
         end_time = time.time()
     seconds = int(end_time - start_time)
@@ -71,7 +78,7 @@ def get_time_diff(start_time, end_time=None):
     return ' '.join(parts)
 
 
-def header(hdr_str, end='\n'):
+def header(hdr_str: str, end: str = '\n') -> None:
     """
     Prints a fancy header in bold text.
     Parameters:
@@ -81,7 +88,7 @@ def header(hdr_str, end='\n'):
     print(f"\n\033[1m{border}\n== {hdr_str} ==\n{border}\n\033[0m", end=end, flush=True)
 
 
-def run(*args, **kwargs):
+def run(args: ValidCmd, **kwargs) -> subprocess.CompletedProcess:
     kwargs.setdefault('check', True)
 
     kwargs.setdefault('text', True)
@@ -89,7 +96,7 @@ def run(*args, **kwargs):
         kwargs['text'] = None
 
     if kwargs.pop('show_cmd', False):
-        show_cmd(*args)
+        show_cmd(args)
 
     if env := kwargs.pop('env', None):
         kwargs['env'] = os.environ | copy.deepcopy(env)
@@ -97,7 +104,7 @@ def run(*args, **kwargs):
     try:
         # This function defaults check=True so if check=False here, it is explicit
         # pylint: disable-next=subprocess-run-check
-        return subprocess.run(*args, **kwargs)  # noqa: PLW1510
+        return subprocess.run(args, **kwargs)  # noqa: PLW1510
     except subprocess.CalledProcessError as err:
         if kwargs.get('capture_output'):
             print(err.stdout)
@@ -105,9 +112,9 @@ def run(*args, **kwargs):
         raise err
 
 
-def run_check_rc_zero(*args, **kwargs):
-    return chronic(*args, **kwargs, check=False).returncode == 0
+def run_check_rc_zero(args: ValidCmd, **kwargs) -> bool:
+    return chronic(args, **kwargs, check=False).returncode == 0
 
 
-def show_cmd(cmd):
+def show_cmd(cmd: ValidCmd) -> None:
     print(f"\n{cmd_str(cmd)}")

@@ -30,29 +30,29 @@ MIN_IAS_LNX_VER = LinuxVersion(5, 19, 0)
 
 
 class S390LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-        self.boot_arch = KERNEL_ARCH
-        self.image_target = 'bzImage'
-        self.qemu_arch = QEMU_ARCH
+        self.boot_arch: str = KERNEL_ARCH
+        self.image_target: str = 'bzImage'
+        self.qemu_arch: str = QEMU_ARCH
 
 
 class S390LKTRunner(lkt.runner.LKTRunner):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(KERNEL_ARCH, CLANG_TARGET)
 
-        self._binutils_version = BinutilsVersion(binary=f"{CROSS_COMPILE}as")
-        self._qemu_version = QemuVersion(arch=QEMU_ARCH)
+        self._binutils_version: BinutilsVersion = BinutilsVersion(binary=f"{CROSS_COMPILE}as")
+        self._qemu_version: QemuVersion = QemuVersion(arch=QEMU_ARCH)
 
-    def _add_defconfig_runners(self):
+    def _add_defconfig_runners(self) -> None:
         runner = S390LLVMKernelRunner()
         runner.bootable = True
         runner.configs = ['defconfig']
         runner.only_test_boot = self.only_test_boot
         self._runners.append(runner)
 
-    def _add_otherconfig_runners(self):
+    def _add_otherconfig_runners(self) -> None:
         other_cfgs = [
             'allmodconfig',
             'allnoconfig',
@@ -69,7 +69,7 @@ class S390LKTRunner(lkt.runner.LKTRunner):
                 runner.configs.append('CONFIG_INFINIBAND_ADDR_TRANS=n')
             self._runners.append(runner)
 
-    def _add_distroconfig_runners(self):
+    def _add_distroconfig_runners(self) -> None:
         distros = [
             'alpine',
             'debian',
@@ -84,7 +84,7 @@ class S390LKTRunner(lkt.runner.LKTRunner):
                 runner.configs += ['CONFIG_MARCH_Z13=n', 'CONFIG_MARCH_Z196=y']
             self._runners.append(runner)
 
-    def run(self):
+    def run(self) -> list[lkt.runner.Result]:
         if self.lsm.version < MIN_LNX_VER:
             print_text = (
                 f"s390 kernels did not build properly until Linux {MIN_LNX_VER}\n"
@@ -116,9 +116,11 @@ class S390LKTRunner(lkt.runner.LKTRunner):
                 f"s390 requires LLVM {min_llvm_ver} or newer {reason} (using '{self._llvm_version}')",
             )
 
-        gnu_vars = []
+        gnu_vars: list[str] = []
         # https://github.com/llvm/llvm-project/pull/75643
-        lld_res = lkt.utils.chronic([shutil.which('ld.lld'), '-m', 'elf64_s390'], check=False)
+        if not (ld_lld := shutil.which('ld.lld')):
+            raise RuntimeError('ld.lld not in PATH?')
+        lld_res = lkt.utils.chronic([ld_lld, '-m', 'elf64_s390'], check=False)
         no_s390_support_in_lld = 'error: unknown emulation:' in lld_res.stderr
         # https://lore.kernel.org/20240207-s390-lld-and-orphan-warn-v1-11-8a665b3346ab@kernel.org/
         s390_makefile_txt = Path(self.folders.source, 'arch/s390/Makefile').read_text(
@@ -128,8 +130,10 @@ class S390LKTRunner(lkt.runner.LKTRunner):
         if no_s390_support_in_lld or no_s390_kernel_support_for_lld:
             gnu_vars.append('LD')
         # https://github.com/llvm/llvm-project/pull/81841
+        if not (llvm_objcopy := shutil.which('llvm-objcopy')):
+            raise RuntimeError('llvm-objcopy not in PATH?')
         objcopy_res = lkt.utils.chronic(
-            [shutil.which('llvm-objcopy'), '-I', 'binary', '-O', 'elf64-s390', '-', '/dev/null'],
+            [llvm_objcopy, '-I', 'binary', '-O', 'elf64-s390', '-', '/dev/null'],
             check=False,
             input='',
         )
@@ -152,7 +156,7 @@ class S390LKTRunner(lkt.runner.LKTRunner):
 
         if self.lsm.version < MIN_IAS_LNX_VER:
             self.make_vars['CROSS_COMPILE'] = CROSS_COMPILE
-            self.make_vars['LLVM_IAS'] = 0
+            self.make_vars['LLVM_IAS'] = '0'
 
         if 'def' in self.targets:
             self._add_defconfig_runners()
@@ -167,7 +171,7 @@ class S390LKTRunner(lkt.runner.LKTRunner):
             for runner in self._runners:
                 if runner.bootable:
                     runner.bootable = False
-                    runner.result['boot'] = (
+                    runner.result.boot = (
                         f"skipped due to QEMU < {MIN_QEMU_VER} (found '{self._qemu_version}')"
                     )
 
