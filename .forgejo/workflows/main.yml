@@ -1,5 +1,6 @@
 name: Lint checks
 on: [push, pull_request, workflow_dispatch]
+enable-email-notifications: true
 jobs:
   fish:
     runs-on: docker
