@@ -75,6 +75,8 @@ class LLVMKernelRunner:
         if not shutil.which(qemu_bin := f"qemu-system-{self.qemu_arch}"):
             self.result.boot = f"skipped due to missing {qemu_bin}"
             return
+        if not lkt.utils.path_is_set(self.folders.boot_utils):
+            raise RuntimeError('No boot-utils folder set?')
         if not self.folders.boot_utils.exists():
             raise RuntimeError('boot-utils could not be found?')
         if not (boot_qemu := Path(self.folders.boot_utils, 'boot-qemu.py')).exists():
