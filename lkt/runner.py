@@ -732,9 +732,9 @@ class LLVMKernelRunner:
                 self.configs.append(f"CONFIG_{val}=n")
 
     def run(self) -> Result:
-        if self.folders.source == lkt.utils.DEFAULT_PATH:
+        if not lkt.utils.path_is_set(self.folders.source):
             raise RuntimeError('No source location set?')
-        if self.folders.build == lkt.utils.DEFAULT_PATH:
+        if not lkt.utils.path_is_set(self.folders.build):
             raise RuntimeError('No build folder set?')
         if not self.configs:
             raise RuntimeError('No configuration to build?')
@@ -834,8 +834,8 @@ class LKTRunner:
 
         for runner in self._runners:
             runner.folders = self.folders
-            if runner.lsm.folder == lkt.utils.DEFAULT_PATH:
-                if self.lsm.folder == lkt.utils.DEFAULT_PATH:
+            if not lkt.utils.path_is_set(runner.lsm.folder):
+                if not lkt.utils.path_is_set(self.lsm.folder):
                     raise RuntimeError('LinuxSourceManager is completely uninitialized!')
                 runner.lsm = self.lsm
             runner.make_vars.update(self.make_vars)

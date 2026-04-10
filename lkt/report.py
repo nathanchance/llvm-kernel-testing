@@ -51,7 +51,7 @@ class LKTReport:
         self.start_time: float = time.time()
 
     def _generate_env_info(self) -> None:
-        if self.folders.source == lkt.utils.DEFAULT_PATH:
+        if not lkt.utils.path_is_set(self.folders.source):
             raise RuntimeError('Cannot generate environment information without source location!')
         if not self.folders.source.exists():
             raise FileNotFoundError('Provided source location does not exist?')

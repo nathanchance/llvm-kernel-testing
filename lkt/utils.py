@@ -88,6 +88,10 @@ def header(hdr_str: str, end: str = '\n') -> None:
     print(f"\n\033[1m{border}\n== {hdr_str} ==\n{border}\n\033[0m", end=end, flush=True)
 
 
+def path_is_set(path: Path) -> bool:
+    return path != DEFAULT_PATH
+
+
 def run(args: ValidCmd, **kwargs) -> subprocess.CompletedProcess:
     kwargs.setdefault('check', True)
 
