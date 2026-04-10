@@ -10,6 +10,7 @@ from subprocess import PIPE, STDOUT, Popen
 import sys
 import tempfile
 import time
+from typing import TypedDict
 
 import lkt.utils
 from lkt.source import LinuxSourceManager
@@ -17,7 +18,23 @@ from lkt.version import ClangVersion
 
 HAVE_DEV_KVM_ACCESS = os.access('/dev/kvm', os.R_OK | os.W_OK)
 KNOWN_SUBSYS_WERROR_CONFIGS = ('DRM_WERROR',)
-MakeVars = dict[str, Path | str]
+
+
+class MakeVars(TypedDict, total=False):
+    ARCH: str
+    CC: str
+    CROSS_COMPILE: str
+    LLVM: str
+    LLVM_IAS: str
+    LD: str
+    LOCALVERSION: str
+    HOSTCC: str
+    HOSTLDFLAGS: str
+    KBZIP2: str
+    KGZIP: str
+    OBJCOPY: str
+    OBJDUMP: str
+    O: Path  # noqa: E741
 
 
 class Folders:

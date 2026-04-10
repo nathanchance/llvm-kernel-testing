@@ -9,6 +9,7 @@ import signal
 import sys
 
 import lkt.report
+from lkt.runner import MakeVars
 import lkt.source
 import lkt.utils
 from lkt.version import ClangVersion, LinuxVersion
@@ -225,7 +226,7 @@ if __name__ == '__main__':
         results.append(RESULT)
 
     if len(results) == 0:
-        make_vars = {}
+        make_vars: MakeVars = {}
         if args.use_ccache and shutil.which('ccache'):
             make_vars['CC'] = 'ccache clang'
             make_vars['HOSTCC'] = 'ccache clang'

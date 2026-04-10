@@ -116,7 +116,6 @@ class S390LKTRunner(lkt.runner.LKTRunner):
                 f"s390 requires LLVM {min_llvm_ver} or newer {reason} (using '{self._llvm_version}')",
             )
 
-        gnu_vars: list[str] = []
         # https://github.com/llvm/llvm-project/pull/75643
         if not (ld_lld := shutil.which('ld.lld')):
             raise RuntimeError('ld.lld not in PATH?')
@@ -128,7 +127,7 @@ class S390LKTRunner(lkt.runner.LKTRunner):
         )
         no_s390_kernel_support_for_lld = '-z notext' not in s390_makefile_txt
         if no_s390_support_in_lld or no_s390_kernel_support_for_lld:
-            gnu_vars.append('LD')
+            self.make_vars['LD'] = f"{CROSS_COMPILE}ld"
         # https://github.com/llvm/llvm-project/pull/81841
         if not (llvm_objcopy := shutil.which('llvm-objcopy')):
             raise RuntimeError('llvm-objcopy not in PATH?')
@@ -146,13 +145,11 @@ class S390LKTRunner(lkt.runner.LKTRunner):
             '--set-section-flags .vmlinux.info=alloc,load' not in s390_boot_makefile_txt
         )
         if no_s390_support_in_llvm_objcopy or have_broken_info_bin:
-            gnu_vars.append('OBJCOPY')
+            self.make_vars['OBJCOPY'] = f"{CROSS_COMPILE}objcopy"
         # https://github.com/ClangBuiltLinux/linux/issues/859
         have_objdump_t_j_wa = r' | grep "\s$*\s\+" | ' in s390_boot_makefile_txt
         if not have_objdump_t_j_wa:
-            gnu_vars.append('OBJDUMP')
-        for variable in gnu_vars:
-            self.make_vars[variable] = f"{CROSS_COMPILE}{variable.lower()}"
+            self.make_vars['OBJDUMP'] = f"{CROSS_COMPILE}objdump"
 
         if self.lsm.version < MIN_IAS_LNX_VER:
             self.make_vars['CROSS_COMPILE'] = CROSS_COMPILE
