@@ -12,8 +12,12 @@ KERNEL_ARCH = 'powerpc'
 CLANG_TARGET = 'powerpc-linux-gnu'
 
 # https://github.com/ClangBuiltLinux/linux/issues/1418
+# powerpc/32: Remove remaining .stabs annotations
+# v5.17-rc2-28-g12318163737c (Mon Feb 7 21:03:10 2022 +1100)
 # https://git.kernel.org/linus/12318163737cd8808d13faa6e2393774191a6182
 MIN_IAS_LNX_VER = LinuxVersion(5, 18, 0)
+# [PowerPC] Allow absolute expressions in relocations
+# llvmorg-14.0.1-16-g33504b3bbe10 (Mon Apr 18 17:02:51 2022 -0700)
 # https://github.com/llvm/llvm-project/commit/33504b3bbe10d5d4caae13efcb99bd159c126070
 MIN_IAS_LLVM_VER = ClangVersion(14, 0, 2)
 
@@ -31,9 +35,13 @@ def ppc64_be_defaults_to_elfv2(lsm: LinuxSourceManager) -> bool:
         return lsm.version >= (6, 2, 0)
 
     kconfig_text = Path(lsm.folder, 'arch/powerpc/Kconfig').read_text(encoding='utf-8')
-    # https://lore.kernel.org/20230505071850.228734-2-npiggin@gmail.com/
+    # powerpc/64: Force ELFv2 when building with LLVM linker
+    # v6.4-rc2-35-g9d90161ca5c7 (Wed Jun 14 12:46:42 2023 +1000)
+    # https://git.kernel.org/linus/9d90161ca5c7234e80e14e563d198f322ca0c1d0
     patch_1_state = '"Build big-endian kernel using ELF ABI V2 (EXPERIMENTAL)" if LD_IS_BFD'
-    # https://lore.kernel.org/20230505071850.228734-3-npiggin@gmail.com/
+    # powerpc/64: Make ELFv2 the default for big-endian builds
+    # v6.4-rc2-36-g8c5fa3b5c4df (Wed Jun 14 12:46:42 2023 +1000)
+    # https://git.kernel.org/linus/8c5fa3b5c4df3d071dab42b04b971df370d99354
     patch_2_state = '"Build big-endian kernel using ELF ABI V2" if LD_IS_BFD && EXPERT'
     return patch_1_state in kconfig_text or patch_2_state in kconfig_text
 
@@ -76,7 +84,11 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
             '"440 (44x family)"\n\tdepends on 44x\n\tdepends on !CC_IS_CLANG' in kconfig_text
         )
 
+        # powerpc/44x: Fix build failure with GCC 12 (unrecognized opcode: `wrteei')
+        # v5.19-rc2-164-g2255411d1d0f (Wed Jul 27 21:36:06 2022 +1000)
+        # https://git.kernel.org/linus/2255411d1d0f0661d1e5acd5f6edf4e6652a345a
         cbl_1814 = '2255411d1d0f0' in self.lsm.commits and not has_44x_hack
+        # https://github.com/ClangBuiltLinux/linux/issues/1679
         cbl_1679 = self._llvm_version < (cbl_1679_fixed_ver := ClangVersion(16, 0, 0)) and cbl_1814
 
         if cbl_1679:
@@ -87,6 +99,10 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         else:
             runner = PowerPCLLVMKernelRunner()
             runner.boot_arch = 'ppc32'
+            # https://github.com/ClangBuiltLinux/linux/issues/1345
+            # powerpc/irq: Inline call_do_irq() and call_do_softirq()
+            # v5.12-rc3-100-g48cf12d88969 (Mon Mar 29 13:22:17 2021 +1100)
+            # https://git.kernel.org/linus/48cf12d88969bd4238b8769767eb476970319d93
             cbl_1345 = self._llvm_version < (12, 0, 1) and '48cf12d88969b' in self.lsm.commits
             runner.bootable = not (cbl_1345 or cbl_1814)
             if not runner.bootable:
@@ -110,9 +126,14 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
             runner.qemu_arch = 'ppc'
             self._runners.append(runner)
 
+        # lib/xor: make xor prototypes more friendly to compiler vectorization
+        # v5.17-rc1-61-g297565aa22cf (Fri Feb 11 20:39:39 2022 +1100)
+        # https://git.kernel.org/linus/297565aa22cfa80ab0f88c3569693aea0b6afb6d
         if '297565aa22cfa' in self.lsm.commits:
             runner = PowerPCLLVMKernelRunner()
             runner.boot_arch = 'ppc32_mac'
+            # [JumpThreading] Ignore free instructions
+            # llvmorg-14-init-4665-g1e3c6fc7cb9d (Thu Sep 23 18:28:36 2021 +0200)
             # https://github.com/llvm/llvm-project/commit/1e3c6fc7cb9d2ee6a5328881f95d6643afeadbff
             runner.bootable = self._llvm_version >= (
                 pmac_min_llvm_ver_for_boot := ClangVersion(14, 0, 0)
@@ -120,6 +141,9 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
             if not runner.bootable:
                 runner.result.boot = f"skipped due to LLVM < {pmac_min_llvm_ver_for_boot} (using '{self._llvm_version}')"
             runner.configs = ['pmac32_defconfig']
+            # powerpc/pmac32: enable serial options by default in defconfig
+            # v6.5-rc3-36-g0b5e06e9cb15 (Mon Aug 14 21:54:04 2023 +1000)
+            # https://git.kernel.org/linus/0b5e06e9cb156e7e97bfb4e1ebf6acd62497eaf5
             if '0b5e06e9cb156' not in self.lsm.commits:
                 runner.configs += [
                     'CONFIG_SERIAL_PMACZILOG=y',
@@ -144,8 +168,20 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         runner.boot_arch = 'ppc64'
         runner.bootable = True
         runner.configs = ['ppc64_guest_defconfig']
+        # https://github.com/ClangBuiltLinux/linux/issues/668
+        # powerpc/pmac/smp: Avoid unused-variable warnings
+        # v5.6-rc2-66-g9451c79bc39e (Tue Mar 17 23:40:36 2020 +1100)
+        # https://git.kernel.org/linus/9451c79bc39e610882bdd12370f01af5004a3c4f
         wa_cbl_668 = '9451c79bc39e' not in self.lsm.commits
+        # https://github.com/ClangBuiltLinux/linux/issues/1292
+        # KVM: PPC: Book3S HV: Workaround high stack usage with clang
+        # v5.13-rc2-41-g51696f39cbee (Wed Jun 23 00:18:30 2021 +1000)
+        # https://git.kernel.org/linus/51696f39cbee5bb684e7959c0c98b5f54548aa34
         wa_cbl_1292 = '51696f39cbee5' not in self.lsm.commits and self._llvm_version >= (12, 0, 0)
+        # https://github.com/ClangBuiltLinux/linux/issues/1445
+        # [Clang][CFG] check children statements of asm goto
+        # llvmorg-14-init-14129-g3a604fdbcd5f (Fri Jan 7 14:11:08 2022 -0800)
+        # https://github.com/llvm/llvm-project/commit/3a604fdbcd5fd9ca41f6659692bb4ad2151c3cf4
         wa_cbl_1445 = self.lsm.version >= (5, 18, 0) and self._llvm_version < (14, 0, 0)
         if wa_cbl_668 or wa_cbl_1292 or wa_cbl_1445:
             runner.configs.append('CONFIG_PPC_DISABLE_WERROR=y')
@@ -161,6 +197,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         # This needs to happen before the LLVM_IAS assignment below.
         runner.make_vars.update(self._ppc64_vars)
         if no_elfv2:
+            # ppc64 pseries_defconfig ld.lld errors
             # https://github.com/ClangBuiltLinux/linux/issues/602
             runner.make_vars['LD'] = f"{self.make_vars['CROSS_COMPILE']}ld"
             # The PowerPC vDSO at the time of this comment (6.5-rc3) uses $(CC)
@@ -183,7 +220,11 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         runner.bootable = True
         runner.configs = ['powernv_defconfig']
         runner.make_vars.update(self._ppc64le_vars)
+        # ld.lld unknown relocation (110) against symbol for powerpc64
         # https://github.com/ClangBuiltLinux/linux/issues/1260
+        # [ELF] Support R_PPC64_ADDR16_HIGH
+        # llvmorg-12-init-17087-g5fcb412ed083 (Tue Jan 19 11:42:53 2021 -0800)
+        # https://github.com/llvm/llvm-project/commit/5fcb412ed0831ad763810f9b424149b3b353451a
         if self._llvm_version < (12, 0, 0) and 'LD' not in self.make_vars:
             runner.make_vars['LD'] = f"{self.make_vars['CROSS_COMPILE']}ld"
         runner.only_test_boot = self.only_test_boot
@@ -201,7 +242,13 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
             parts = [
                 'skipped due to',
                 'CONFIG_RELOCATABLE=y,',
+                # [ELF] --emit-relocs: fix st_value of STT_SECTION in the presence of a gap before the first input section
+                # llvmorg-12-init-10472-g2fc704a0a529 (Mon Nov 2 08:37:15 2020 -0800)
+                # https://github.com/llvm/llvm-project/commit/2fc704a0a529dd7eba7566a293f981a86bfa5c3e
                 'LLVM < 12.0.0 (2fc704a0a529d),',
+                # kbuild: link symbol CRCs at final link, removing CONFIG_MODULE_REL_CRCS
+                # v5.18-rc1-54-g7b4537199a4a (Tue May 24 16:33:20 2022 +0900)
+                # https://git.kernel.org/linus/7b4537199a4a8480b8c3ba37a2d44765ce76cd9b
                 'and Linux < 5.19 (7b4537199a4a)',
             ]
             runner.result.boot = ' '.join(parts)
@@ -223,6 +270,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         # This needs to happen before the LLVM_IAS assignment below.
         runner.make_vars.update(self._ppc64_vars)
         if no_elfv2:
+            # ppc64 pseries_defconfig ld.lld errors
             # https://github.com/ClangBuiltLinux/linux/issues/602
             runner.make_vars['LD'] = f"{self.make_vars['CROSS_COMPILE']}ld"
             # See comment in ppc64_guest_defconfig
@@ -255,6 +303,12 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         else:
             self._skip_one(
                 f"{KERNEL_ARCH} allmodconfig",
+                # powerpc: Allow CONFIG_PPC64_BIG_ENDIAN_ELF_ABI_V2 with ld.lld 15+
+                # v6.3-rc2-10-ga11334d8327b (Wed Mar 15 00:52:10 2023 +1100)
+                # https://git.kernel.org/linus/a11334d8327b3fd7987cbfb38e956a44c722d88f
+                # powerpc/64: Force ELFv2 when building with LLVM linker
+                # v6.4-rc2-35-g9d90161ca5c7 (Wed Jun 14 12:46:42 2023 +1000)
+                # https://git.kernel.org/linus/9d90161ca5c7234e80e14e563d198f322ca0c1d0
                 f"lack of a11334d8327b (from {min_lnx_ver_for_elfv2_select}) with LLVM < {min_llvm_ver_for_elfv2_select} (using '{self._llvm_version}') or lack of 9d90161ca5c7 (from {LinuxVersion(6, 5, 0)})",
             )
 
@@ -273,13 +327,21 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         for distro, config_name in configs:
             reason = None
             if distro in ('fedora', 'opensuse') and self.lsm.version < (5, 17, 0):
+                # Drop OpenSUSE's PowerPC configuration from 5.15
                 reason = 'https://github.com/ClangBuiltLinux/continuous-integration2/pull/775'
             elif (
                 distro == 'opensuse'
+                # powerpc/64: Make VDSO32 track COMPAT on 64-bit
+                # v5.9-rc2-94-g231b232df8f6 (Mon Sep 14 23:07:04 2020 +1000)
+                # https://git.kernel.org/linus/231b232df8f67e7d37af01259c21f2a131c3911e
                 and '231b232df8f67' in self.lsm.commits
+                # powerpc: Kconfig: disable CONFIG_COMPAT for clang < 12
+                # v5.13-rc2-26-g6fcb574125e6 (Sun May 23 20:51:35 2021 +1000)
+                # https://git.kernel.org/linus/6fcb574125e673f33ff058caa54b4e65629f3a08
                 and '6fcb574125e67' not in self.lsm.commits
                 and self._llvm_version <= (12, 0, 0)
             ):
+                # arch/powerpc/kernel/vdso32/gettimeofday.S:40: Error: syntax error; found @', expected ,'
                 reason = 'https://github.com/ClangBuiltLinux/linux/issues/1160'
 
             if reason:
@@ -312,6 +374,9 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
             self._runners.append(runner)
 
     def run(self) -> list[lkt.runner.Result]:
+        # powerpc: Add "-z notext" flag to disable diagnostic
+        # v5.14-rc2-77-g0355785313e2 (Sun Aug 15 13:49:39 2021 +1000)
+        # https://git.kernel.org/linus/0355785313e2191be4e1108cdbda94ddb0238c48
         if '0355785313e21' not in self.lsm.commits and 'CROSS_COMPILE' in self.make_vars:
             self._ppc64le_vars['LD'] = f"{self.make_vars['CROSS_COMPILE']}ld"
         if self.lsm.version >= MIN_IAS_LNX_VER and self._llvm_version >= MIN_IAS_LLVM_VER:

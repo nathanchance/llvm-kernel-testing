@@ -32,12 +32,14 @@ class I386LKTRunner(lkt.runner.LKTRunner):
         runner.configs = ['defconfig']
         runners.append(runner)
 
+        # x86, lto: Enable Clang LTO for 32-bit as well
+        # v5.13-rc2-3-g583bfd484bcc (Mon Jun 14 09:12:41 2021 -0700)
+        # https://git.kernel.org/linus/583bfd484bcc85e9371e7205fa9e827c18ae34fb
         if '583bfd484bcc8' in self.lsm.commits:
             runner = I386LLVMKernelRunner()
             runner.configs = ['defconfig', 'CONFIG_LTO_CLANG_THIN=y']
             runners.append(runner)
         else:
-            # https://git.kernel.org/linus/583bfd484bcc85e9371e7205fa9e827c18ae34fb
             self._skip_one(
                 f"{KERNEL_ARCH} LTO builds",
                 f"Linux < {LinuxVersion(5, 14, 0)} (have '{self.lsm.version}')",
@@ -67,6 +69,7 @@ class I386LKTRunner(lkt.runner.LKTRunner):
         runner.configs += self._disable_broken_configs_with_fortify()
         self._runners.append(runner)
 
+    # Fedora i686 config minus CONFIG_FORTIFY_SOURCE error in arch/x86/include/asm/checksum_32.h
     # https://github.com/ClangBuiltLinux/linux/issues/1442
     def _disable_broken_configs_with_fortify(self) -> list[str]:
         broken_configs = []
@@ -79,15 +82,19 @@ class I386LKTRunner(lkt.runner.LKTRunner):
         )
 
         if fortify_broken:
+            # i386 "error: builtin functions must be directly called" in fs/bcachefs/replicas.c
             # https://github.com/ClangBuiltLinux/linux/issues/1932
             if 'CONFIG_BCACHEFS_FS' in self.lsm.configs:
                 replicas_text = Path(self.folders.source, 'fs/bcachefs/replicas.c').read_text(
                     encoding='utf-8'
                 )
-                # https://git.kernel.org/next/linux-next/c/00593c344bf3eda115c3bdbc712ba2038747c8cf
+                # bcachefs: Don't pass memcmp() as a pointer
+                # v6.7-rc7-299-g0124f42da70c (Sun Jan 21 13:27:04 2024 -0500)
+                # https://git.kernel.org/linus/0124f42da70c513dc371b73688663c54e5a9666f
                 if 'bch2_memcmp' not in replicas_text:
                     broken_configs.append('CONFIG_BCACHEFS_FS=n')
 
+            # Fedora i686 config minus CONFIG_FORTIFY_SOURCE error in arch/x86/include/asm/checksum_32.h
             # https://github.com/ClangBuiltLinux/linux/issues/1442
             if self._llvm_version < (15, 0, 0):
                 broken_configs += [
@@ -100,12 +107,18 @@ class I386LKTRunner(lkt.runner.LKTRunner):
 
     def run(self) -> list[lkt.runner.Result]:
         if self.lsm.version < (min_lnx_ver := LinuxVersion(5, 9, 0)):
+            # x86/uaccess: Make __get_user_size() Clang compliant on 32-bit
+            # v5.8-rc6-11-g158807de5822 (Thu Jul 23 12:38:31 2020 +0200)
+            # https://git.kernel.org/linus/158807de5822d1079e162a3762956fd743dd483e
             return self._skip_all(
                 f"missing 158807de5822 (from {min_lnx_ver})",
                 f"i386 kernels do not build properly prior to Linux {min_lnx_ver}: https://github.com/ClangBuiltLinux/linux/issues/194",
             )
         if (
             self._llvm_version >= (min_llvm_ver := ClangVersion(12, 0, 0))
+            # x86/build: Treat R_386_PLT32 relocation as R_386_PC32
+            # v5.11-rc1-3-gbb73d07148c4 (Thu Jan 28 12:24:06 2021 +0100)
+            # https://git.kernel.org/linus/bb73d07148c405c293e576b40af37737faf23a6a
             and 'bb73d07148c40' not in self.lsm.commits
         ):
             return self._skip_all(
@@ -114,11 +127,17 @@ class I386LKTRunner(lkt.runner.LKTRunner):
             )
 
         if platform.machine() != 'x86_64':
+            # x86/boot: Add $(CLANG_FLAGS) to compressed KBUILD_CFLAGS
+            # v5.12-rc4-2-gd5cbd80e302d (Fri Mar 26 11:32:55 2021 +0100)
+            # https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f
             if 'd5cbd80e302df' not in self.lsm.commits:
                 return self._skip_all(
                     f"missing d5cbd80e302d (from {LinuxVersion(5, 13, 0)}) on a non-x86_64 host",
                     f"Cannot cross compile without https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f (from {LinuxVersion(5, 13, 0)})",
                 )
+            # Makefile: move initial clang flag handling into scripts/Makefile.clang
+            # v5.14-rc5-5-g6f5b41a2f5a6 (Tue Aug 10 09:13:25 2021 +0900)
+            # https://git.kernel.org/linus/6f5b41a2f5a6314614e286274eb8e985248aac60
             if '6f5b41a2f5a63' not in self.lsm.commits:
                 self.make_vars['CROSS_COMPILE'] = CROSS_COMPILE
 

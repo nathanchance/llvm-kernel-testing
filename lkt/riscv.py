@@ -13,20 +13,35 @@ QEMU_ARCH = 'riscv64'
 # https://git.kernel.org/torvalds/l/abc71bf0a70311ab294f97a7f16e8de03718c05a
 MIN_LNX_VER = LinuxVersion(5, 7, 0)
 
+# Merge patch series "riscv: KCFI support"
+# v6.5-rc1-46-g7f7d3ea6eb00 (Thu Aug 31 00:18:32 2023 -0700)
 # https://git.kernel.org/linus/7f7d3ea6eb000bd329a6f2fe3f1c7596c4e783e1
 MIN_LLVM_VER_CFI = ClangVersion(17, 0, 0)
-# https://git.kernel.org/riscv/c/021d23428bdbae032294e8f4a29cb53cb50ae71c
+# RISC-V: build: Allow LTO to be selected
+# v6.8-rc1-2-g021d23428bdb (Mon Jan 22 10:06:29 2024 -0800)
+# https://git.kernel.org/linus/021d23428bdbae032294e8f4a29cb53cb50ae71c
 MIN_LLVM_VER_LTO = ClangVersion(14, 0, 0)
+# [CodeGen][RISCV] Change Shadow Call Stack Register to X3
+# llvmorg-17-init-7844-gaa1d2693c256 (Wed Apr 12 21:06:22 2023 +0000)
 # https://github.com/llvm/llvm-project/commit/aa1d2693c25622ea4a8ee2b622ba2a617e18ef88
 MIN_LLVM_VER_SCS = ClangVersion(17, 0, 0)
 
+# error: Unsupported relocation type in arch/riscv/kernel/head.S
 # https://github.com/ClangBuiltLinux/linux/issues/1023
+# RISC-V: error: 2-byte data relocations not supported
 # https://github.com/ClangBuiltLinux/linux/issues/1143
+# RISCV: adjust handling of relocation emission for RISCV
+# llvmorg-13-init-13148-gbbea64250f65 (Thu Jun 17 08:20:02 2021 -0700)
+# https://github.com/llvm/llvm-project/commit/bbea64250f65480d787e1c5ff45c4de3ec2dcda8
 MIN_IAS_LLVM_VER = ClangVersion(13, 0, 0)
 
+# riscv: Allow CONFIG_CFI_CLANG to be selected
+# v6.5-rc1-6-g74f8fc31feb4 (Wed Aug 23 14:16:41 2023 -0700)
 # https://git.kernel.org/linus/74f8fc31feb4b756814ec0720f48ccdc1175f774
 LNX_VER_CFI = LinuxVersion(6, 6, 0)
-# https://git.kernel.org/riscv/c/021d23428bdbae032294e8f4a29cb53cb50ae71c
+# RISC-V: build: Allow LTO to be selected
+# v6.8-rc1-2-g021d23428bdb (Mon Jan 22 10:06:29 2024 -0800)
+# https://git.kernel.org/linus/021d23428bdbae032294e8f4a29cb53cb50ae71c
 EXPECTED_LNX_VER_LTO = LinuxVersion(6, 9, 0)
 
 
@@ -106,6 +121,8 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
 
         # The first version to support linker relaxation
         broken_lto_start = ClangVersion(15, 0, 0)
+        # [lld][RISCV] Handle relaxation reductions of more than 65536 bytes
+        # llvmorg-17-init-11453-g9d37ea95df1b (Tue May 16 14:59:36 2023 -0700)
         # https://github.com/llvm/llvm-project/commit/9d37ea95df1b84cca9b5e954d8964c976a5e303e
         broken_lto_end = ClangVersion(17, 0, 0)
         if not self._has_lto or broken_lto_start <= self._llvm_version < broken_lto_end:
@@ -124,6 +141,9 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
         distros = ('alpine', 'debian', 'fedora', 'opensuse')
         for distro in distros:
             runner = RISCVLLVMKernelRunner()
+            # riscv: set default pm_power_off to NULL
+            # v5.15-rc1-6-gf2928e224d85 (Mon Oct 4 14:16:57 2021 -0700)
+            # https://git.kernel.org/linus/f2928e224d85e7cc139009ab17cefdfec2df5d11
             runner.bootable = 'f2928e224d85e' in self.lsm.commits
             if not runner.bootable:
                 runner.result.boot = (
@@ -148,6 +168,9 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
                 print_text,
             )
 
+        # Makefile: move initial clang flag handling into scripts/Makefile.clang
+        # v5.14-rc5-5-g6f5b41a2f5a6 (Tue Aug 10 09:13:25 2021 +0900)
+        # https://git.kernel.org/linus/6f5b41a2f5a6314614e286274eb8e985248aac60
         if '6f5b41a2f5a63' not in self.lsm.commits:
             self.make_vars['CROSS_COMPILE'] = CROSS_COMPILE
         if self._llvm_version < MIN_IAS_LLVM_VER:
@@ -155,6 +178,9 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
 
         if (
             self._llvm_version < (13, 0, 0)
+            # riscv: Use -mno-relax when using lld linker
+            # v5.13-rc1-5-gec3a5cb61146 (Sat May 29 11:40:16 2021 -0700)
+            # https://git.kernel.org/linus/ec3a5cb61146c91f0f7dcec8b7e7157a4879a9ee
             or 'ec3a5cb61146c' not in self.lsm.commits
             or self.lsm.version <= (5, 10, 999)
         ):
@@ -180,6 +206,9 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
 
         if not self.only_test_boot:
             min_other_distro_lnx_ver = LinuxVersion(5, 8, 0)
+            # riscv: Use -mno-relax when using lld linker
+            # v5.13-rc1-5-gec3a5cb61146 (Sat May 29 11:40:16 2021 -0700)
+            # https://git.kernel.org/linus/ec3a5cb61146c91f0f7dcec8b7e7157a4879a9ee
             if self.lsm.version > min_other_distro_lnx_ver and 'ec3a5cb61146c' in self.lsm.commits:
                 if 'other' in self.targets:
                     self._add_otherconfig_runners()

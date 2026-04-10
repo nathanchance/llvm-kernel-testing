@@ -16,6 +16,8 @@ MIN_IAS_LNX_VER = LinuxVersion(5, 13, 0)
 # https://github.com/ClangBuiltLinux/linux/issues?q=is%3Aissue+label%3A%22%5BARCH%5D+arm32%22+label%3A%22%5BTOOL%5D+integrated-as%22+label%3A%22%5BFIXED%5D%5BLLVM%5D+13%22+
 MIN_IAS_LLVM_VER = ClangVersion(13, 0, 0)
 
+# Add generic KCFI operand bundle lowering
+# llvmorg-16-init-11473-gcacd3e73d7f8 (Tue Nov 22 23:01:18 2022 +0000)
 # https://github.com/llvm/llvm-project/commit/cacd3e73d7f87ef3593443271ab3f170d0360934
 MIN_LLVM_VER_CFI = ClangVersion(16, 0, 0)
 
@@ -52,6 +54,8 @@ class ArmLKTRunner(lkt.runner.LKTRunner):
             runner.boot_arch = boot_arch
             runner.configs = [config_target]
             if self.only_test_boot:
+                # ARM: dts: Move .dts files to vendor sub-directories
+                # v6.4-rc3-965-g724ba6751532 (Wed Jun 21 11:39:50 2023 -0600)
                 # https://git.kernel.org/linus/724ba6751532055db75992fc6ae21c3e322e94a7
                 dtb_prefix = (
                     'aspeed/'
@@ -66,7 +70,13 @@ class ArmLKTRunner(lkt.runner.LKTRunner):
 
         # https://github.com/ClangBuiltLinux/linux/issues/325
         if (
+            # ARM: 9122/1: select HAVE_FUTEX_CMPXCHG
+            # v5.15-rc1-1-g9d417cbe36ee (Tue Oct 19 10:37:34 2021 +0100)
+            # https://git.kernel.org/linus/9d417cbe36eee7afdd85c2e871685f8dab7c2dba
             '9d417cbe36eee' in self.lsm.commits
+            # futex: Remove futex_cmpxchg detection
+            # v5.16-rc1-3-g3297481d688a (Thu Nov 25 00:02:28 2021 +0100)
+            # https://git.kernel.org/linus/3297481d688a5cc2973ea58bd78e66b8639748b1
             or 'CONFIG_HAVE_FUTEX_CMPXCHG' not in self.lsm.configs
         ):
             runner = ArmLLVMKernelRunner()
@@ -83,7 +93,9 @@ class ArmLKTRunner(lkt.runner.LKTRunner):
             runner.configs = ['multi_v7_defconfig', self.lsm.get_cfi_y_config()]
             runners.append(runner)
         else:
-            # https://git.kernel.org/rmk/c/1a4fec49efe5273eb2fcf575175a117745f76f97
+            # ARM: 9392/2: Support CLANG CFI
+            # v6.9-rc1-9-g1a4fec49efe5 (Mon Apr 29 14:14:23 2024 +0100)
+            # https://git.kernel.org/linus/1a4fec49efe5273eb2fcf575175a117745f76f97
             self._skip_one(
                 f"{KERNEL_ARCH} CFI configs",
                 f"either LLVM < {MIN_LLVM_VER_CFI} (using '{self._llvm_version}') or Linux < {LinuxVersion(6, 10, 0)} (have '{self.lsm.version}')",
@@ -120,6 +132,9 @@ class ArmLKTRunner(lkt.runner.LKTRunner):
             if shutil.which(f"{cross_compile}as"):
                 break
 
+        # Makefile: move initial clang flag handling into scripts/Makefile.clang
+        # v5.14-rc5-5-g6f5b41a2f5a6 (Tue Aug 10 09:13:25 2021 +0900)
+        # https://git.kernel.org/linus/6f5b41a2f5a6314614e286274eb8e985248aac60
         if '6f5b41a2f5a63' not in self.lsm.commits:
             self.make_vars['CROSS_COMPILE'] = cross_compile
         if self._llvm_version < MIN_IAS_LLVM_VER or self.lsm.version < MIN_IAS_LNX_VER:

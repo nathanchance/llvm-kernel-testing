@@ -21,7 +21,9 @@ def can_build_arm64_big_endian(lsm: LinuxSourceManager, llvm_version: ClangVersi
     arm64_kconfig_txt = Path(lsm.folder, 'arch/arm64/Kconfig').read_text(encoding='utf-8')
 
     # Detect if big endian support is present and working in the kernel
-    # https://git.kernel.org/arm64/c/1cf89b6bf660c2e9fa137b3e160c7b1001937a78
+    # arm64: Kconfig: Make CPU_BIG_ENDIAN depend on BROKEN
+    # v6.17-rc1-3-g1cf89b6bf660 (Wed Sep 24 16:25:45 2025 +0100)
+    # https://git.kernel.org/linus/1cf89b6bf660c2e9fa137b3e160c7b1001937a78
     # Look for three states:
     # 1. That commit as it exists in the arm64 tree
     # 2. That commit with https://lore.kernel.org/aNU-sG84vqPj7p7G@sirena.org.uk/ addressed
@@ -33,7 +35,9 @@ def can_build_arm64_big_endian(lsm: LinuxSourceManager, llvm_version: ClangVersi
     be_broken = state_one in arm64_kconfig_txt or state_two in arm64_kconfig_txt
     be_exists = 'config CPU_BIG_ENDIAN' in arm64_kconfig_txt
 
-    # LLVM 15: https://git.kernel.org/linus/146a15b873353f8ac28dc281c139ff611a3c4848
+    # arm64: Restrict CPU_BIG_ENDIAN to GNU as or LLVM IAS 15.x or newer
+    # v6.6-rc3-8-g146a15b87335 (Thu Oct 26 16:33:20 2023 +0100)
+    # https://git.kernel.org/linus/146a15b873353f8ac28dc281c139ff611a3c4848
     return llvm_version >= ClangVersion(15, 0, 0) and not be_broken and be_exists
 
 
@@ -78,6 +82,8 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
             runner.configs = ['defconfig', 'CONFIG_LTO_CLANG_THIN=y']
             runners.append(runner)
         else:
+            # arm64: allow LTO to be selected
+            # v5.11-rc2-16-g112b6a8e038d (Thu Jan 14 08:21:10 2021 -0800)
             # https://git.kernel.org/linus/112b6a8e038d793d016e330f53acb9383ac504b3
             self._skip_one(
                 f"{KERNEL_ARCH} LTO builds",
@@ -86,6 +92,9 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
 
         if self.lsm.arch_supports_kcfi(KERNEL_ARCH):
             cfi_y_config = self.lsm.get_cfi_y_config()
+            # cfi: Switch to -fsanitize=kcfi
+            # v6.0-rc4-5-g89245600941e (Mon Sep 26 10:13:13 2022 -0700)
+            # https://git.kernel.org/linus/89245600941e4e0f87d77f60ee269b5e61ef4e49
             if '89245600941e4' in self.lsm.commits:
                 runner = Arm64LLVMKernelRunner()
                 runner.configs = [
@@ -108,6 +117,8 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
             runner.configs = ['defconfig', 'CONFIG_SHADOW_CALL_STACK=y']
             runners.append(runner)
         else:
+            # arm64: Implement Shadow Call Stack
+            # v5.7-rc3-10-g5287569a790d (Fri May 15 16:35:50 2020 +0100)
             # https://git.kernel.org/linus/5287569a790d2546a06db07e391bf84b8bd6cf51
             self._skip_one(
                 f"{KERNEL_ARCH} CFI/SCS builds",
@@ -166,6 +177,9 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
 
     def run(self) -> list[lkt.runner.Result]:
         cross_compile: str = '' if platform.machine() == 'aarch64' else CROSS_COMPILE
+        # Makefile: move initial clang flag handling into scripts/Makefile.clang
+        # v5.14-rc5-5-g6f5b41a2f5a6 (Tue Aug 10 09:13:25 2021 +0900)
+        # https://git.kernel.org/linus/6f5b41a2f5a6314614e286274eb8e985248aac60
         if '6f5b41a2f5a63' not in self.lsm.commits and cross_compile:
             self.make_vars['CROSS_COMPILE'] = cross_compile
         if self.lsm.version < MIN_IAS_LNX_VER:

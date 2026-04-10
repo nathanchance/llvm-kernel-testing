@@ -12,10 +12,16 @@ CLANG_TARGET = 'x86_64-linux-gnu'
 CROSS_COMPILE = f"{CLANG_TARGET}-"
 QEMU_ARCH = 'x86_64'
 
+# KCFI sanitizer
+# llvmorg-16-init-2791-gcff5bef948c9 (Wed Aug 24 22:41:38 2022 +0000)
 # https://github.com/llvm/llvm-project/commit/cff5bef948c91e4919de8a5fb9765e0edc13f3de
 MIN_LLVM_VER_CFI = ClangVersion(16, 0, 0)
 
+# changed binding to STB_GLOBAL
 # https://github.com/ClangBuiltLinux/linux/issues/1190
+# x86/lib: Change .weak to SYM_FUNC_START_WEAK for arch/x86/lib/mem*_64.S
+# v5.10-rc2-1-g4d6ffa27b8e5 (Wed Nov 4 12:30:20 2020 +0100)
+# https://git.kernel.org/linus/4d6ffa27b8e5116c0abb318790fd01d4e12d75e6
 MIN_IAS_LNX_VER = LinuxVersion(5, 10, 0)
 
 
@@ -44,12 +50,17 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
             runner.configs = ['defconfig', 'CONFIG_LTO_CLANG_THIN=y']
             runners.append(runner)
         else:
+            # x86, build: allow LTO to be selected
+            # v5.11-rc2-27-gb33fff07e3e3 (Tue Feb 23 12:46:58 2021 -0800)
             # https://git.kernel.org/linus/b33fff07e3e3817d94dbec7bf2040070ecd96d16
             self._skip_one(
                 f"{KERNEL_ARCH} LTO builds",
                 f"Linux < {LinuxVersion(5, 12, 0)} (have '{self.lsm.version}')",
             )
 
+        # cfi: Switch to -fsanitize=kcfi
+        # v6.0-rc4-5-g89245600941e (Mon Sep 26 10:13:13 2022 -0700)
+        # https://git.kernel.org/linus/89245600941e4e0f87d77f60ee269b5e61ef4e49
         if self._llvm_version >= MIN_LLVM_VER_CFI and '89245600941e4' in self.lsm.commits:
             cfi_y_config = self.lsm.get_cfi_y_config()
 
@@ -61,7 +72,9 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
             runner.configs = ['defconfig', cfi_y_config, 'CONFIG_LTO_CLANG_THIN=y']
             runners.append(runner)
         else:
-            # https://git.kernel.org/linus/3c516f89e17e56b4738f05588e51267e295b5e63
+            # x86/Kconfig: Do not allow CONFIG_X86_X32_ABI=y with llvm-objcopy
+            # v5.17-rc8-55-gaaeed6ecc125 (Tue Mar 15 10:32:48 2022 +0100)
+            # https://git.kernel.org/linus/aaeed6ecc1253ce1463fa1aca0b70a4ccbc9fa75
             self._skip_one(
                 f"{KERNEL_ARCH} CFI configs",
                 f"either LLVM < {MIN_LLVM_VER_CFI} (using '{self._llvm_version}') or Linux < {LinuxVersion(6, 1, 0)} (have '{self.lsm.version}')",
@@ -80,6 +93,7 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
     def _add_otherconfig_runners(self) -> None:
         runner = X8664LLVMKernelRunner()
         runner.configs = ['allmodconfig']
+        # ERROR: "__memcat_p" [drivers/hwtracing/stm/stm_core.ko] undefined!
         # https://github.com/ClangBuiltLinux/linux/issues/515
         if self.lsm.version < (5, 7, 0):
             runner.configs += ['CONFIG_STM=n', 'CONFIG_TEST_MEMCAT_P=n']
@@ -108,6 +122,9 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
             runner.bootable = True
             runner.configs = [Path(self.folders.configs, distro, f"{config_name}.config")]
             has_x32 = lkt.utils.is_set(self.folders.source, runner.configs[0], 'X86_X32_ABI')
+            # x86/Kconfig: Do not allow CONFIG_X86_X32_ABI=y with llvm-objcopy
+            # v5.17-rc8-55-gaaeed6ecc125 (Tue Mar 15 10:32:48 2022 +0100)
+            # https://git.kernel.org/linus/aaeed6ecc1253ce1463fa1aca0b70a4ccbc9fa75
             needs_gnu_objcopy = 'aaeed6ecc1253' not in self.lsm.commits
             if has_x32 and needs_gnu_objcopy:
                 if 'CROSS_COMPILE' in self.make_vars:
@@ -123,6 +140,9 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
     def run(self) -> list[lkt.runner.Result]:
         cross_compile: str = ''
         if platform.machine() != KERNEL_ARCH:
+            # x86/boot: Add $(CLANG_FLAGS) to compressed KBUILD_CFLAGS
+            # v5.12-rc4-2-gd5cbd80e302d (Fri Mar 26 11:32:55 2021 +0100)
+            # https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f
             if 'd5cbd80e302df' not in self.lsm.commits:
                 return self._skip_all(
                     f"missing d5cbd80e302d (from {LinuxVersion(5, 13, 0)}) on a non-x86_64 host",
@@ -131,6 +151,9 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
 
             cross_compile = CROSS_COMPILE
 
+        # Makefile: move initial clang flag handling into scripts/Makefile.clang
+        # v5.14-rc5-5-g6f5b41a2f5a6 (Tue Aug 10 09:13:25 2021 +0900)
+        # https://git.kernel.org/linus/6f5b41a2f5a6314614e286274eb8e985248aac60
         if '6f5b41a2f5a63' not in self.lsm.commits and cross_compile:
             self.make_vars['CROSS_COMPILE'] = cross_compile
         if self.lsm.version < MIN_IAS_LNX_VER:
