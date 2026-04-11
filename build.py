@@ -28,7 +28,7 @@ import lkt.x86_64
 # This is the minimum version of Linux that can be used with this test
 # framework due to assumptions made throughout the framework with regards to
 # present commits and make variables.
-MINIMUM_SUPPORTED_LINUX_VERSION = LinuxVersion(5, 4, 0)
+MINIMUM_SUPPORTED_LINUX_VERSION = LinuxVersion(5, 15, 0)
 
 REPO = Path(__file__).resolve().parent
 SUPPORTED_TARGETS = [
