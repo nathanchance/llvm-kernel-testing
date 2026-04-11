@@ -146,15 +146,6 @@ class LinuxSourceManager:
             '925d046e7e52', 'static void cma_netevent_work_handler', 'drivers/infiniband/core/cma.c'
         )
 
-        # powerpc/pmac/smp: Avoid unused-variable warnings
-        # v5.6-rc2-66-g9451c79bc39e (Tue Mar 17 23:40:36 2020 +1100)
-        # https://git.kernel.org/linus/9451c79bc39e610882bdd12370f01af5004a3c4f
-        smp_c_txt = Path(self.folder, 'arch/powerpc/platforms/powermac/smp.c').read_text(
-            encoding='utf-8'
-        )
-        if not re.search('^volatile static long int core99_l2_cache;$', smp_c_txt, flags=re.M):
-            self.commits.append('9451c79bc39e')
-
         # ARM: 9122/1: select HAVE_FUTEX_CMPXCHG
         # v5.15-rc1-1-g9d417cbe36ee (Tue Oct 19 10:37:34 2021 +0100)
         # https://git.kernel.org/linus/9d417cbe36eee7afdd85c2e871685f8dab7c2dba
