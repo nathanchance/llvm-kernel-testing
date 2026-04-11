@@ -100,10 +100,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
             runner = PowerPCLLVMKernelRunner()
             runner.boot_arch = 'ppc32'
             # https://github.com/ClangBuiltLinux/linux/issues/1345
-            # powerpc/irq: Inline call_do_irq() and call_do_softirq()
-            # v5.12-rc3-100-g48cf12d88969 (Mon Mar 29 13:22:17 2021 +1100)
-            # https://git.kernel.org/linus/48cf12d88969bd4238b8769767eb476970319d93
-            cbl_1345 = self._llvm_version < (12, 0, 1) and '48cf12d88969b' in self.lsm.commits
+            cbl_1345 = self._llvm_version < (12, 0, 1)
             runner.bootable = not (cbl_1345 or cbl_1814)
             if not runner.bootable:
                 parts = ['skipped']

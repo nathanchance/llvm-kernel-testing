@@ -115,15 +115,6 @@ class LinuxSourceManager:
         else:
             self._add_commit('297565aa22cfa', '__restrict', 'arch/powerpc/lib/xor_vmx.c')
 
-        # powerpc/irq: Inline call_do_irq() and call_do_softirq()
-        # v5.12-rc3-100-g48cf12d88969 (Mon Mar 29 13:22:17 2021 +1100)
-        # https://git.kernel.org/linus/48cf12d88969bd4238b8769767eb476970319d93
-        self._add_commit(
-            '48cf12d88969b',
-            r"static __always_inline void call_do_softirq\(const void \*sp\)",
-            'arch/powerpc/kernel/irq.c',
-        )
-
         # KVM: PPC: Book3S HV: Workaround high stack usage with clang
         # v5.13-rc2-41-g51696f39cbee (Wed Jun 23 00:18:30 2021 +1000)
         # https://git.kernel.org/linus/51696f39cbee5bb684e7959c0c98b5f54548aa34
