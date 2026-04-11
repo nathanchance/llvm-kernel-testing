@@ -75,15 +75,6 @@ class LinuxSourceManager:
         if Path(self.folder, 'kernel/bpf/preload/Kconfig').exists():
             self.configs.append('CONFIG_BPF_PRELOAD')
 
-        # powerpc: Add "-z notext" flag to disable diagnostic
-        # v5.14-rc2-77-g0355785313e2 (Sun Aug 15 13:49:39 2021 +1000)
-        # https://git.kernel.org/linus/0355785313e2191be4e1108cdbda94ddb0238c48
-        self._add_commit(
-            '0355785313e21',
-            r"LDFLAGS_vmlinux-\$\(CONFIG_RELOCATABLE\) \+= -z notext",
-            'arch/powerpc/Makefile',
-        )
-
         # powerpc/pmac32: enable serial options by default in defconfig
         # v6.5-rc3-36-g0b5e06e9cb15 (Mon Aug 14 21:54:04 2023 +1000)
         # https://git.kernel.org/linus/0b5e06e9cb156e7e97bfb4e1ebf6acd62497eaf5

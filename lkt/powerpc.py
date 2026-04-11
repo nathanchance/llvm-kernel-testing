@@ -360,11 +360,6 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
             self._runners.append(runner)
 
     def run(self) -> list[lkt.runner.Result]:
-        # powerpc: Add "-z notext" flag to disable diagnostic
-        # v5.14-rc2-77-g0355785313e2 (Sun Aug 15 13:49:39 2021 +1000)
-        # https://git.kernel.org/linus/0355785313e2191be4e1108cdbda94ddb0238c48
-        if '0355785313e21' not in self.lsm.commits and 'CROSS_COMPILE' in self.make_vars:
-            self._ppc64le_vars['LD'] = f"{self.make_vars['CROSS_COMPILE']}ld"
         if self.lsm.version >= MIN_IAS_LNX_VER and self._llvm_version >= MIN_IAS_LLVM_VER:
             self._ppc64_vars['LLVM_IAS'] = '1'
             self._ppc64le_vars['LLVM_IAS'] = '1'
