@@ -44,11 +44,6 @@ class LinuxSourceManager:
         # https://git.kernel.org/linus/3297481d688a5cc2973ea58bd78e66b8639748b1
         self._add_config('CONFIG_HAVE_FUTEX_CMPXCHG', 'init/Kconfig')
 
-        # kbuild: add support for Clang LTO
-        # v5.11-rc2-2-gdc5723b02e52 (Thu Jan 14 08:21:08 2021 -0800)
-        # https://git.kernel.org/linus/dc5723b02e523b2c4a68667f7e28c65018f7202f
-        self._add_config('CONFIG_LTO_CLANG_THIN', 'arch/Kconfig')
-
         # kbuild: link symbol CRCs at final link, removing CONFIG_MODULE_REL_CRCS
         # v5.18-rc1-54-g7b4537199a4a (Tue May 24 16:33:20 2022 +0900)
         # https://git.kernel.org/linus/7b4537199a4a8480b8c3ba37a2d44765ce76cd9b

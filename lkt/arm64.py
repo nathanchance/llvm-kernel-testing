@@ -75,18 +75,9 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
                 f"LLVM < 15.0.0 (using '{self._llvm_version}') or no big endian support in Linux",
             )
 
-        if 'CONFIG_LTO_CLANG_THIN' in self.lsm.configs:
-            runner = Arm64LLVMKernelRunner()
-            runner.configs = ['defconfig', 'CONFIG_LTO_CLANG_THIN=y']
-            runners.append(runner)
-        else:
-            # arm64: allow LTO to be selected
-            # v5.11-rc2-16-g112b6a8e038d (Thu Jan 14 08:21:10 2021 -0800)
-            # https://git.kernel.org/linus/112b6a8e038d793d016e330f53acb9383ac504b3
-            self._skip_one(
-                f"{KERNEL_ARCH} LTO builds",
-                f"Linux < {LinuxVersion(5, 12, 0)} (have '{self.lsm.version}')",
-            )
+        runner = Arm64LLVMKernelRunner()
+        runner.configs = ['defconfig', 'CONFIG_LTO_CLANG_THIN=y']
+        runners.append(runner)
 
         if self.lsm.arch_supports_kcfi(KERNEL_ARCH):
             cfi_y_config = self.lsm.get_cfi_y_config()
@@ -138,15 +129,14 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
         runner.configs = ['allmodconfig']
         self._runners.append(runner)
 
-        if 'CONFIG_LTO_CLANG_THIN' in self.lsm.configs:
-            runner = Arm64LLVMKernelRunner()
-            runner.configs = [
-                'allmodconfig',
-                'CONFIG_GCOV_KERNEL=n',
-                'CONFIG_KASAN=n',
-                'CONFIG_LTO_CLANG_THIN=y',
-            ]
-            self._runners.append(runner)
+        runner = Arm64LLVMKernelRunner()
+        runner.configs = [
+            'allmodconfig',
+            'CONFIG_GCOV_KERNEL=n',
+            'CONFIG_KASAN=n',
+            'CONFIG_LTO_CLANG_THIN=y',
+        ]
+        self._runners.append(runner)
 
         for config_target in ('allnoconfig', 'tinyconfig'):
             runner = Arm64LLVMKernelRunner()

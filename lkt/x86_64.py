@@ -43,18 +43,9 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
         runner.configs = ['defconfig']
         runners.append(runner)
 
-        if 'CONFIG_LTO_CLANG_THIN' in self.lsm.configs:
-            runner = X8664LLVMKernelRunner()
-            runner.configs = ['defconfig', 'CONFIG_LTO_CLANG_THIN=y']
-            runners.append(runner)
-        else:
-            # x86, build: allow LTO to be selected
-            # v5.11-rc2-27-gb33fff07e3e3 (Tue Feb 23 12:46:58 2021 -0800)
-            # https://git.kernel.org/linus/b33fff07e3e3817d94dbec7bf2040070ecd96d16
-            self._skip_one(
-                f"{KERNEL_ARCH} LTO builds",
-                f"Linux < {LinuxVersion(5, 12, 0)} (have '{self.lsm.version}')",
-            )
+        runner = X8664LLVMKernelRunner()
+        runner.configs = ['defconfig', 'CONFIG_LTO_CLANG_THIN=y']
+        runners.append(runner)
 
         # cfi: Switch to -fsanitize=kcfi
         # v6.0-rc4-5-g89245600941e (Mon Sep 26 10:13:13 2022 -0700)
@@ -97,15 +88,14 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
             runner.configs += ['CONFIG_STM=n', 'CONFIG_TEST_MEMCAT_P=n']
         self._runners.append(runner)
 
-        if 'CONFIG_LTO_CLANG_THIN' in self.lsm.configs:
-            runner = X8664LLVMKernelRunner()
-            runner.configs = [
-                'allmodconfig',
-                'CONFIG_GCOV_KERNEL=n',
-                'CONFIG_KASAN=n',
-                'CONFIG_LTO_CLANG_THIN=y',
-            ]
-            self._runners.append(runner)
+        runner = X8664LLVMKernelRunner()
+        runner.configs = [
+            'allmodconfig',
+            'CONFIG_GCOV_KERNEL=n',
+            'CONFIG_KASAN=n',
+            'CONFIG_LTO_CLANG_THIN=y',
+        ]
+        self._runners.append(runner)
 
     def _add_distroconfig_runners(self) -> None:
         configs: list[tuple[str, str]] = [
