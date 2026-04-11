@@ -810,7 +810,7 @@ class LLVMKernelRunner:
             raise RuntimeError('No build folder set?')
         if not self.configs:
             raise RuntimeError('No configuration to build?')
-        if not self.lsm:
+        if not lkt.utils.path_is_set(self.lsm.folder):
             raise RuntimeError('No source manager set?')
 
         self._config = Path(self.folders.build, '.config')
