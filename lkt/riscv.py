@@ -10,9 +10,6 @@ CLANG_TARGET = 'riscv64-linux-gnu'
 CROSS_COMPILE = f"{CLANG_TARGET}-"
 QEMU_ARCH = 'riscv64'
 
-# https://git.kernel.org/torvalds/l/abc71bf0a70311ab294f97a7f16e8de03718c05a
-MIN_LNX_VER = LinuxVersion(5, 7, 0)
-
 # Merge patch series "riscv: KCFI support"
 # v6.5-rc1-46-g7f7d3ea6eb00 (Thu Aug 31 00:18:32 2023 -0700)
 # https://git.kernel.org/linus/7f7d3ea6eb000bd329a6f2fe3f1c7596c4e783e1
@@ -153,21 +150,6 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
             self._runners.append(runner)
 
     def run(self) -> list[lkt.runner.Result]:
-        if self.lsm.version < MIN_LNX_VER:
-            print_text = (
-                f"RISC-V needs the following fixes from Linux {MIN_LNX_VER} to build properly:\n"
-                '\n'
-                '        * https://git.kernel.org/linus/52e7c52d2ded5908e6a4f8a7248e5fa6e0d6809a\n'
-                '        * https://git.kernel.org/linus/fdff9911f266951b14b20e25557278b5b3f0d90d\n'
-                '        * https://git.kernel.org/linus/abc71bf0a70311ab294f97a7f16e8de03718c05a\n'
-                '\n'
-                f"Provide a kernel tree with Linux {MIN_LNX_VER} or newer to build RISC-V kernels."
-            )
-            return self._skip_all(
-                f"missing 52e7c52d2ded, fdff9911f266, and/or abc71bf0a703 (from {MIN_LNX_VER})",
-                print_text,
-            )
-
         if self._llvm_version < MIN_IAS_LLVM_VER:
             self.make_vars['LLVM_IAS'] = '0'
 
