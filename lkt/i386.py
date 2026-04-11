@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import lkt.runner
-from lkt.version import ClangVersion, LinuxVersion
+from lkt.version import LinuxVersion
 
 KERNEL_ARCH = 'i386'
 CLANG_TARGET = 'i386-linux-gnu'
@@ -104,18 +104,6 @@ class I386LKTRunner(lkt.runner.LKTRunner):
         return broken_configs
 
     def run(self) -> list[lkt.runner.Result]:
-        if (
-            self._llvm_version >= (min_llvm_ver := ClangVersion(12, 0, 0))
-            # x86/build: Treat R_386_PLT32 relocation as R_386_PC32
-            # v5.11-rc1-3-gbb73d07148c4 (Thu Jan 28 12:24:06 2021 +0100)
-            # https://git.kernel.org/linus/bb73d07148c405c293e576b40af37737faf23a6a
-            and 'bb73d07148c40' not in self.lsm.commits
-        ):
-            return self._skip_all(
-                f"missing bb73d07148c4 (from {LinuxVersion(5, 12, 0)}) with LLVM > {min_llvm_ver} (using '{self._llvm_version}')",
-                f"x86 kernels do not build properly with LLVM {min_llvm_ver}+ without R_386_PLT32 handling: https://github.com/ClangBuiltLinux/linux/issues/1210",
-            )
-
         if 'def' in self.targets:
             self._add_defconfig_runners()
 

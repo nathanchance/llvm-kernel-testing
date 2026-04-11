@@ -240,11 +240,6 @@ class LinuxSourceManager:
             'arch/x86/Kconfig',
         )
 
-        # x86/build: Treat R_386_PLT32 relocation as R_386_PC32
-        # v5.11-rc1-3-gbb73d07148c4 (Thu Jan 28 12:24:06 2021 +0100)
-        # https://git.kernel.org/linus/bb73d07148c405c293e576b40af37737faf23a6a
-        self._add_commit('bb73d07148c40', 'R_386_PLT32:', 'arch/x86/tools/relocs.c')
-
         # MIPS: Malta: Enable BLK_DEV_INITRD
         # v5.17-rc3-5-gc47c7ab9b536 (Wed Feb 9 13:57:50 2022 +0100)
         # https://git.kernel.org/linus/c47c7ab9b53635860c6b48736efdd22822d726d7
