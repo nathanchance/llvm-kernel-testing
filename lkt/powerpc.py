@@ -329,20 +329,6 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
             if distro in ('fedora', 'opensuse') and self.lsm.version < (5, 17, 0):
                 # Drop OpenSUSE's PowerPC configuration from 5.15
                 reason = 'https://github.com/ClangBuiltLinux/continuous-integration2/pull/775'
-            elif (
-                distro == 'opensuse'
-                # powerpc/64: Make VDSO32 track COMPAT on 64-bit
-                # v5.9-rc2-94-g231b232df8f6 (Mon Sep 14 23:07:04 2020 +1000)
-                # https://git.kernel.org/linus/231b232df8f67e7d37af01259c21f2a131c3911e
-                and '231b232df8f67' in self.lsm.commits
-                # powerpc: Kconfig: disable CONFIG_COMPAT for clang < 12
-                # v5.13-rc2-26-g6fcb574125e6 (Sun May 23 20:51:35 2021 +1000)
-                # https://git.kernel.org/linus/6fcb574125e673f33ff058caa54b4e65629f3a08
-                and '6fcb574125e67' not in self.lsm.commits
-                and self._llvm_version <= (12, 0, 0)
-            ):
-                # arch/powerpc/kernel/vdso32/gettimeofday.S:40: Error: syntax error; found @', expected ,'
-                reason = 'https://github.com/ClangBuiltLinux/linux/issues/1160'
 
             if reason:
                 self._skip_one(f"{KERNEL_ARCH} {distro} config", reason)

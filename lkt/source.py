@@ -102,15 +102,6 @@ class LinuxSourceManager:
             'arch/arm64/Kconfig',
         )
 
-        # powerpc/64: Make VDSO32 track COMPAT on 64-bit
-        # v5.9-rc2-94-g231b232df8f6 (Mon Sep 14 23:07:04 2020 +1000)
-        # https://git.kernel.org/linus/231b232df8f67e7d37af01259c21f2a131c3911e
-        self._add_commit(
-            '231b232df8f67',
-            'config VDSO32\n\tdef_bool y\n\tdepends on PPC32 || COMPAT',
-            'arch/powerpc/platforms/Kconfig.cputype',
-        )
-
         # powerpc/44x: Fix build failure with GCC 12 (unrecognized opcode: `wrteei')
         # v5.19-rc2-164-g2255411d1d0f (Wed Jul 27 21:36:06 2022 +1000)
         # https://git.kernel.org/linus/2255411d1d0f0661d1e5acd5f6edf4e6652a345a
@@ -149,15 +140,6 @@ class LinuxSourceManager:
             '51696f39cbee5',
             'noinline_for_stack void byteswap_pt_regs',
             'arch/powerpc/kvm/book3s_hv_nested.c',
-        )
-
-        # Introduced by: powerpc: Kconfig: disable CONFIG_COMPAT for clang < 12
-        # Link: https://git.kernel.org/linus/6fcb574125e673f33ff058caa54b4e65629f3a08
-        # First appeared: v5.14-rc1~104^2~195
-        self._add_commit(
-            '6fcb574125e67',
-            'config COMPAT\n\tbool "[a-zA-Z0-9 ]+"\n\tdepends on PPC64\n\tdepends on !CC_IS_CLANG',
-            'arch/powerpc/Kconfig',
         )
 
         # Makefile: Add loongarch target flag for Clang compilation
