@@ -4,14 +4,14 @@ from pathlib import Path
 import re
 from typing import Optional
 
-from lkt.utils import DEFAULT_PATH
+import lkt.utils
 from lkt.version import LinuxVersion, MinToolVersion
 
 
 class LinuxSourceManager:
     def __init__(self, linux_source: Optional[Path] = None) -> None:
-        self.folder: Path = linux_source if linux_source else DEFAULT_PATH
-        if self.folder == DEFAULT_PATH:
+        self.folder: Path = linux_source if linux_source else lkt.utils.DEFAULT_PATH
+        if not lkt.utils.path_is_set(self.folder):
             return
 
         # Perform same check as Linux for clean source tree to catch early failures
