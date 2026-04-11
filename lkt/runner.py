@@ -780,6 +780,9 @@ class LLVMKernelRunner:
             self.configs.append('CONFIG_DEBUG_INFO_BTF=n')
 
         if (
+            # bpf: Drop libbpf, libelf, libz dependency from bpf preload.
+            # v5.16-11580-ge96f2d64c812 (Tue Feb 1 23:56:18 2022 +0100)
+            # https://git.kernel.org/linus/e96f2d64c812d9c20adea38a9b5e08feaa21fcf5
             'e96f2d64c812d' not in self.lsm.commits
             and 'CONFIG_BPF_PRELOAD' in self.lsm.configs
             and lkt.utils.is_set(self.folders.source, config, 'BPF_PRELOAD')
