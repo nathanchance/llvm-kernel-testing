@@ -236,7 +236,9 @@ class LinuxSourceManager:
             if match := re.search(r"config (CFI(?:_CLANG)?)$", arch_kconfig_txt, flags=re.M):
                 self._cfi_y_config = f"CONFIG_{match.groups()[0]}=y"
             else:
-                self._cfi_y_config = 'CONFIG_CFI_CLANG=y'
+                self._cfi_y_config = (
+                    f"CONFIG_CFI{'' if self.version >= LinuxVersion(6, 18, 0) else '_CLANG'}=y"
+                )
         return self._cfi_y_config
 
     def get_min_llvm_ver(self, arch=None) -> MinToolVersion:
