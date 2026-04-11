@@ -54,12 +54,6 @@ class LinuxSourceManager:
         # https://git.kernel.org/linus/5017b45946722bdd20ac255c9ae7273b78d1f12e
         self._add_config('CONFIG_PPC64_BIG_ENDIAN_ELF_ABI_V2', 'arch/powerpc/Kconfig')
 
-        # bpf: Add kernel module with user mode driver that populates bpffs.
-        # v5.9-rc1-124-gd71fa5c9763c (Thu Aug 20 16:02:36 2020 +0200)
-        # https://git.kernel.org/linus/d71fa5c9763c24dd997a2fa4feb7a13a95bab42c
-        if Path(self.folder, 'kernel/bpf/preload/Kconfig').exists():
-            self.configs.append('CONFIG_BPF_PRELOAD')
-
         # powerpc/pmac32: enable serial options by default in defconfig
         # v6.5-rc3-36-g0b5e06e9cb15 (Mon Aug 14 21:54:04 2023 +1000)
         # https://git.kernel.org/linus/0b5e06e9cb156e7e97bfb4e1ebf6acd62497eaf5
