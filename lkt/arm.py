@@ -65,25 +65,9 @@ class ArmLKTRunner(lkt.runner.LKTRunner):
                     runner.make_targets.append(f"{dtb_prefix}aspeed-bmc-opp-romulus.dtb")
             runners.append(runner)
 
-        # https://github.com/ClangBuiltLinux/linux/issues/325
-        if (
-            # ARM: 9122/1: select HAVE_FUTEX_CMPXCHG
-            # v5.15-rc1-1-g9d417cbe36ee (Tue Oct 19 10:37:34 2021 +0100)
-            # https://git.kernel.org/linus/9d417cbe36eee7afdd85c2e871685f8dab7c2dba
-            '9d417cbe36eee7afdd85c2e871685f8dab7c2dba' in self.lsm.commits
-            # futex: Remove futex_cmpxchg detection
-            # v5.16-rc1-3-g3297481d688a (Thu Nov 25 00:02:28 2021 +0100)
-            # https://git.kernel.org/linus/3297481d688a5cc2973ea58bd78e66b8639748b1
-            or 'CONFIG_HAVE_FUTEX_CMPXCHG' not in self.lsm.configs
-        ):
-            runner = ArmLLVMKernelRunner()
-            runner.configs = ['multi_v7_defconfig', 'CONFIG_THUMB2_KERNEL=y']
-            runners.append(runner)
-        else:
-            self._skip_one(
-                f"{KERNEL_ARCH} multi_v7_defconfig + Thumb2",
-                f"either lack of 9d417cbe36eee (from {LinuxVersion(5, 15, 0)}) or presence of CONFIG_HAVE_FUTEX_CMPXCHG",
-            )
+        runner = ArmLLVMKernelRunner()
+        runner.configs = ['multi_v7_defconfig', 'CONFIG_THUMB2_KERNEL=y']
+        runners.append(runner)
 
         if self._llvm_version >= MIN_LLVM_VER_CFI and self.lsm.arch_supports_kcfi(KERNEL_ARCH):
             runner = ArmLLVMKernelRunner()

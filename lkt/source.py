@@ -39,11 +39,6 @@ class LinuxSourceManager:
         # https://git.kernel.org/linus/f89632a9e5fa6c4787c14458cd42a9ef42025434
         self._add_config('CONFIG_DRM_WERROR', 'drivers/gpu/drm/Kconfig')
 
-        # futex: Remove futex_cmpxchg detection
-        # v5.16-rc1-3-g3297481d688a (Thu Nov 25 00:02:28 2021 +0100)
-        # https://git.kernel.org/linus/3297481d688a5cc2973ea58bd78e66b8639748b1
-        self._add_config('CONFIG_HAVE_FUTEX_CMPXCHG', 'init/Kconfig')
-
         # kbuild: link symbol CRCs at final link, removing CONFIG_MODULE_REL_CRCS
         # v5.18-rc1-54-g7b4537199a4a (Tue May 24 16:33:20 2022 +0900)
         # https://git.kernel.org/linus/7b4537199a4a8480b8c3ba37a2d44765ce76cd9b
@@ -142,16 +137,6 @@ class LinuxSourceManager:
             LinuxVersion(6, 0, 0),
             'static void cma_netevent_work_handler',
             'drivers/infiniband/core/cma.c',
-        )
-
-        # ARM: 9122/1: select HAVE_FUTEX_CMPXCHG
-        # v5.15-rc1-1-g9d417cbe36ee (Tue Oct 19 10:37:34 2021 +0100)
-        # https://git.kernel.org/linus/9d417cbe36eee7afdd85c2e871685f8dab7c2dba
-        self._add_commit(
-            '9d417cbe36eee7afdd85c2e871685f8dab7c2dba',
-            LinuxVersion(5, 15, 0),
-            'select HAVE_FUTEX_CMPXCHG if FUTEX',
-            'arch/arm/Kconfig',
         )
 
         # x86/Kconfig: Do not allow CONFIG_X86_X32_ABI=y with llvm-objcopy
