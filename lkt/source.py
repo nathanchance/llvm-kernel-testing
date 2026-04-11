@@ -75,12 +75,6 @@ class LinuxSourceManager:
         if Path(self.folder, 'kernel/bpf/preload/Kconfig').exists():
             self.configs.append('CONFIG_BPF_PRELOAD')
 
-        # Hexagon: add target builtins to kernel
-        # v5.12-13587-gf1f99adf05f2 (Mon May 3 11:04:22 2021 -0500)
-        # https://git.kernel.org/linus/f1f99adf05f2138ff2646d756d4674e302e8d02d
-        if Path(self.folder, 'arch/hexagon/lib/divsi3.S').exists():
-            self.commits.append('f1f99adf05f21')
-
         # powerpc: Add "-z notext" flag to disable diagnostic
         # v5.14-rc2-77-g0355785313e2 (Sun Aug 15 13:49:39 2021 +1000)
         # https://git.kernel.org/linus/0355785313e2191be4e1108cdbda94ddb0238c48
@@ -164,13 +158,6 @@ class LinuxSourceManager:
             '6fcb574125e67',
             'config COMPAT\n\tbool "[a-zA-Z0-9 ]+"\n\tdepends on PPC64\n\tdepends on !CC_IS_CLANG',
             'arch/powerpc/Kconfig',
-        )
-
-        # Hexagon: fix build errors
-        # v5.12-13584-g788dcee0306e (Mon May 3 11:04:18 2021 -0500)
-        # https://git.kernel.org/linus/788dcee0306e1bdbae1a76d1b3478bb899c5838e
-        self._add_commit(
-            '788dcee0306e1', r"KBUILD_CFLAGS \+= -mlong-calls", 'arch/hexagon/Makefile'
         )
 
         # Makefile: Add loongarch target flag for Clang compilation

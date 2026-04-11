@@ -46,21 +46,6 @@ class HexagonLKTRunner(lkt.runner.LKTRunner):
         if self.only_test_boot:
             return self._skip_all('only testing boot', 'Only boot testing was requested')
 
-        if not ('788dcee0306e1' in self.lsm.commits and 'f1f99adf05f21' in self.lsm.commits):
-            print_text = (
-                'Hexagon needs the following fixes from Linux 5.13 to build properly:\n'
-                '\n'
-                '  * https://git.kernel.org/linus/788dcee0306e1bdbae1a76d1b3478bb899c5838e\n'
-                '  * https://git.kernel.org/linus/6fff7410f6befe5744d54f0418d65a6322998c09\n'
-                '  * https://git.kernel.org/linus/f1f99adf05f2138ff2646d756d4674e302e8d02d\n'
-                '\n'
-                'Provide a kernel tree with Linux 5.13+ or one with these fixes to build Hexagon kernels.'
-            )
-            return self._skip_all(
-                f"missing 788dcee0306e, 6fff7410f6be, and/or f1f99adf05f2 (from {LinuxVersion(5, 13, 0)})",
-                print_text,
-            )
-
         if 'def' in self.targets:
             self._add_defconfig_runners()
 
