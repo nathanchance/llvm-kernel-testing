@@ -15,13 +15,6 @@ QEMU_ARCH = 'x86_64'
 # https://github.com/llvm/llvm-project/commit/cff5bef948c91e4919de8a5fb9765e0edc13f3de
 MIN_LLVM_VER_CFI = ClangVersion(16, 0, 0)
 
-# changed binding to STB_GLOBAL
-# https://github.com/ClangBuiltLinux/linux/issues/1190
-# x86/lib: Change .weak to SYM_FUNC_START_WEAK for arch/x86/lib/mem*_64.S
-# v5.10-rc2-1-g4d6ffa27b8e5 (Wed Nov 4 12:30:20 2020 +0100)
-# https://git.kernel.org/linus/4d6ffa27b8e5116c0abb318790fd01d4e12d75e6
-MIN_IAS_LNX_VER = LinuxVersion(5, 10, 0)
-
 
 class X8664LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
     def __init__(self) -> None:
@@ -126,9 +119,6 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
             self._runners.append(runner)
 
     def run(self) -> list[lkt.runner.Result]:
-        if self.lsm.version < MIN_IAS_LNX_VER:
-            self.make_vars['LLVM_IAS'] = '0'
-
         if 'def' in self.targets:
             self._add_defconfig_runners()
 
