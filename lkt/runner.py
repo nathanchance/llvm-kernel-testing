@@ -473,36 +473,11 @@ class LLVMKernelRunner:
             # v6.18-3954-g6abd4577bccc (Wed Dec 10 09:19:34 2025 +0100)
             # https://git.kernel.org/linus/6abd4577bccc66f83edfdb24dc484723ae99cbe8
             ('CAN_DEV', 'drivers/net/can/Kconfig'),
-            # power: supply: Allow charger manager can be built as a module
-            # v5.6-rc1-3-g241eaabc3c31 (Fri Mar 6 21:31:23 2020 +0100)
-            # https://git.kernel.org/linus/241eaabc3c315cdfea505725a43de848f498527f
-            ('CHARGER_MANAGER', 'drivers/power/supply/Kconfig'),
-            # crypto/chcr: Moving chelsio's inline ipsec functionality to /drivers/net
-            # v5.9-rc1-126-g1b77be463929 (Fri Aug 21 14:15:16 2020 -0700)
-            # https://git.kernel.org/linus/1b77be463929e6d3cefbc929f710305714a89723
-            ('CHELSIO_IPSEC_INLINE', 'drivers/net/ethernet/chelsio/inline_crypto/Kconfig'),
             # Several Mediatek common clock drivers were converted to modules over time
             *[
                 (f"COMMON_CLK_{mt_rev}{cfg_suffix}", 'drivers/clk/mediatek/Kconfig')
                 for mt_rev, cfg_suffixes in mtk_common_clk_cfgs.items()
                 for cfg_suffix in cfg_suffixes
-            ],
-            # coresight: core: Allow the coresight core driver to be built as a module
-            # v5.9-rc5-228-g8e264c52e1da (Mon Sep 28 19:47:42 2020 +0200)
-            # https://git.kernel.org/linus/8e264c52e1dab8a7c1e036222ef376c8920c3423
-            *[
-                (f"CORESIGHT{val}", 'drivers/hwtracing/coresight/Kconfig')
-                for val in (
-                    '',
-                    '_LINKS_AND_SINKS',
-                    '_LINK_AND_SINK_TMC',
-                    '_CATU',
-                    '_SINK_TPIU',
-                    '_SINK_ETBV10',
-                    '_SOURCE_ETM3X',
-                    '_SOURCE_ETM4X',
-                    '_STM',
-                )
             ],
             # cpufreq: dt-platdev: Support building as module
             # v6.4-rc1-8-g3b062a086984 (Mon Jun 5 16:33:05 2023 +0530)
@@ -527,10 +502,6 @@ class LLVMKernelRunner:
             # v6.17-rc3-12-gb646b782e522 (Fri Aug 29 09:49:18 2025 -0700)
             # https://git.kernel.org/linus/b646b782e522da3509e61f971e5502fccb3a3723
             ('CRYPTO_LIB_POLY1305_GENERIC', 'lib/crypto/Kconfig'),
-            # cs89x0: rework driver configuration
-            # v5.14-rc3-913-g47fd22f2b847 (Tue Aug 3 13:05:25 2021 +0100)
-            # https://git.kernel.org/linus/47fd22f2b84765a2f7e3f150282497b902624547
-            ('CS89x0_PLATFORM', 'drivers/net/ethernet/cirrus/Kconfig'),
             # lib: Allow for the DIM library to be modular
             # v6.9-rc6-1525-g0d5044b4e774 (Tue May 7 16:42:45 2024 -0700)
             # https://git.kernel.org/linus/0d5044b4e7749099b12da5f2c8618f04bb4fa82f
@@ -570,18 +541,10 @@ class LLVMKernelRunner:
                     # v6.1-rc1-42-g8dab99c9eab3 (Thu Nov 10 15:24:34 2022 +0100)
                     # https://git.kernel.org/linus/8dab99c9eab3162bfb4326c35579a3388dbf68f2
                     'DAVINCI',
-                    # gpio: mxc: Support module build
-                    # v5.9-rc1-39-g12d16b397ce0 (Tue Sep 29 15:04:31 2020 +0200)
-                    # https://git.kernel.org/linus/12d16b397ce0a999d13762c4c0cae2fb82eb60ee
-                    'MXC',
                     # gpio: palmas: Allow building as a module
                     # v6.16-rc1-90-gcfbbf275ffcf (Thu Jul 3 10:37:04 2025 +0200)
                     # https://git.kernel.org/linus/cfbbf275ffcf05c82994b8787b0d1974aa1569d8
                     'PALMAS',
-                    # gpio: pl061: Support building as module
-                    # v5.7-rc1-3-g616844408de7 (Tue Apr 14 16:23:46 2020 +0200)
-                    # https://git.kernel.org/linus/616844408de7f21546c3c2a71ea7f8d364f45e0d
-                    'PL061',
                     # gpio: tps68470: Allow building as module
                     # v5.17-rc1-5-ga1ce76e89907 (Mon Jan 24 17:23:15 2022 +0200)
                     # https://git.kernel.org/linus/a1ce76e89907a69713f729ff21db1efa00f3bb47
@@ -596,10 +559,6 @@ class LLVMKernelRunner:
             # v6.17-rc1-16-ge3ec97c3abaf (Wed Oct 1 00:00:45 2025 +0000)
             # https://git.kernel.org/linus/e3ec97c3abaf2fb68cc755cae3229288696b9f3d
             ('HYPERV', 'drivers/hv/Kconfig'),
-            # firmware: imx: Allow IMX DSP to be selected as module
-            # v5.5-rc1-4-gf52cdcce9197 (Thu Jan 9 17:21:33 2020 +0800)
-            # https://git.kernel.org/linus/f52cdcce9197fef9d4a68792dd3b840ad2b77117
-            ('IMX_DSP', 'drivers/firmware/imx/Kconfig'),
             # RDMA/hns: Clean up the legacy CONFIG_INFINIBAND_HNS
             # v6.13-rc1-49-g8977b561216c (Mon Jan 6 08:41:06 2025 -0500)
             # https://git.kernel.org/linus/8977b561216c7e693d61c6442657e33f134bfeb5
@@ -612,18 +571,10 @@ class LLVMKernelRunner:
             # v6.1-rc1-86-gd4b15e447c35 (Wed Dec 7 13:28:08 2022 +0000)
             # https://git.kernel.org/linus/d4b15e447c352ae74b18261bdaf0023fa9a7d1bd
             ('MFD_PALMAS', 'drivers/mfd/Kconfig'),
-            # iommu/mediatek: Allow building as module
-            # v5.12-rc3-2-g18d8c74ec598 (Wed Apr 7 10:33:58 2021 +0200)
-            # https://git.kernel.org/linus/18d8c74ec5987a78bd1e9c1c629dfdd04a151a89
-            ('MTK_IOMMU', 'drivers/iommu/Kconfig'),
             # mtk-mmsys: Change mtk-mmsys & mtk-mutex to modules
             # v6.2-rc1-7-ga7596e62dac7 (Mon Jan 9 17:17:47 2023 +0100)
             # https://git.kernel.org/linus/a7596e62dac7318456c1aa9af5bfccf0f8e6ad7e
             ('MTK_MMSYS', 'drivers/soc/mediatek/Kconfig'),
-            # memory: mtk-smi: Allow building as module
-            # v5.11-rc1-7-g50fc8d9232cd (Tue Jan 26 20:47:51 2021 +0100)
-            # https://git.kernel.org/linus/50fc8d9232cdc64b9e9d1b9488452f153de52b69
-            ('MTK_SMI', 'drivers/memory/Kconfig'),
             # mux: add visible config symbol to enable multiplexer subsystem
             # v7.0-rc1-8-gce5c7c17e706 (Mon Mar 9 13:44:45 2026 +0100)
             # https://git.kernel.org/linus/ce5c7c17e70640fc5635fd2252d0bdf4664d452b
@@ -656,97 +607,28 @@ class LLVMKernelRunner:
                     'DRA7XX',
                     'DRA7XX_EP',
                     'DRA7XX_HOST',
-                    # PCI: dwc: exynos: Rework the driver to support Exynos5433 variant
-                    # v5.10-rc3-23-g778f7c194b1d (Tue Dec 1 10:22:30 2020 +0000)
-                    # https://git.kernel.org/linus/778f7c194b1dac351d345ce723f8747026092949
-                    'EXYNOS',
-                    # PCI: meson: Build as module by default
-                    # v5.9-rc1-1-ga98d2187efd9 (Mon Oct 5 13:01:42 2020 +0100)
-                    # https://git.kernel.org/linus/a98d2187efd9e6d554efb50e3ed3a2983d340fe5
-                    'MESON',
                 )
             ],
             # PCI: mvebu: Add support for compiling driver as module
             # v5.16-rc1-22-g0746ae1be121 (Thu Jan 6 13:37:47 2022 +0000)
             # https://git.kernel.org/linus/0746ae1be12177ebda0666eefa82583cbaeeefd6
             ('PCI_MVEBU', 'drivers/pci/controller/Kconfig'),
-            # pinctrl: rockchip: make driver be tristate module
-            # v5.12-rc2-17-gbe786ac5a6c4 (Mon Mar 15 16:36:44 2021 +0100)
-            # https://git.kernel.org/linus/be786ac5a6c4bf4ef3e4c569a045d302c1e60fe6
-            ('PINCTRL_ROCKCHIP', 'drivers/pinctrl/Kconfig'),
             # pinctrl: spacemit: enable config option
             # v6.14-rc4-3-g7ff4faba6357 (Tue Feb 25 17:22:36 2025 +0100)
             # https://git.kernel.org/linus/7ff4faba63571c51004280f7eb5d6362b15ec61f
             ('PINCTRL_SPACEMIT_K1', 'drivers/pinctrl/spacemit/Kconfig'),
-            # power: reset: sc27xx: Allow the SC27XX poweroff driver building into a module
-            # v5.6-rc1-26-gf78c55e3b480 (Wed Mar 11 23:32:09 2020 +0100)
-            # https://git.kernel.org/linus/f78c55e3b4806974f7d590b2aab8683232b7bd25
-            ('POWER_RESET_SC27XX', 'drivers/power/reset/Kconfig'),
-            # thermal: int340x: processor_thermal: Refactor MMIO interface
-            # v5.10-rc1-30-ga5923b6c3137 (Thu Dec 10 12:29:47 2020 +0100)
-            # https://git.kernel.org/linus/a5923b6c3137b9d4fc2ea1c997f6e4d51ac5d774
-            ('PROC_THERMAL_MMIO_RAPL', 'drivers/thermal/intel/int340x_thermal/Kconfig'),
             # pwm: crc: Allow compilation as module and with COMPILE_TEST
             # v6.6-rc1-8-g91a69d38cf97 (Fri Oct 13 10:07:17 2023 +0200)
             # https://git.kernel.org/linus/91a69d38cf97b195fef1a10ea53cf429aa134497
             ('PWM_CRC', 'drivers/pwm/Kconfig'),
-            # mailbox: qcom-ipcc: Enable loading QCOM_IPCC as a module
-            # v5.14-rc7-2-g8d7e5908c0bc (Sun Aug 29 23:50:15 2021 -0500)
-            # https://git.kernel.org/linus/8d7e5908c0bcf8a0abc437385e58e49abab11a93
-            ('QCOM_IPCC', 'drivers/mailbox/Kconfig'),
-            *[
-                # pmdomain: qcom: Move Kconfig options to the pmdomain subsystem
-                # v6.6-rc1-20-g4eb42e5bd86d (Wed Oct 4 23:41:18 2023 +0200)
-                # https://git.kernel.org/linus/4eb42e5bd86da528be604845f52732742ef74e6b
-                (f"QCOM_RPM{val}PD", ('drivers/pmdomain/qcom/Kconfig', 'drivers/soc/qcom/Kconfig'))
-                for val in (
-                    # soc: qcom: rpmpd: Allow RPMPD driver to be loaded as a module
-                    # v5.7-rc1-22-gf29808b2fb85 (Tue Apr 14 15:39:56 2020 -0700)
-                    # https://git.kernel.org/linus/f29808b2fb85a7ff2d4830aa1cb736c8c9b986f4
-                    '',
-                    # soc: qcom: rpmhpd: Allow RPMHPD driver to be loaded as a module
-                    # v5.7-rc1-21-gd4889ec1fc6a (Tue Apr 14 15:39:46 2020 -0700)
-                    # https://git.kernel.org/linus/d4889ec1fc6ac6321cc1e8b35bb656f970926a09
-                    'H',
-                )
-            ],
             # media: make RADIO_ADAPTERS tristate
             # v5.18-rc3-170-g215d49a41709 (Fri May 13 11:02:19 2022 +0200)
             # https://git.kernel.org/linus/215d49a41709610b9e82a49b27269cfaff1ef0b6
             ('RADIO_ADAPTERS', 'drivers/media/radio/Kconfig'),
-            # math: make RATIONAL tristate
-            # v5.14-65-gbcda5fd34417 (Wed Sep 8 11:50:26 2021 -0700)
-            # https://git.kernel.org/linus/bcda5fd34417c89f653cc0912cc0608b36ea032c
-            ('RATIONAL', 'lib/math/Kconfig'),
-            # reset: imx7: Support module build
-            # v5.9-rc1-1-ga442abbbe186 (Wed Sep 23 14:25:31 2020 +0200)
-            # https://git.kernel.org/linus/a442abbbe186e14128d18bc3e42fb0fbf1a62210
-            ('RESET_IMX7', 'drivers/reset/Kconfig'),
-            # reset: meson: make it possible to build as a module
-            # v5.10-rc1-2-g3bfe8933f9d1 (Mon Nov 16 17:05:29 2020 +0100)
-            # https://git.kernel.org/linus/3bfe8933f9d187f93f0d0910b741a59070f58c4c
-            # reset: amlogic: move drivers to a dedicated directory
-            # v6.12-rc1-7-g2c138ee3354f (Tue Oct 1 10:40:32 2024 +0200)
-            # https://git.kernel.org/linus/2c138ee3354f8088769d05701a2e16d1cb4cc22d
-            ('RESET_MESON', ('drivers/reset/amlogic/Kconfig', 'drivers/reset/Kconfig')),
-            # rtw88: extract: make 8822b an individual kernel module
-            # v5.7-rc4-1504-g416e87fcc780 (Mon May 18 15:16:19 2020 +0300)
-            # https://git.kernel.org/linus/416e87fcc780cae8d72cb9370fa0f46007faa69a
-            # rtw88: extract: make 8822c an individual kernel module
-            # v5.7-rc4-1503-gba0fbe236fb8 (Mon May 18 15:16:18 2020 +0300)
-            # https://git.kernel.org/linus/ba0fbe236fb8a7b992e82d6eafb03a600f5eba43
-            *[
-                (f"RTW88_8822{val}E", 'drivers/net/wireless/realtek/rtw88/Kconfig')
-                for val in ('B', 'C')
-            ],
             # serial: sc16is7xx: split into core and I2C/SPI parts (core)
             # v6.9-rc3-58-gd49216438139 (Thu Apr 11 14:08:08 2024 +0200)
             # https://git.kernel.org/linus/d49216438139bca0454e69b6c4ab8a01af2b72ed
             *[(f"SERIAL_SC16IS7XX_{val}", 'drivers/tty/serial/Kconfig') for val in ('I2C', 'SPI')],
-            # serial: lantiq: Make driver modular
-            # v5.7-rc5-26-gad406341bdd7 (Fri May 15 12:22:19 2020 +0200)
-            # https://git.kernel.org/linus/ad406341bdd7d22ba9497931c2df5dde6bb9440e
-            ('SERIAL_LANTIQ', 'drivers/tty/serial/Kconfig'),
             # ASoC: SOF: Convert the generic probe support to SOF client
             # v5.17-rc1-108-g3dc0d7091778 (Thu Feb 10 15:19:12 2022 +0000)
             # https://git.kernel.org/linus/3dc0d709177828a22dfc9d0072e3ac937ef90d06
@@ -755,10 +637,6 @@ class LLVMKernelRunner:
             # v5.18-rc1-175-ge18610eaa66a (Tue Apr 19 16:30:31 2022 +0100)
             # https://git.kernel.org/linus/e18610eaa66a1849aaa00ca43d605fb1a6fed800
             ('SND_SOC_SOF_HDA_PROBES', 'sound/soc/sof/intel/Kconfig'),
-            # ASoC: sprd: Allow the MCDT driver to build into modules
-            # v5.6-rc1-220-gfd357ec595d3 (Thu Mar 5 13:15:17 2020 +0000)
-            # https://git.kernel.org/linus/fd357ec595d36676c239d8d16706a270a961ac32
-            ('SND_SOC_SPRD_MCDT', 'sound/soc/sprd/Kconfig'),
             # clk: sunxi-ng: Allow the CCU core to be built as a module
             # v5.16-rc1-4-g91389c390521 (Tue Nov 23 10:29:05 2021 +0100)
             # https://git.kernel.org/linus/91389c390521a02ecfb91270f5b9d7fae4312ae5
@@ -767,31 +645,7 @@ class LLVMKernelRunner:
             # v5.16-rc1-2-gc8c525b06f53 (Mon Nov 22 10:02:21 2021 +0100)
             # https://git.kernel.org/linus/c8c525b06f532923d21d99811a7b80bf18ffd2be
             ('SUN8I_DE2_CCU', 'drivers/clk/sunxi-ng/Kconfig'),
-            # kunit: allow kunit tests to be loaded as a module
-            # v5.5-rc5-4-gc475c77d5b56 (Thu Jan 9 16:42:29 2020 -0700)
-            # https://git.kernel.org/linus/c475c77d5b56398303e726969e81208196b3aab3
-            ('SYSCTL_KUNIT_TEST', 'lib/Kconfig.debug'),
-            *[
-                (f"TEGRA{ver}_EMC", 'drivers/memory/tegra/Kconfig')
-                for ver in (
-                    # memory: tegra124-emc: Make driver modular
-                    # v5.11-rc1-1-g281462e59348 (Tue Jan 5 18:00:09 2021 +0100)
-                    # https://git.kernel.org/linus/281462e593483350d8072a118c6e072c550a80fa
-                    '124',
-                    # memory: tegra20-emc: Make driver modular
-                    # v5.10-rc1-27-g0260979b018f (Thu Nov 26 18:50:35 2020 +0100)
-                    # https://git.kernel.org/linus/0260979b018faaf90ff5a7bb04ac3f38e9dee6e3
-                    '20',
-                    # memory: tegra30-emc: Make driver modular
-                    # v5.10-rc1-36-g0c56eda86f8c (Thu Nov 26 18:50:36 2020 +0100)
-                    # https://git.kernel.org/linus/0c56eda86f8cad705d7d14e81e0e4efaeeaf4613
-                    '30',
-                )
-            ],
             # net: ethernet: ti: Remove TI_CPTS_MOD workaround
-            # v5.7-rc4-192-g92db978f0d68 (Tue May 12 12:33:27 2020 -0700)
-            # https://git.kernel.org/linus/92db978f0d686468e527d49268e7c7e8d97d334b
-            ('TI_CPTS', 'drivers/net/ethernet/ti/Kconfig'),
             # dmaengine: ti: convert PSIL to be buildable as module
             # v6.1-rc1-9-gd15aae73a9f6 (Wed Oct 19 18:58:05 2022 +0530)
             # https://git.kernel.org/linus/d15aae73a9f6c321167b9120f263df7dbc08d2ba
@@ -825,14 +679,6 @@ class LLVMKernelRunner:
             # v6.1-rc4-20-ge2d55709398e (Mon Dec 5 12:04:32 2022 -0700)
             # https://git.kernel.org/linus/e2d55709398e62cf53e5c7df3758ae52cc62d63a
             ('VFIO_VIRQFD', 'drivers/vfio/Kconfig'),
-            # iommu/virtio: Build virtio-iommu as module
-            # v5.6-rc3-1-gfa4afd78ea12 (Fri Feb 28 16:19:57 2020 +0100)
-            # https://git.kernel.org/linus/fa4afd78ea12cf31113f8b146b696c500d6a9dc3
-            ('VIRTIO_IOMMU', 'drivers/iommu/Kconfig'),
-            # xen/pvcalls: backend can be a module
-            # v5.14-16-g45da234467f3 (Wed Sep 15 08:42:04 2021 +0200)
-            # https://git.kernel.org/linus/45da234467f381239d87536c86597149f189d375
-            ('XEN_PVCALLS_BACKEND', 'drivers/xen/Kconfig'),
         ]
         for config_sym, locations in compat_changes:
             # Check if the symbol is modular in the current configuration and move on if not
@@ -856,19 +702,6 @@ class LLVMKernelRunner:
 
             if not can_be_m:
                 configs.append(f"CONFIG_{config_sym}=y")
-                if config_sym == 'CS89x0_PLATFORM':
-                    configs.append('CONFIG_CS89x0=y')
-
-        # mfd: arizona: Allow building arizona MFD-core as module
-        # v5.13-rc1-54-g33d550701b91 (Wed Jun 2 10:50:04 2021 +0100)
-        # https://git.kernel.org/linus/33d550701b915938bd35ca323ee479e52029adf2
-        # Done manually because 'tristate'/'bool' is not right after 'config MFD_ARIZONA'...
-        mfd_arizona_is_m = lkt.utils.is_modular(
-            self.folders.source, self.folders.build, 'MFD_ARIZONA'
-        )
-        file_text = Path(self.folders.source, 'drivers/mfd/Makefile').read_text(encoding='utf-8')
-        if mfd_arizona_is_m and 'arizona-objs' not in file_text:
-            configs.append('CONFIG_MFD_ARIZONA=y')
 
         changed_type_cfgs: list[tuple[str, str]] = [
             # printk: Change type of CONFIG_BASE_SMALL to bool
