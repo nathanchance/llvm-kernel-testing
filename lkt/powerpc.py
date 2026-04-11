@@ -170,17 +170,12 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         # v5.6-rc2-66-g9451c79bc39e (Tue Mar 17 23:40:36 2020 +1100)
         # https://git.kernel.org/linus/9451c79bc39e610882bdd12370f01af5004a3c4f
         wa_cbl_668 = '9451c79bc39e' not in self.lsm.commits
-        # https://github.com/ClangBuiltLinux/linux/issues/1292
-        # KVM: PPC: Book3S HV: Workaround high stack usage with clang
-        # v5.13-rc2-41-g51696f39cbee (Wed Jun 23 00:18:30 2021 +1000)
-        # https://git.kernel.org/linus/51696f39cbee5bb684e7959c0c98b5f54548aa34
-        wa_cbl_1292 = '51696f39cbee5' not in self.lsm.commits and self._llvm_version >= (12, 0, 0)
         # https://github.com/ClangBuiltLinux/linux/issues/1445
         # [Clang][CFG] check children statements of asm goto
         # llvmorg-14-init-14129-g3a604fdbcd5f (Fri Jan 7 14:11:08 2022 -0800)
         # https://github.com/llvm/llvm-project/commit/3a604fdbcd5fd9ca41f6659692bb4ad2151c3cf4
         wa_cbl_1445 = self.lsm.version >= (5, 18, 0) and self._llvm_version < (14, 0, 0)
-        if wa_cbl_668 or wa_cbl_1292 or wa_cbl_1445:
+        if wa_cbl_668 or wa_cbl_1445:
             runner.configs.append('CONFIG_PPC_DISABLE_WERROR=y')
         # There is a warning at boot on 5.4, which does not appear in 5.10 or
         # newer. While it would be nice to investigate this issue, 5.4 is quite
@@ -262,7 +257,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         #######################
         runner = PowerPCLLVMKernelRunner()
         runner.configs = ['ppc64_defconfig']
-        if wa_cbl_668 or wa_cbl_1292 or wa_cbl_1445:
+        if wa_cbl_668 or wa_cbl_1445:
             runner.configs.append('CONFIG_PPC_DISABLE_WERROR=y')
         # This needs to happen before the LLVM_IAS assignment below.
         runner.make_vars.update(self._ppc64_vars)

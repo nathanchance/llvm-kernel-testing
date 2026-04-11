@@ -115,15 +115,6 @@ class LinuxSourceManager:
         else:
             self._add_commit('297565aa22cfa', '__restrict', 'arch/powerpc/lib/xor_vmx.c')
 
-        # KVM: PPC: Book3S HV: Workaround high stack usage with clang
-        # v5.13-rc2-41-g51696f39cbee (Wed Jun 23 00:18:30 2021 +1000)
-        # https://git.kernel.org/linus/51696f39cbee5bb684e7959c0c98b5f54548aa34
-        self._add_commit(
-            '51696f39cbee5',
-            'noinline_for_stack void byteswap_pt_regs',
-            'arch/powerpc/kvm/book3s_hv_nested.c',
-        )
-
         # Makefile: Add loongarch target flag for Clang compilation
         # v6.4-21-g65eea6b44a5d (Thu Jun 29 20:58:43 2023 +0800)
         # https://git.kernel.org/linus/65eea6b44a5dd332c50390fdaeda7e197802c484
