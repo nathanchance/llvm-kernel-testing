@@ -5,14 +5,11 @@ from pathlib import Path
 import lkt.runner
 from lkt.source import LinuxSourceManager
 import lkt.utils
-from lkt.version import ClangVersion, LinuxVersion
+from lkt.version import ClangVersion
 
 KERNEL_ARCH = 'arm64'
 CLANG_TARGET = 'aarch64-linux-gnu'
 QEMU_ARCH = 'aarch64'
-
-# https://github.com/ClangBuiltLinux/linux/issues/1106
-MIN_IAS_LNX_VER = LinuxVersion(5, 9, 0)
 
 
 def can_build_arm64_big_endian(lsm: LinuxSourceManager, llvm_version: ClangVersion) -> bool:
@@ -154,9 +151,6 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
             self._runners.append(runner)
 
     def run(self) -> list[lkt.runner.Result]:
-        if self.lsm.version < MIN_IAS_LNX_VER:
-            self.make_vars['LLVM_IAS'] = '0'
-
         if 'def' in self.targets:
             self._add_defconfig_runners()
 
