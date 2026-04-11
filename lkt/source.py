@@ -63,15 +63,6 @@ class LinuxSourceManager:
             'arch/powerpc/configs/pmac32_defconfig',
         )
 
-        # arm64: Restrict CPU_BIG_ENDIAN to GNU as or LLVM IAS 15.x or newer
-        # v6.6-rc3-8-g146a15b87335 (Thu Oct 26 16:33:20 2023 +0100)
-        # https://git.kernel.org/linus/146a15b873353f8ac28dc281c139ff611a3c4848
-        self._add_commit(
-            '146a15b873353',
-            'https://github.com/llvm/llvm-project/commit/1379b150991f70a5782e9a143c2ba5308da1161c',
-            'arch/arm64/Kconfig',
-        )
-
         # powerpc/44x: Fix build failure with GCC 12 (unrecognized opcode: `wrteei')
         # v5.19-rc2-164-g2255411d1d0f (Wed Jul 27 21:36:06 2022 +1000)
         # https://git.kernel.org/linus/2255411d1d0f0661d1e5acd5f6edf4e6652a345a
