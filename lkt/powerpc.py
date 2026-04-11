@@ -50,7 +50,7 @@ class PowerPCLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
     def __init__(self) -> None:
         super().__init__()
 
-        self.boot_arch: str = 'ppc64le'
+        self.boot_utils_arch: str = 'ppc64le'
         self.image_target: str = 'zImage.epapr'
         self.qemu_arch: str = 'ppc64'
 
@@ -100,7 +100,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
             )
         else:
             runner = PowerPCLLVMKernelRunner()
-            runner.boot_arch = 'ppc32'
+            runner.boot_utils_arch = 'ppc32'
             # https://github.com/ClangBuiltLinux/linux/issues/1345
             cbl_1345 = self._llvm_version < (12, 0, 1)
             runner.bootable = not (cbl_1345 or cbl_1814)
@@ -130,7 +130,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         # https://git.kernel.org/linus/297565aa22cfa80ab0f88c3569693aea0b6afb6d
         if '297565aa22cfa80ab0f88c3569693aea0b6afb6d' in self.lsm.commits:
             runner = PowerPCLLVMKernelRunner()
-            runner.boot_arch = 'ppc32_mac'
+            runner.boot_utils_arch = 'ppc32_mac'
             # [JumpThreading] Ignore free instructions
             # llvmorg-14-init-4665-g1e3c6fc7cb9d (Thu Sep 23 18:28:36 2021 +0200)
             # https://github.com/llvm/llvm-project/commit/1e3c6fc7cb9d2ee6a5328881f95d6643afeadbff
@@ -164,7 +164,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         no_elfv2 = not ppc64_be_defaults_to_elfv2(self.lsm)
 
         runner = PowerPCLLVMKernelRunner()
-        runner.boot_arch = 'ppc64'
+        runner.boot_utils_arch = 'ppc64'
         runner.bootable = True
         runner.configs = ['ppc64_guest_defconfig']
         # https://github.com/ClangBuiltLinux/linux/issues/1445

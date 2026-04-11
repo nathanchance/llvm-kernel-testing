@@ -30,7 +30,7 @@ class ArmLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
     def __init__(self) -> None:
         super().__init__()
 
-        self.boot_arch: str = 'arm32_v7'
+        self.boot_utils_arch: str = 'arm32_v7'
         self.image_target: str = 'zImage'
         self.qemu_arch: str = QEMU_ARCH
 
@@ -46,9 +46,9 @@ class ArmLKTRunner(lkt.runner.LKTRunner):
             ('aspeed_g5_defconfig', 'arm32_v6'),
             ('multi_v7_defconfig', 'arm32_v7'),
         ]
-        for config_target, boot_arch in defconfigs:
+        for config_target, boot_utils_arch in defconfigs:
             runner = ArmLLVMKernelRunner()
-            runner.boot_arch = boot_arch
+            runner.boot_utils_arch = boot_utils_arch
             runner.configs = [config_target]
             if self.only_test_boot:
                 # ARM: dts: Move .dts files to vendor sub-directories

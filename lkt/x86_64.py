@@ -20,7 +20,7 @@ class X8664LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
     def __init__(self) -> None:
         super().__init__()
 
-        self.boot_arch = KERNEL_ARCH
+        self.boot_utils_arch = KERNEL_ARCH
         self.image_target = 'bzImage'
         self.qemu_arch = QEMU_ARCH
 

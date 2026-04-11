@@ -30,7 +30,7 @@ class S390LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
     def __init__(self) -> None:
         super().__init__()
 
-        self.boot_arch: str = KERNEL_ARCH
+        self.boot_utils_arch: str = KERNEL_ARCH
         self.image_target: str = 'bzImage'
         self.qemu_arch: str = QEMU_ARCH
 

@@ -12,7 +12,7 @@ class MipsLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
     def __init__(self) -> None:
         super().__init__()
 
-        self.boot_arch: str = 'mipsel'
+        self.boot_utils_arch: str = 'mipsel'
         self.image_target: str = 'vmlinux'
         self.qemu_arch: str = 'mipsel'
 
@@ -49,7 +49,7 @@ class MipsLKTRunner(lkt.runner.LKTRunner):
         runners.append(runner)
 
         runner = MipsLLVMKernelRunner()
-        runner.boot_arch = 'mips'
+        runner.boot_utils_arch = 'mips'
         runner.configs = [
             'malta_defconfig',
             'CONFIG_CPU_BIG_ENDIAN=y',

@@ -40,7 +40,7 @@ class Arm64LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
     def __init__(self) -> None:
         super().__init__()
 
-        self.boot_arch: str = KERNEL_ARCH
+        self.boot_utils_arch: str = KERNEL_ARCH
         self.image_target: str = 'Image.gz'
         self.qemu_arch: str = QEMU_ARCH
 
@@ -63,7 +63,7 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
 
         if can_build_arm64_big_endian(self.lsm, self._llvm_version):
             runner = Arm64LLVMKernelRunner()
-            runner.boot_arch = 'arm64be'
+            runner.boot_utils_arch = 'arm64be'
             runner.configs = ['defconfig', 'CONFIG_CPU_BIG_ENDIAN=y']
             runners.append(runner)
         else:

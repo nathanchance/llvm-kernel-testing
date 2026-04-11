@@ -46,7 +46,7 @@ class RISCVLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
     def __init__(self) -> None:
         super().__init__()
 
-        self.boot_arch: str = 'riscv'
+        self.boot_utils_arch: str = 'riscv'
         self.image_target: str = 'Image'
         self.qemu_arch: str = QEMU_ARCH
 

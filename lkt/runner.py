@@ -59,7 +59,7 @@ class Result:
 class LLVMKernelRunner:
     def __init__(self) -> None:
         self.bootable: bool = False
-        self.boot_arch: str = ''
+        self.boot_utils_arch: str = ''
         self.configs: list[lkt.utils.PathString] = []
         self.folders: Folders = Folders()
         self.lsm: LinuxSourceManager = LinuxSourceManager()
@@ -85,7 +85,7 @@ class LLVMKernelRunner:
         if self.result.build == 'failed':
             self.result.boot = 'skipped'
             return
-        if not self.boot_arch:
+        if not self.boot_utils_arch:
             raise RuntimeError('No boot-utils architecture set?')
         if not self.qemu_arch:
             raise RuntimeError('No QEMU architecture set?')
@@ -101,7 +101,7 @@ class LLVMKernelRunner:
         boot_utils_cmd: lkt.utils.CmdList = [
             boot_qemu,
             '-a',
-            self.boot_arch,
+            self.boot_utils_arch,
             '-k',
             self.folders.build,
         ]
@@ -111,19 +111,19 @@ class LLVMKernelRunner:
         # help maintain that tool :)
         using_kvm = False
         if (machine := platform.machine()) == 'aarch64':
-            if self.boot_arch == 'arm32_v7':
+            if self.boot_utils_arch == 'arm32_v7':
                 el1_32 = Path(boot_qemu.parent, 'utils/aarch64_32_bit_el1_supported')
                 using_kvm = lkt.utils.run_check_rc_zero(el1_32) and HAVE_DEV_KVM_ACCESS
             else:
-                using_kvm = self.boot_arch in ('arm64', 'arm64be') and HAVE_DEV_KVM_ACCESS
+                using_kvm = self.boot_utils_arch in ('arm64', 'arm64be') and HAVE_DEV_KVM_ACCESS
         elif machine == 'x86_64':
-            using_kvm = self.boot_arch in ('x86', 'x86_64') and HAVE_DEV_KVM_ACCESS
+            using_kvm = self.boot_utils_arch in ('x86', 'x86_64') and HAVE_DEV_KVM_ACCESS
         # i386 may not have highmem automatically enabled after
         # x86/mm: Remove CONFIG_HIGHMEM64G support
         # v6.14-rc3-38-gbbeb69ce3013 (Thu Feb 27 11:21:53 2025 +0100)
         # https://git.kernel.org/linus/bbeb69ce301323e84f1677484eb8e4cd8fb1f9f8
         # and it does not need this workaround because it can only have 8 CPUs.
-        if using_kvm and self.boot_arch != 'x86':
+        if using_kvm and self.boot_utils_arch != 'x86':
             boot_utils_cmd += ['-m', '2G']
         lkt.utils.show_cmd(boot_utils_cmd)
         sys.stderr.flush()

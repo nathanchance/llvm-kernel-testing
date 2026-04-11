@@ -13,7 +13,7 @@ class I386LLVMKernelRunner(lkt.runner.LLVMKernelRunner):
     def __init__(self) -> None:
         super().__init__()
 
-        self.boot_arch: str = 'x86'
+        self.boot_utils_arch: str = 'x86'
         self.image_target: str = 'bzImage'
         self.qemu_arch: str = QEMU_ARCH
 
