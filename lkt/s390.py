@@ -12,9 +12,6 @@ CLANG_TARGET = 's390x-linux-gnu'
 CROSS_COMPILE = f"{CLANG_TARGET}-"
 QEMU_ARCH = 's390x'
 
-# https://lore.kernel.org/r/your-ad-here.call-01580230449-ext-6884@work.hours/
-MIN_LNX_VER = LinuxVersion(5, 6, 0)
-
 # While the change that raised the minimum version of LLVM for s390 did
 # not land in Linux until 5.14, backports to earlier versions may use
 # the assembly constructs that caused the minimum version to be bumped
@@ -83,15 +80,6 @@ class S390LKTRunner(lkt.runner.LKTRunner):
             self._runners.append(runner)
 
     def run(self) -> list[lkt.runner.Result]:
-        if self.lsm.version < MIN_LNX_VER:
-            print_text = (
-                f"s390 kernels did not build properly until Linux {MIN_LNX_VER}\n"
-                '        https://lore.kernel.org/lkml/your-ad-here.call-01580230449-ext-6884@work.hours/'
-            )
-            return self._skip_all(
-                f"missing fixes from {MIN_LNX_VER} (https://lore.kernel.org/r/your-ad-here.call-01580230449-ext-6884@work.hours/)",
-                print_text,
-            )
         if self._binutils_version >= (2, 39, 50) and '80ddf5ce1c929' not in self.lsm.commits:
             print_text = (
                 's390 kernels may fail to link with binutils 2.40+ and CONFIG_RELOCATABLE=n\n'
