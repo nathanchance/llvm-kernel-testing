@@ -58,7 +58,7 @@ class LinuxSourceManager:
         # v6.5-rc3-36-g0b5e06e9cb15 (Mon Aug 14 21:54:04 2023 +1000)
         # https://git.kernel.org/linus/0b5e06e9cb156e7e97bfb4e1ebf6acd62497eaf5
         self._add_commit(
-            '0b5e06e9cb156',
+            '0b5e06e9cb156e7e97bfb4e1ebf6acd62497eaf5',
             'CONFIG_SERIAL_PMACZILOG_CONSOLE=y',
             'arch/powerpc/configs/pmac32_defconfig',
         )
@@ -67,7 +67,7 @@ class LinuxSourceManager:
         # v5.19-rc2-164-g2255411d1d0f (Wed Jul 27 21:36:06 2022 +1000)
         # https://git.kernel.org/linus/2255411d1d0f0661d1e5acd5f6edf4e6652a345a
         self._add_commit(
-            '2255411d1d0f0',
+            '2255411d1d0f0661d1e5acd5f6edf4e6652a345a',
             'config POWERPC_CPU\n\tbool "Generic 32 bits powerpc"\n\tdepends on PPC_BOOK3S_32',
             'arch/powerpc/platforms/Kconfig.cputype',
         )
@@ -75,31 +75,47 @@ class LinuxSourceManager:
         # LoongArch: Allow building with kcov coverage
         # v6.5-114-g2363088eba2e (Wed Sep 6 22:53:55 2023 +0800)
         # https://git.kernel.org/linus/2363088eba2ecccfb643725e4864af73c4226a04
-        self._add_commit('2363088eba2ec', 'select ARCH_HAS_KCOV', 'arch/loongarch/Kconfig')
+        self._add_commit(
+            '2363088eba2ecccfb643725e4864af73c4226a04',
+            'select ARCH_HAS_KCOV',
+            'arch/loongarch/Kconfig',
+        )
 
         # lib/xor: make xor prototypes more friendly to compiler vectorization
         # v5.17-rc1-61-g297565aa22cf (Fri Feb 11 20:39:39 2022 +1100)
         # https://git.kernel.org/linus/297565aa22cfa80ab0f88c3569693aea0b6afb6d
         if Path(self.folder, 'lib/raid/xor/powerpc/xor_vmx.c').exists():
-            self.commits.append('297565aa22cfa')
+            self.commits.append('297565aa22cfa80ab0f88c3569693aea0b6afb6d')
         else:
-            self._add_commit('297565aa22cfa', '__restrict', 'arch/powerpc/lib/xor_vmx.c')
+            self._add_commit(
+                '297565aa22cfa80ab0f88c3569693aea0b6afb6d',
+                '__restrict',
+                'arch/powerpc/lib/xor_vmx.c',
+            )
 
         # Makefile: Add loongarch target flag for Clang compilation
         # v6.4-21-g65eea6b44a5d (Thu Jun 29 20:58:43 2023 +0800)
         # https://git.kernel.org/linus/65eea6b44a5dd332c50390fdaeda7e197802c484
-        self._add_commit('65eea6b44a5dd', 'loongarch64-linux-gnusf', 'scripts/Makefile.clang')
+        self._add_commit(
+            '65eea6b44a5dd332c50390fdaeda7e197802c484',
+            'loongarch64-linux-gnusf',
+            'scripts/Makefile.clang',
+        )
 
         # s390: always build relocatable kernel
         # v6.1-rc2-13-g80ddf5ce1c92 (Tue Nov 8 19:32:32 2022 +0100)
         # https://git.kernel.org/linus/80ddf5ce1c9291cb175d52ed1227134ad48c47ee
-        self._add_commit('80ddf5ce1c929', 'config RELOCATABLE\n\tdef_bool y', 'arch/s390/Kconfig')
+        self._add_commit(
+            '80ddf5ce1c9291cb175d52ed1227134ad48c47ee',
+            'config RELOCATABLE\n\tdef_bool y',
+            'arch/s390/Kconfig',
+        )
 
         # RDMA/cma: Distinguish between sockaddr_in and sockaddr_in6 by size
         # v6.2-rc3-52-g876e480da2f7 (Thu Feb 16 11:20:20 2023 -0400)
         # https://git.kernel.org/linus/876e480da2f74715fc70e37723e77ca16a631e35
         self._add_commit(
-            '876e480da2f74',
+            '876e480da2f74715fc70e37723e77ca16a631e35',
             r"__builtin_object_size\(sa, 0\) >= sizeof\(struct sockaddr_in",
             'drivers/infiniband/core/cma.c',
         )
@@ -107,25 +123,31 @@ class LinuxSourceManager:
         # cfi: Switch to -fsanitize=kcfi
         # v6.0-rc4-5-g89245600941e (Mon Sep 26 10:13:13 2022 -0700)
         # https://git.kernel.org/linus/89245600941e4e0f87d77f60ee269b5e61ef4e49
-        self._add_commit('89245600941e4', '-fsanitize=kcfi', 'Makefile')
+        self._add_commit('89245600941e4e0f87d77f60ee269b5e61ef4e49', '-fsanitize=kcfi', 'Makefile')
 
         # RDMA/core: Add a netevent notifier to cma
         # v5.19-rc1-4-g925d046e7e52 (Thu Jun 16 09:54:42 2022 +0300)
         # https://git.kernel.org/linus/925d046e7e52c71c3531199ce137e141807ef740
         self._add_commit(
-            '925d046e7e52', 'static void cma_netevent_work_handler', 'drivers/infiniband/core/cma.c'
+            '925d046e7e52c71c3531199ce137e141807ef740',
+            'static void cma_netevent_work_handler',
+            'drivers/infiniband/core/cma.c',
         )
 
         # ARM: 9122/1: select HAVE_FUTEX_CMPXCHG
         # v5.15-rc1-1-g9d417cbe36ee (Tue Oct 19 10:37:34 2021 +0100)
         # https://git.kernel.org/linus/9d417cbe36eee7afdd85c2e871685f8dab7c2dba
-        self._add_commit('9d417cbe36eee', 'select HAVE_FUTEX_CMPXCHG if FUTEX', 'arch/arm/Kconfig')
+        self._add_commit(
+            '9d417cbe36eee7afdd85c2e871685f8dab7c2dba',
+            'select HAVE_FUTEX_CMPXCHG if FUTEX',
+            'arch/arm/Kconfig',
+        )
 
         # x86/Kconfig: Do not allow CONFIG_X86_X32_ABI=y with llvm-objcopy
         # v5.17-rc8-55-gaaeed6ecc125 (Tue Mar 15 10:32:48 2022 +0100)
         # https://git.kernel.org/linus/aaeed6ecc1253ce1463fa1aca0b70a4ccbc9fa75
         self._add_commit(
-            'aaeed6ecc1253',
+            'aaeed6ecc1253ce1463fa1aca0b70a4ccbc9fa75',
             'https://github.com/ClangBuiltLinux/linux/issues/514',
             'arch/x86/Kconfig',
         )
@@ -134,7 +156,9 @@ class LinuxSourceManager:
         # v5.17-rc3-5-gc47c7ab9b536 (Wed Feb 9 13:57:50 2022 +0100)
         # https://git.kernel.org/linus/c47c7ab9b53635860c6b48736efdd22822d726d7
         self._add_commit(
-            'c47c7ab9b5363', 'CONFIG_BLK_DEV_INITRD=y', 'arch/mips/configs/malta_defconfig'
+            'c47c7ab9b53635860c6b48736efdd22822d726d7',
+            'CONFIG_BLK_DEV_INITRD=y',
+            'arch/mips/configs/malta_defconfig',
         )
 
         # bpf: Drop libbpf, libelf, libz dependency from bpf preload.
@@ -143,19 +167,25 @@ class LinuxSourceManager:
         if (
             preload_make := Path(self.folder, 'kernel/bpf/preload/Makefile')
         ).exists() and 'LIBBPF_OUT' not in preload_make.read_text(encoding='utf-8'):
-            self.commits.append('e96f2d64c812d')
+            self.commits.append('e96f2d64c812d9c20adea38a9b5e08feaa21fcf5')
 
         # riscv: set default pm_power_off to NULL
         # v5.15-rc1-6-gf2928e224d85 (Mon Oct 4 14:16:57 2021 -0700)
         # https://git.kernel.org/linus/f2928e224d85e7cc139009ab17cefdfec2df5d11
         self._add_commit(
-            'f2928e224d85e', r"void \(\*pm_power_off\)\(void\) = NULL;", 'arch/riscv/kernel/reset.c'
+            'f2928e224d85e7cc139009ab17cefdfec2df5d11',
+            r"void \(\*pm_power_off\)\(void\) = NULL;",
+            'arch/riscv/kernel/reset.c',
         )
 
         # hexagon: export raw I/O routines for modules
         # v5.16-rc1-318-gffb92ce826fd (Sat Nov 20 10:35:54 2021 -0800)
         # https://git.kernel.org/linus/ffb92ce826fd801acb0f4e15b75e4ddf0d189bde
-        self._add_commit('ffb92ce826fd8', r"EXPORT_SYMBOL\(__raw_readsw\)", 'arch/hexagon/lib/io.c')
+        self._add_commit(
+            'ffb92ce826fd801acb0f4e15b75e4ddf0d189bde',
+            r"EXPORT_SYMBOL\(__raw_readsw\)",
+            'arch/hexagon/lib/io.c',
+        )
 
     def _add_commit(self, commit: str, regex: str, file_path: Path | str) -> None:
         if not (file := Path(self.folder, file_path)).exists():

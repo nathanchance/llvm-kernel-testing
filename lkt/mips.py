@@ -31,7 +31,7 @@ class MipsLKTRunner(lkt.runner.LKTRunner):
         runners = []
 
         extra_configs: list[str] = []
-        if 'c47c7ab9b5363' not in self.lsm.commits:
+        if 'c47c7ab9b53635860c6b48736efdd22822d726d7' not in self.lsm.commits:
             extra_configs.append('CONFIG_BLK_DEV_INITRD=y')
 
         runner = MipsLLVMKernelRunner()

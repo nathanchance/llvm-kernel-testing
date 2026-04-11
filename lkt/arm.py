@@ -70,7 +70,7 @@ class ArmLKTRunner(lkt.runner.LKTRunner):
             # ARM: 9122/1: select HAVE_FUTEX_CMPXCHG
             # v5.15-rc1-1-g9d417cbe36ee (Tue Oct 19 10:37:34 2021 +0100)
             # https://git.kernel.org/linus/9d417cbe36eee7afdd85c2e871685f8dab7c2dba
-            '9d417cbe36eee' in self.lsm.commits
+            '9d417cbe36eee7afdd85c2e871685f8dab7c2dba' in self.lsm.commits
             # futex: Remove futex_cmpxchg detection
             # v5.16-rc1-3-g3297481d688a (Thu Nov 25 00:02:28 2021 +0100)
             # https://git.kernel.org/linus/3297481d688a5cc2973ea58bd78e66b8639748b1

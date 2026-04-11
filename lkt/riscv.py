@@ -141,7 +141,7 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
             # riscv: set default pm_power_off to NULL
             # v5.15-rc1-6-gf2928e224d85 (Mon Oct 4 14:16:57 2021 -0700)
             # https://git.kernel.org/linus/f2928e224d85e7cc139009ab17cefdfec2df5d11
-            runner.bootable = 'f2928e224d85e' in self.lsm.commits
+            runner.bootable = 'f2928e224d85e7cc139009ab17cefdfec2df5d11' in self.lsm.commits
             if not runner.bootable:
                 runner.result.boot = (
                     f"skipped due to lack of f2928e224d85e (from {LinuxVersion(5, 16, 0)})"

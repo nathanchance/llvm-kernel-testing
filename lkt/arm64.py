@@ -81,7 +81,7 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
             # cfi: Switch to -fsanitize=kcfi
             # v6.0-rc4-5-g89245600941e (Mon Sep 26 10:13:13 2022 -0700)
             # https://git.kernel.org/linus/89245600941e4e0f87d77f60ee269b5e61ef4e49
-            if '89245600941e4' in self.lsm.commits:
+            if '89245600941e4e0f87d77f60ee269b5e61ef4e49' in self.lsm.commits:
                 runner = Arm64LLVMKernelRunner()
                 runner.configs = [
                     'defconfig',

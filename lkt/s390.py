@@ -60,8 +60,8 @@ class S390LKTRunner(lkt.runner.LKTRunner):
             runner.configs = [config_target]
             if (
                 config_target == 'allmodconfig'
-                and '925d046e7e52' in self.lsm.commits
-                and '876e480da2f74' not in self.lsm.commits
+                and '925d046e7e52c71c3531199ce137e141807ef740' in self.lsm.commits
+                and '876e480da2f74715fc70e37723e77ca16a631e35' not in self.lsm.commits
             ):
                 runner.configs.append('CONFIG_INFINIBAND_ADDR_TRANS=n')
             self._runners.append(runner)
@@ -80,7 +80,10 @@ class S390LKTRunner(lkt.runner.LKTRunner):
             self._runners.append(runner)
 
     def run(self) -> list[lkt.runner.Result]:
-        if self._binutils_version >= (2, 39, 50) and '80ddf5ce1c929' not in self.lsm.commits:
+        if (
+            self._binutils_version >= (2, 39, 50)
+            and '80ddf5ce1c9291cb175d52ed1227134ad48c47ee' not in self.lsm.commits
+        ):
             print_text = (
                 's390 kernels may fail to link with binutils 2.40+ and CONFIG_RELOCATABLE=n\n'
                 '        https://github.com/ClangBuiltLinux/linux/issues/1747'

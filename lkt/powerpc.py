@@ -87,7 +87,9 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         # powerpc/44x: Fix build failure with GCC 12 (unrecognized opcode: `wrteei')
         # v5.19-rc2-164-g2255411d1d0f (Wed Jul 27 21:36:06 2022 +1000)
         # https://git.kernel.org/linus/2255411d1d0f0661d1e5acd5f6edf4e6652a345a
-        cbl_1814 = '2255411d1d0f0' in self.lsm.commits and not has_44x_hack
+        cbl_1814 = (
+            '2255411d1d0f0661d1e5acd5f6edf4e6652a345a' in self.lsm.commits and not has_44x_hack
+        )
         # https://github.com/ClangBuiltLinux/linux/issues/1679
         cbl_1679 = self._llvm_version < (cbl_1679_fixed_ver := ClangVersion(16, 0, 0)) and cbl_1814
 
@@ -126,7 +128,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         # lib/xor: make xor prototypes more friendly to compiler vectorization
         # v5.17-rc1-61-g297565aa22cf (Fri Feb 11 20:39:39 2022 +1100)
         # https://git.kernel.org/linus/297565aa22cfa80ab0f88c3569693aea0b6afb6d
-        if '297565aa22cfa' in self.lsm.commits:
+        if '297565aa22cfa80ab0f88c3569693aea0b6afb6d' in self.lsm.commits:
             runner = PowerPCLLVMKernelRunner()
             runner.boot_arch = 'ppc32_mac'
             # [JumpThreading] Ignore free instructions
@@ -141,7 +143,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
             # powerpc/pmac32: enable serial options by default in defconfig
             # v6.5-rc3-36-g0b5e06e9cb15 (Mon Aug 14 21:54:04 2023 +1000)
             # https://git.kernel.org/linus/0b5e06e9cb156e7e97bfb4e1ebf6acd62497eaf5
-            if '0b5e06e9cb156' not in self.lsm.commits:
+            if '0b5e06e9cb156e7e97bfb4e1ebf6acd62497eaf5' not in self.lsm.commits:
                 runner.configs += [
                     'CONFIG_SERIAL_PMACZILOG=y',
                     'CONFIG_SERIAL_PMACZILOG_CONSOLE=y',

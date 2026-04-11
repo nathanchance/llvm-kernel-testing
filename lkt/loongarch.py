@@ -57,7 +57,10 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
             *self._broken_configs,
         ]
         # https://github.com/ClangBuiltLinux/linux/issues/1895
-        if '2363088eba2ec' in self.lsm.commits and base_all_cfgs[0] == 'allyesconfig':
+        if (
+            '2363088eba2ecccfb643725e4864af73c4226a04' in self.lsm.commits
+            and base_all_cfgs[0] == 'allyesconfig'
+        ):
             base_all_cfgs.append('CONFIG_KCOV=n')
 
         runner = LoongArchLLVMKernelRunner()
@@ -101,7 +104,7 @@ class LoongArchLKTRunner(lkt.runner.LKTRunner):
                 f"LoongArch requires LLVM {min_llvm_ver} or newer {reason} (using '{self._llvm_version}')",
             )
 
-        if '65eea6b44a5dd' not in self.lsm.commits:
+        if '65eea6b44a5dd332c50390fdaeda7e197802c484' not in self.lsm.commits:
             print_text = (
                 f"LoongArch needs the following series from Linux {MIN_LNX_VER} to build properly:\n"
                 '\n'

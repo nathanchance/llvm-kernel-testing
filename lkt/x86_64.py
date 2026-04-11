@@ -43,7 +43,10 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
         # cfi: Switch to -fsanitize=kcfi
         # v6.0-rc4-5-g89245600941e (Mon Sep 26 10:13:13 2022 -0700)
         # https://git.kernel.org/linus/89245600941e4e0f87d77f60ee269b5e61ef4e49
-        if self._llvm_version >= MIN_LLVM_VER_CFI and '89245600941e4' in self.lsm.commits:
+        if (
+            self._llvm_version >= MIN_LLVM_VER_CFI
+            and '89245600941e4e0f87d77f60ee269b5e61ef4e49' in self.lsm.commits
+        ):
             cfi_y_config = self.lsm.get_cfi_y_config()
 
             runner = X8664LLVMKernelRunner()
@@ -106,7 +109,7 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
             # x86/Kconfig: Do not allow CONFIG_X86_X32_ABI=y with llvm-objcopy
             # v5.17-rc8-55-gaaeed6ecc125 (Tue Mar 15 10:32:48 2022 +0100)
             # https://git.kernel.org/linus/aaeed6ecc1253ce1463fa1aca0b70a4ccbc9fa75
-            needs_gnu_objcopy = 'aaeed6ecc1253' not in self.lsm.commits
+            needs_gnu_objcopy = 'aaeed6ecc1253ce1463fa1aca0b70a4ccbc9fa75' not in self.lsm.commits
             if has_x32 and needs_gnu_objcopy:
                 if 'CROSS_COMPILE' in self.make_vars:
                     runner.make_vars['OBJCOPY'] = f"{self.make_vars['CROSS_COMPILE']}objcopy"

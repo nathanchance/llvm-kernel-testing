@@ -24,7 +24,8 @@ class HexagonLKTRunner(lkt.runner.LKTRunner):
         # which breaks the check in lkt/source.py.
         ffb92ce826fd8_ver = LinuxVersion(5, 16, 0)
         have_ffb92ce826fd8 = (
-            self.lsm.version >= ffb92ce826fd8_ver or 'ffb92ce826fd8' in self.lsm.commits
+            self.lsm.version >= ffb92ce826fd8_ver
+            or 'ffb92ce826fd801acb0f4e15b75e4ddf0d189bde' in self.lsm.commits
         )
         # Misaligned constant address
         # https://github.com/ClangBuiltLinux/linux/issues/1407
