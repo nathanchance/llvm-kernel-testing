@@ -167,11 +167,6 @@ class LinuxSourceManager:
             'c47c7ab9b5363', 'CONFIG_BLK_DEV_INITRD=y', 'arch/mips/configs/malta_defconfig'
         )
 
-        # arm64: Kconfig: add a choice for endianness
-        # v5.4-rc3-112-gd8e85e144bbe (Thu Nov 14 14:39:03 2019 +0000)
-        # https://git.kernel.org/linus/d8e85e144bbe12e8d82c6b05d690a34da62cc991
-        self._add_commit('d8e85e144bbe1', 'prompt "Endianness"', 'arch/arm64/Kconfig')
-
         # bpf: Drop libbpf, libelf, libz dependency from bpf preload.
         # v5.16-11580-ge96f2d64c812 (Tue Feb 1 23:56:18 2022 +0100)
         # https://git.kernel.org/linus/e96f2d64c812d9c20adea38a9b5e08feaa21fcf5

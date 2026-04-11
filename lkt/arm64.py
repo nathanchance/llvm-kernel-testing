@@ -136,8 +136,6 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
     def _add_otherconfig_runners(self) -> None:
         runner = Arm64LLVMKernelRunner()
         runner.configs = ['allmodconfig']
-        if 'd8e85e144bbe1' not in self.lsm.commits:
-            runner.configs.append('CONFIG_CPU_BIG_ENDIAN=n')
         self._runners.append(runner)
 
         if 'CONFIG_LTO_CLANG_THIN' in self.lsm.configs:
