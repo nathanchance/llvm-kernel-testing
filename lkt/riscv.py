@@ -171,14 +171,7 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
         if self._llvm_version < MIN_IAS_LLVM_VER:
             self.make_vars['LLVM_IAS'] = '0'
 
-        if (
-            self._llvm_version < (13, 0, 0)
-            # riscv: Use -mno-relax when using lld linker
-            # v5.13-rc1-5-gec3a5cb61146 (Sat May 29 11:40:16 2021 -0700)
-            # https://git.kernel.org/linus/ec3a5cb61146c91f0f7dcec8b7e7157a4879a9ee
-            or 'ec3a5cb61146c' not in self.lsm.commits
-            or self.lsm.version <= (5, 10, 999)
-        ):
+        if self._llvm_version < (13, 0, 0):
             self.make_vars['LD'] = f"{CROSS_COMPILE}ld"
 
         riscv_kconfig_txt = Path(self.folders.source, 'arch/riscv/Kconfig').read_text(
@@ -200,19 +193,9 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
             self._add_defconfig_runners()
 
         if not self.only_test_boot:
-            min_other_distro_lnx_ver = LinuxVersion(5, 8, 0)
-            # riscv: Use -mno-relax when using lld linker
-            # v5.13-rc1-5-gec3a5cb61146 (Sat May 29 11:40:16 2021 -0700)
-            # https://git.kernel.org/linus/ec3a5cb61146c91f0f7dcec8b7e7157a4879a9ee
-            if self.lsm.version > min_other_distro_lnx_ver and 'ec3a5cb61146c' in self.lsm.commits:
-                if 'other' in self.targets:
-                    self._add_otherconfig_runners()
-                if 'distro' in self.targets:
-                    self._add_distroconfig_runners()
-            else:
-                self._skip_one(
-                    f"{KERNEL_ARCH} other and distro configs",
-                    f"Linux < {min_other_distro_lnx_ver} (have '{self.lsm.version}') or missing ec3a5cb61146c (from {LinuxVersion(5, 13, 0)})",
-                )
+            if 'other' in self.targets:
+                self._add_otherconfig_runners()
+            if 'distro' in self.targets:
+                self._add_distroconfig_runners()
 
         return super().run()

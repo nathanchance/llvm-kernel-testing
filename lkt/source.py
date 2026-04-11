@@ -175,20 +175,6 @@ class LinuxSourceManager:
         ).exists() and 'LIBBPF_OUT' not in preload_make.read_text(encoding='utf-8'):
             self.commits.append('e96f2d64c812d')
 
-        # riscv: Use -mno-relax when using lld linker
-        # v5.13-rc1-5-gec3a5cb61146 (Sat May 29 11:40:16 2021 -0700)
-        # https://git.kernel.org/linus/ec3a5cb61146c91f0f7dcec8b7e7157a4879a9ee
-        # Explicit version check because '-mno-relax' was removed in 6.18 with
-        # riscv: Unconditionally use linker relaxation
-        # v6.17-rc1-8-g7ccbe91796d7 (Thu Aug 28 16:58:45 2025 -0700)
-        # https://git.kernel.org/linus/7ccbe91796d7bb584a00833cb59ef7d4575ba784
-        if self.version >= LinuxVersion(5, 13, 0):
-            self.commits.append('ec3a5cb61146c')
-        else:
-            self._add_commit(
-                'ec3a5cb61146c', r"KBUILD_CFLAGS \+= -mno-relax", 'arch/riscv/Makefile'
-            )
-
         # riscv: set default pm_power_off to NULL
         # v5.15-rc1-6-gf2928e224d85 (Mon Oct 4 14:16:57 2021 -0700)
         # https://git.kernel.org/linus/f2928e224d85e7cc139009ab17cefdfec2df5d11
