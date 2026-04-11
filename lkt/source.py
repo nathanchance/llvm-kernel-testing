@@ -54,11 +54,6 @@ class LinuxSourceManager:
         # https://git.kernel.org/linus/5017b45946722bdd20ac255c9ae7273b78d1f12e
         self._add_config('CONFIG_PPC64_BIG_ENDIAN_ELF_ABI_V2', 'arch/powerpc/Kconfig')
 
-        # Enable '-Werror' by default for all kernel builds
-        # v5.14-9462-g3fe617ccafd6 (Sun Sep 5 11:24:05 2021 -0700)
-        # https://git.kernel.org/linus/3fe617ccafd6f5bb33c2391d6f4eeb41c1fd0151
-        self._add_config('CONFIG_WERROR', 'init/Kconfig')
-
         # bpf: Add kernel module with user mode driver that populates bpffs.
         # v5.9-rc1-124-gd71fa5c9763c (Thu Aug 20 16:02:36 2020 +0200)
         # https://git.kernel.org/linus/d71fa5c9763c24dd997a2fa4feb7a13a95bab42c

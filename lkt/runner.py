@@ -822,7 +822,7 @@ class LLVMKernelRunner:
 
         self._config = Path(self.folders.build, '.config')
 
-        if 'allmodconfig' in self.configs and 'CONFIG_WERROR' in self.lsm.configs:
+        if 'allmodconfig' in self.configs:
             self.configs.append('CONFIG_WERROR=n')
 
         if 'CONFIG_WERROR=n' in self.configs:
