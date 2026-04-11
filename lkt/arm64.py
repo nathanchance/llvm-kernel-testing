@@ -101,18 +101,10 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
                 'CONFIG_SHADOW_CALL_STACK=y',
             ]
             runners.append(runner)
-        elif 'CONFIG_SHADOW_CALL_STACK' in self.lsm.configs:
+        else:
             runner = Arm64LLVMKernelRunner()
             runner.configs = ['defconfig', 'CONFIG_SHADOW_CALL_STACK=y']
             runners.append(runner)
-        else:
-            # arm64: Implement Shadow Call Stack
-            # v5.7-rc3-10-g5287569a790d (Fri May 15 16:35:50 2020 +0100)
-            # https://git.kernel.org/linus/5287569a790d2546a06db07e391bf84b8bd6cf51
-            self._skip_one(
-                f"{KERNEL_ARCH} CFI/SCS builds",
-                f"Linux < {LinuxVersion(5, 8, 0)} (have '{self.lsm.version}')",
-            )
 
         if Path(self.folders.source, 'kernel/configs/hardening.config').exists():
             runner = Arm64LLVMKernelRunner()

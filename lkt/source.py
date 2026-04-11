@@ -54,11 +54,6 @@ class LinuxSourceManager:
         # https://git.kernel.org/linus/5017b45946722bdd20ac255c9ae7273b78d1f12e
         self._add_config('CONFIG_PPC64_BIG_ENDIAN_ELF_ABI_V2', 'arch/powerpc/Kconfig')
 
-        # scs: Add support for Clang's Shadow Call Stack (SCS)
-        # v5.7-rc3-1-gd08b9f0ca660 (Fri May 15 16:35:45 2020 +0100)
-        # https://git.kernel.org/linus/d08b9f0ca6605e13dcb48f04e55a30545b3c71eb
-        self._add_config('CONFIG_SHADOW_CALL_STACK', 'arch/Kconfig')
-
         # Enable '-Werror' by default for all kernel builds
         # v5.14-9462-g3fe617ccafd6 (Sun Sep 5 11:24:05 2021 -0700)
         # https://git.kernel.org/linus/3fe617ccafd6f5bb33c2391d6f4eeb41c1fd0151
