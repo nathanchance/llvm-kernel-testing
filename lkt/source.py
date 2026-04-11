@@ -187,13 +187,6 @@ class LinuxSourceManager:
         # https://git.kernel.org/linus/ffb92ce826fd801acb0f4e15b75e4ddf0d189bde
         self._add_commit('ffb92ce826fd8', r"EXPORT_SYMBOL\(__raw_readsw\)", 'arch/hexagon/lib/io.c')
 
-        # s390/bitops: remove small optimization to fix clang build
-        # v5.11-rc4-5-gefe5e0fea4b2 (Tue Jan 19 12:29:26 2021 +0100)
-        # https://git.kernel.org/linus/efe5e0fea4b24872736c62a0bcfc3f99bebd2005
-        text = Path(self.folder, 'arch/s390/include/asm/bitops.h').read_text(encoding='utf-8')
-        if not re.search('"(o|n|x)i\t%0,%b1\\\\n"', text):
-            self.commits.append('efe5e0fea4b24')
-
     def _add_commit(self, commit: str, regex: str, file_path: Path | str) -> None:
         if not (file := Path(self.folder, file_path)).exists():
             return
