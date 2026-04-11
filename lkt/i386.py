@@ -3,7 +3,6 @@
 from pathlib import Path
 
 import lkt.runner
-from lkt.version import LinuxVersion
 
 KERNEL_ARCH = 'i386'
 CLANG_TARGET = 'i386-linux-gnu'
@@ -30,18 +29,9 @@ class I386LKTRunner(lkt.runner.LKTRunner):
         runner.configs = ['defconfig']
         runners.append(runner)
 
-        # x86, lto: Enable Clang LTO for 32-bit as well
-        # v5.13-rc2-3-g583bfd484bcc (Mon Jun 14 09:12:41 2021 -0700)
-        # https://git.kernel.org/linus/583bfd484bcc85e9371e7205fa9e827c18ae34fb
-        if '583bfd484bcc8' in self.lsm.commits:
-            runner = I386LLVMKernelRunner()
-            runner.configs = ['defconfig', 'CONFIG_LTO_CLANG_THIN=y']
-            runners.append(runner)
-        else:
-            self._skip_one(
-                f"{KERNEL_ARCH} LTO builds",
-                f"Linux < {LinuxVersion(5, 14, 0)} (have '{self.lsm.version}')",
-            )
+        runner = I386LLVMKernelRunner()
+        runner.configs = ['defconfig', 'CONFIG_LTO_CLANG_THIN=y']
+        runners.append(runner)
 
         for runner in runners:
             runner.bootable = True

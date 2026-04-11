@@ -163,13 +163,6 @@ class LinuxSourceManager:
             'arch/powerpc/kvm/book3s_hv_nested.c',
         )
 
-        # x86, lto: Enable Clang LTO for 32-bit as well
-        # v5.13-rc2-3-g583bfd484bcc (Mon Jun 14 09:12:41 2021 -0700)
-        # https://git.kernel.org/linus/583bfd484bcc85e9371e7205fa9e827c18ae34fb
-        self._add_commit(
-            '583bfd484bcc8', 'select ARCH_SUPPORTS_LTO_CLANG_THIN\n', 'arch/x86/Kconfig'
-        )
-
         # Introduced by: powerpc: Kconfig: disable CONFIG_COMPAT for clang < 12
         # Link: https://git.kernel.org/linus/6fcb574125e673f33ff058caa54b4e65629f3a08
         # First appeared: v5.14-rc1~104^2~195
