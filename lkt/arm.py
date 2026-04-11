@@ -10,8 +10,6 @@ KERNEL_ARCH = 'arm'
 CLANG_TARGET = 'arm-linux-gnueabi'
 QEMU_ARCH = 'arm'
 
-# https://github.com/ClangBuiltLinux/linux/issues?q=is%3Aissue+label%3A%22%5BARCH%5D+arm32%22+label%3A%22%5BTOOL%5D+integrated-as%22+label%3A%22%5BBUG%5D+linux%22+
-MIN_IAS_LNX_VER = LinuxVersion(5, 13, 0)
 # https://github.com/ClangBuiltLinux/linux/issues?q=is%3Aissue+label%3A%22%5BARCH%5D+arm32%22+label%3A%22%5BTOOL%5D+integrated-as%22+label%3A%22%5BFIXED%5D%5BLLVM%5D+13%22+
 MIN_IAS_LLVM_VER = ClangVersion(13, 0, 0)
 
@@ -127,7 +125,7 @@ class ArmLKTRunner(lkt.runner.LKTRunner):
             self._runners.append(runner)
 
     def run(self) -> list[lkt.runner.Result]:
-        if self._llvm_version < MIN_IAS_LLVM_VER or self.lsm.version < MIN_IAS_LNX_VER:
+        if self._llvm_version < MIN_IAS_LLVM_VER:
             self.make_vars['LLVM_IAS'] = '0'
 
         if 'def' in self.targets:
