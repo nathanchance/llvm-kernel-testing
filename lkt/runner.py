@@ -153,13 +153,7 @@ class LLVMKernelRunner:
             self.make_vars['O'] = self.folders.build.relative_to(self.folders.source)
 
         # Remove LLVM_IAS if the value is the default
-        llvm_ias = self.make_vars['LLVM_IAS']
-        makefile_clang = Path(self.folders.source, 'scripts/Makefile.clang')
-        llvm_ias_def_on = (
-            makefile_clang.exists()
-            and 'ifeq ($(LLVM_IAS),0)' in makefile_clang.read_text(encoding='utf-8')
-        )
-        if (llvm_ias_def_on and llvm_ias == '1') or (not llvm_ias_def_on and llvm_ias == '0'):
+        if self.make_vars['LLVM_IAS'] == '1':
             del self.make_vars['LLVM_IAS']
 
         base_make_cmd: lkt.utils.CmdList = [
