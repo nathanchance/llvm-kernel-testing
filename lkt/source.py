@@ -252,11 +252,6 @@ class LinuxSourceManager:
             'c47c7ab9b5363', 'CONFIG_BLK_DEV_INITRD=y', 'arch/mips/configs/malta_defconfig'
         )
 
-        # x86/boot: Add $(CLANG_FLAGS) to compressed KBUILD_CFLAGS
-        # v5.12-rc4-2-gd5cbd80e302d (Fri Mar 26 11:32:55 2021 +0100)
-        # https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f
-        self._add_commit('d5cbd80e302df', 'CLANG_FLAGS', 'arch/x86/boot/compressed/Makefile')
-
         # arm64: Kconfig: add a choice for endianness
         # v5.4-rc3-112-gd8e85e144bbe (Thu Nov 14 14:39:03 2019 +0000)
         # https://git.kernel.org/linus/d8e85e144bbe12e8d82c6b05d690a34da62cc991

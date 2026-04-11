@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
-import platform
 
 import lkt.runner
 from lkt.version import ClangVersion, LinuxVersion
@@ -123,15 +122,6 @@ class I386LKTRunner(lkt.runner.LKTRunner):
             return self._skip_all(
                 f"missing bb73d07148c4 (from {LinuxVersion(5, 12, 0)}) with LLVM > {min_llvm_ver} (using '{self._llvm_version}')",
                 f"x86 kernels do not build properly with LLVM {min_llvm_ver}+ without R_386_PLT32 handling: https://github.com/ClangBuiltLinux/linux/issues/1210",
-            )
-
-        # x86/boot: Add $(CLANG_FLAGS) to compressed KBUILD_CFLAGS
-        # v5.12-rc4-2-gd5cbd80e302d (Fri Mar 26 11:32:55 2021 +0100)
-        # https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f
-        if platform.machine() != 'x86_64' and 'd5cbd80e302df' not in self.lsm.commits:
-            return self._skip_all(
-                f"missing d5cbd80e302d (from {LinuxVersion(5, 13, 0)}) on a non-x86_64 host",
-                f"Cannot cross compile without https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f (from {LinuxVersion(5, 13, 0)})",
             )
 
         if 'def' in self.targets:

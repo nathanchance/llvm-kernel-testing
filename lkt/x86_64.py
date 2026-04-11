@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
-import platform
 
 import lkt.runner
 import lkt.utils
@@ -137,15 +136,6 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
             self._runners.append(runner)
 
     def run(self) -> list[lkt.runner.Result]:
-        # x86/boot: Add $(CLANG_FLAGS) to compressed KBUILD_CFLAGS
-        # v5.12-rc4-2-gd5cbd80e302d (Fri Mar 26 11:32:55 2021 +0100)
-        # https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f
-        if platform.machine() != KERNEL_ARCH and 'd5cbd80e302df' not in self.lsm.commits:
-            return self._skip_all(
-                f"missing d5cbd80e302d (from {LinuxVersion(5, 13, 0)}) on a non-x86_64 host",
-                f"Cannot cross compile without https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f (from {LinuxVersion(5, 13, 0)})",
-            )
-
         if self.lsm.version < MIN_IAS_LNX_VER:
             self.make_vars['LLVM_IAS'] = '0'
 
