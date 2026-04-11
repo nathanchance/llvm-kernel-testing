@@ -9,7 +9,6 @@ from lkt.version import ClangVersion, LinuxVersion
 
 KERNEL_ARCH = 'x86_64'
 CLANG_TARGET = 'x86_64-linux-gnu'
-CROSS_COMPILE = f"{CLANG_TARGET}-"
 QEMU_ARCH = 'x86_64'
 
 # KCFI sanitizer
@@ -138,24 +137,15 @@ class X8664LKTRunner(lkt.runner.LKTRunner):
             self._runners.append(runner)
 
     def run(self) -> list[lkt.runner.Result]:
-        cross_compile: str = ''
-        if platform.machine() != KERNEL_ARCH:
-            # x86/boot: Add $(CLANG_FLAGS) to compressed KBUILD_CFLAGS
-            # v5.12-rc4-2-gd5cbd80e302d (Fri Mar 26 11:32:55 2021 +0100)
-            # https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f
-            if 'd5cbd80e302df' not in self.lsm.commits:
-                return self._skip_all(
-                    f"missing d5cbd80e302d (from {LinuxVersion(5, 13, 0)}) on a non-x86_64 host",
-                    f"Cannot cross compile without https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f (from {LinuxVersion(5, 13, 0)})",
-                )
+        # x86/boot: Add $(CLANG_FLAGS) to compressed KBUILD_CFLAGS
+        # v5.12-rc4-2-gd5cbd80e302d (Fri Mar 26 11:32:55 2021 +0100)
+        # https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f
+        if platform.machine() != KERNEL_ARCH and 'd5cbd80e302df' not in self.lsm.commits:
+            return self._skip_all(
+                f"missing d5cbd80e302d (from {LinuxVersion(5, 13, 0)}) on a non-x86_64 host",
+                f"Cannot cross compile without https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f (from {LinuxVersion(5, 13, 0)})",
+            )
 
-            cross_compile = CROSS_COMPILE
-
-        # Makefile: move initial clang flag handling into scripts/Makefile.clang
-        # v5.14-rc5-5-g6f5b41a2f5a6 (Tue Aug 10 09:13:25 2021 +0900)
-        # https://git.kernel.org/linus/6f5b41a2f5a6314614e286274eb8e985248aac60
-        if '6f5b41a2f5a63' not in self.lsm.commits and cross_compile:
-            self.make_vars['CROSS_COMPILE'] = cross_compile
         if self.lsm.version < MIN_IAS_LNX_VER:
             self.make_vars['LLVM_IAS'] = '0'
 

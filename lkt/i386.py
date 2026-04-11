@@ -8,7 +8,6 @@ from lkt.version import ClangVersion, LinuxVersion
 
 KERNEL_ARCH = 'i386'
 CLANG_TARGET = 'i386-linux-gnu'
-CROSS_COMPILE = 'x86_64-linux-gnu-'
 QEMU_ARCH = 'i386'
 
 
@@ -126,20 +125,14 @@ class I386LKTRunner(lkt.runner.LKTRunner):
                 f"x86 kernels do not build properly with LLVM {min_llvm_ver}+ without R_386_PLT32 handling: https://github.com/ClangBuiltLinux/linux/issues/1210",
             )
 
-        if platform.machine() != 'x86_64':
-            # x86/boot: Add $(CLANG_FLAGS) to compressed KBUILD_CFLAGS
-            # v5.12-rc4-2-gd5cbd80e302d (Fri Mar 26 11:32:55 2021 +0100)
-            # https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f
-            if 'd5cbd80e302df' not in self.lsm.commits:
-                return self._skip_all(
-                    f"missing d5cbd80e302d (from {LinuxVersion(5, 13, 0)}) on a non-x86_64 host",
-                    f"Cannot cross compile without https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f (from {LinuxVersion(5, 13, 0)})",
-                )
-            # Makefile: move initial clang flag handling into scripts/Makefile.clang
-            # v5.14-rc5-5-g6f5b41a2f5a6 (Tue Aug 10 09:13:25 2021 +0900)
-            # https://git.kernel.org/linus/6f5b41a2f5a6314614e286274eb8e985248aac60
-            if '6f5b41a2f5a63' not in self.lsm.commits:
-                self.make_vars['CROSS_COMPILE'] = CROSS_COMPILE
+        # x86/boot: Add $(CLANG_FLAGS) to compressed KBUILD_CFLAGS
+        # v5.12-rc4-2-gd5cbd80e302d (Fri Mar 26 11:32:55 2021 +0100)
+        # https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f
+        if platform.machine() != 'x86_64' and 'd5cbd80e302df' not in self.lsm.commits:
+            return self._skip_all(
+                f"missing d5cbd80e302d (from {LinuxVersion(5, 13, 0)}) on a non-x86_64 host",
+                f"Cannot cross compile without https://git.kernel.org/linus/d5cbd80e302dfea59726c44c56ab7957f822409f (from {LinuxVersion(5, 13, 0)})",
+            )
 
         if 'def' in self.targets:
             self._add_defconfig_runners()

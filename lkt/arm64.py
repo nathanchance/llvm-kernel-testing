@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
-import platform
 
 import lkt.runner
 from lkt.source import LinuxSourceManager
@@ -10,7 +9,6 @@ from lkt.version import ClangVersion, LinuxVersion
 
 KERNEL_ARCH = 'arm64'
 CLANG_TARGET = 'aarch64-linux-gnu'
-CROSS_COMPILE = f"{CLANG_TARGET}-"
 QEMU_ARCH = 'aarch64'
 
 # https://github.com/ClangBuiltLinux/linux/issues/1106
@@ -176,12 +174,6 @@ class Arm64LKTRunner(lkt.runner.LKTRunner):
             self._runners.append(runner)
 
     def run(self) -> list[lkt.runner.Result]:
-        cross_compile: str = '' if platform.machine() == 'aarch64' else CROSS_COMPILE
-        # Makefile: move initial clang flag handling into scripts/Makefile.clang
-        # v5.14-rc5-5-g6f5b41a2f5a6 (Tue Aug 10 09:13:25 2021 +0900)
-        # https://git.kernel.org/linus/6f5b41a2f5a6314614e286274eb8e985248aac60
-        if '6f5b41a2f5a63' not in self.lsm.commits and cross_compile:
-            self.make_vars['CROSS_COMPILE'] = cross_compile
         if self.lsm.version < MIN_IAS_LNX_VER:
             self.make_vars['LLVM_IAS'] = '0'
 

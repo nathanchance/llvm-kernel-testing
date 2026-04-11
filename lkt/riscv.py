@@ -168,11 +168,6 @@ class RISCVLKTRunner(lkt.runner.LKTRunner):
                 print_text,
             )
 
-        # Makefile: move initial clang flag handling into scripts/Makefile.clang
-        # v5.14-rc5-5-g6f5b41a2f5a6 (Tue Aug 10 09:13:25 2021 +0900)
-        # https://git.kernel.org/linus/6f5b41a2f5a6314614e286274eb8e985248aac60
-        if '6f5b41a2f5a63' not in self.lsm.commits:
-            self.make_vars['CROSS_COMPILE'] = CROSS_COMPILE
         if self._llvm_version < MIN_IAS_LLVM_VER:
             self.make_vars['LLVM_IAS'] = '0'
 

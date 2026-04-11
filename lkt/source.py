@@ -75,12 +75,6 @@ class LinuxSourceManager:
         if Path(self.folder, 'kernel/bpf/preload/Kconfig').exists():
             self.configs.append('CONFIG_BPF_PRELOAD')
 
-        # Makefile: move initial clang flag handling into scripts/Makefile.clang
-        # v5.14-rc5-5-g6f5b41a2f5a6 (Tue Aug 10 09:13:25 2021 +0900)
-        # https://git.kernel.org/linus/6f5b41a2f5a6314614e286274eb8e985248aac60
-        if Path(self.folder, 'scripts/Makefile.clang').exists():
-            self.commits.append('6f5b41a2f5a63')
-
         # MIPS: VDSO: Move disabling the VDSO logic to Kconfig
         # v5.7-rc1-71-ge91946d6d93e (Tue May 12 10:01:45 2020 +0200)
         # https://git.kernel.org/linus/e91946d6d93ef6167bd3b1456f163d1585095ea1
@@ -195,8 +189,7 @@ class LinuxSourceManager:
         # Makefile: Add loongarch target flag for Clang compilation
         # v6.4-21-g65eea6b44a5d (Thu Jun 29 20:58:43 2023 +0800)
         # https://git.kernel.org/linus/65eea6b44a5dd332c50390fdaeda7e197802c484
-        if '6f5b41a2f5a63' in self.commits:
-            self._add_commit('65eea6b44a5dd', 'loongarch64-linux-gnusf', 'scripts/Makefile.clang')
+        self._add_commit('65eea6b44a5dd', 'loongarch64-linux-gnusf', 'scripts/Makefile.clang')
 
         # s390: always build relocatable kernel
         # v6.1-rc2-13-g80ddf5ce1c92 (Tue Nov 8 19:32:32 2022 +0100)

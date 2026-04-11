@@ -61,9 +61,6 @@ class HexagonLKTRunner(lkt.runner.LKTRunner):
                 print_text,
             )
 
-        if '6f5b41a2f5a63' not in self.lsm.commits:
-            self.make_vars['CROSS_COMPILE'] = CLANG_TARGET
-
         if 'def' in self.targets:
             self._add_defconfig_runners()
 
