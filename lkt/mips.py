@@ -99,7 +99,7 @@ class MipsLKTRunner(lkt.runner.LKTRunner):
             self.make_vars['CROSS_COMPILE'] = self._cross_compile
             self.make_vars['LLVM_IAS'] = '0'
 
-        if 'e91946d6d93ef' in self.lsm.commits and self._llvm_version < (13, 0, 0):
+        if self._llvm_version < (13, 0, 0):
             self._be_vars['LD'] = f"{self._cross_compile}ld"
 
         if 'def' in self.targets:

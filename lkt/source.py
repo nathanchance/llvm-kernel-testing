@@ -75,12 +75,6 @@ class LinuxSourceManager:
         if Path(self.folder, 'kernel/bpf/preload/Kconfig').exists():
             self.configs.append('CONFIG_BPF_PRELOAD')
 
-        # MIPS: VDSO: Move disabling the VDSO logic to Kconfig
-        # v5.7-rc1-71-ge91946d6d93e (Tue May 12 10:01:45 2020 +0200)
-        # https://git.kernel.org/linus/e91946d6d93ef6167bd3b1456f163d1585095ea1
-        if Path(self.folder, 'arch/mips/vdso/Kconfig').exists():
-            self.commits.append('e91946d6d93ef')
-
         # Hexagon: add target builtins to kernel
         # v5.12-13587-gf1f99adf05f2 (Mon May 3 11:04:22 2021 -0500)
         # https://git.kernel.org/linus/f1f99adf05f2138ff2646d756d4674e302e8d02d
