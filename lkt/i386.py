@@ -104,14 +104,6 @@ class I386LKTRunner(lkt.runner.LKTRunner):
         return broken_configs
 
     def run(self) -> list[lkt.runner.Result]:
-        if self.lsm.version < (min_lnx_ver := LinuxVersion(5, 9, 0)):
-            # x86/uaccess: Make __get_user_size() Clang compliant on 32-bit
-            # v5.8-rc6-11-g158807de5822 (Thu Jul 23 12:38:31 2020 +0200)
-            # https://git.kernel.org/linus/158807de5822d1079e162a3762956fd743dd483e
-            return self._skip_all(
-                f"missing 158807de5822 (from {min_lnx_ver})",
-                f"i386 kernels do not build properly prior to Linux {min_lnx_ver}: https://github.com/ClangBuiltLinux/linux/issues/194",
-            )
         if (
             self._llvm_version >= (min_llvm_ver := ClangVersion(12, 0, 0))
             # x86/build: Treat R_386_PLT32 relocation as R_386_PC32
