@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-from functools import total_ordering
 import os
-from pathlib import Path
 import re
 import shutil
+from functools import total_ordering
+from pathlib import Path
 
 import lkt.utils
 

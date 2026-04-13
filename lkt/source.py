@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-from pathlib import Path
 import re
+from pathlib import Path
 from typing import Optional
 
 import lkt.utils
@@ -10,7 +10,7 @@ from lkt.version import LinuxVersion, MinToolVersion
 
 class LinuxSourceManager:
     def __init__(self, linux_source: Optional[Path] = None) -> None:
-        self.folder: Path = linux_source if linux_source else lkt.utils.DEFAULT_PATH
+        self.folder: Path = linux_source or lkt.utils.DEFAULT_PATH
         if not lkt.utils.path_is_set(self.folder):
             return
 
@@ -218,7 +218,9 @@ class LinuxSourceManager:
     def get_cfi_y_config(self) -> str:
         if not self._cfi_y_config:
             arch_kconfig_txt = Path(self.folder, 'arch/Kconfig').read_text(encoding='utf-8')
-            if match := re.search(r"config (CFI(?:_CLANG)?)$", arch_kconfig_txt, flags=re.M):
+            if match := re.search(
+                r"config (CFI(?:_CLANG)?)$", arch_kconfig_txt, flags=re.MULTILINE
+            ):
                 self._cfi_y_config = f"CONFIG_{match.groups()[0]}=y"
             else:
                 self._cfi_y_config = (

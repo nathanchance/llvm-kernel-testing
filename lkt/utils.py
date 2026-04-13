@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-from collections.abc import Sequence
 import copy
 import os
-from pathlib import Path
 import shlex
 import subprocess
 import time
+from collections.abc import Sequence
+from pathlib import Path
 
 DEFAULT_PATH = Path('/intentionally/does/not/exist')
 PathString = Path | str
@@ -113,7 +113,7 @@ def run(args: ValidCmd, **kwargs) -> subprocess.CompletedProcess:
         if kwargs.get('capture_output'):
             print(err.stdout)
             print(err.stderr)
-        raise err
+        raise
 
 
 def run_check_rc_zero(args: ValidCmd, **kwargs) -> bool:

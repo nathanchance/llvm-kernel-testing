@@ -2,14 +2,14 @@
 
 import contextlib
 import os
-from pathlib import Path
 import platform
 import re
 import shutil
-from subprocess import PIPE, STDOUT, Popen
 import sys
 import tempfile
 import time
+from pathlib import Path
+from subprocess import PIPE, STDOUT, Popen
 from typing import TypedDict
 
 import lkt.utils
@@ -170,7 +170,7 @@ class LLVMKernelRunner:
         requested_options: list[str] = []
         for item in self.configs[1:]:
             if not isinstance(item, str):
-                raise ValueError(f"{item} is not a string?")
+                raise TypeError(f"{item} is not a string?")
             if item.endswith('.config'):
                 requested_fragments.append(item)
             elif item.startswith('CONFIG_'):
@@ -281,14 +281,16 @@ class LLVMKernelRunner:
                 # '# CONFIG_FOO is not set'
                 search = f"# {cfg_name} is not set" if cfg_val == 'n' else item
                 # If we find a match, move on
-                if re.search(f"^{search}$", config_text, flags=re.M):
+                if re.search(f"^{search}$", config_text, flags=re.MULTILINE):
                     continue
 
                 # If we did not find a match for '# CONFIG_FOO is not set' or
                 # CONFIG_FOO="", we should only add it to the missing configs
                 # list if it is present with some other value because it may
                 # not be visible, which means it is implicitly 'n' or '""'.
-                if cfg_val in ('n', '""') and re.search(f"^{cfg_name}=", config_text, flags=re.M):
+                if cfg_val in ('n', '""') and re.search(
+                    f"^{cfg_name}=", config_text, flags=re.MULTILINE
+                ):
                     missing_configs.append(item)
 
             if missing_configs:
@@ -310,7 +312,7 @@ class LLVMKernelRunner:
 
         config = self.configs[0]
         if not isinstance(config, Path):
-            raise ValueError(f"{config} must be a Path object!")
+            raise TypeError(f"{config} must be a Path object!")
         distro = config.parts[-2]
 
         if distro == 'alpine':
@@ -327,9 +329,11 @@ class LLVMKernelRunner:
 
         if distro == 'debian':
             # The Android drivers are not modular in upstream
-            for android_cfg in ('ANDROID_BINDER_IPC', 'ASHMEM'):
-                if lkt.utils.is_modular(self.folders.source, self.folders.build, android_cfg):
-                    configs.append(f"CONFIG_{android_cfg}=y")
+            configs.extend(
+                f"CONFIG_{android_cfg}=y"
+                for android_cfg in ('ANDROID_BINDER_IPC', 'ASHMEM')
+                if lkt.utils.is_modular(self.folders.source, self.folders.build, android_cfg)
+            )
 
         if 'ppc64le' in config.name or 'powerpc64le' in config.name:
             text = Path(self.folders.source, 'arch/powerpc/Kconfig').read_text(encoding='utf-8')
@@ -684,7 +688,7 @@ class LLVMKernelRunner:
             elif isinstance(locations, tuple):
                 files = locations
             else:
-                raise ValueError('locations neither a string nor a tuple?')
+                raise TypeError('locations neither a string nor a tuple?')
 
             can_be_m = False
             for file in files:
@@ -756,7 +760,7 @@ class LLVMKernelRunner:
     def _initial_distro_prep(self) -> None:
         config = self.configs[0]
         if not isinstance(config, Path):
-            raise ValueError(f"{config} must be a Path object!")
+            raise TypeError(f"{config} must be a Path object!")
         distro = config.parts[-2]
 
         # CONFIG_DEBUG_INFO_BTF has two conditions:

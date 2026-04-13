@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 
 import os
-from pathlib import Path
 import platform
 import re
 import shutil
 import time
+from pathlib import Path
 
-from lkt.runner import Folders, Result
 import lkt.utils
+from lkt.runner import Folders, Result
 
 
 def get_cmd_info(cmd: str) -> tuple[str, Path]:
@@ -76,10 +76,11 @@ class LKTReport:
             kernel_result.append(' '.join(kernel))
 
             if result.build == 'failed':
-                issues = []
-                for line in result.log.read_text(encoding='utf-8').splitlines():
-                    if re.search('error:|warning:|undefined', line):
-                        issues.append(line.replace(f"{self.folders.source}/", ''))
+                issues = [
+                    line.replace(f"{self.folders.source}/", '')
+                    for line in result.log.read_text(encoding='utf-8').splitlines()
+                    if re.search('error:|warning:|undefined', line)
+                ]
                 if issues:
                     kernel_result.append('\n'.join(issues))
 

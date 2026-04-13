@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 import lkt.runner
-from lkt.source import LinuxSourceManager
 import lkt.utils
+from lkt.source import LinuxSourceManager
 from lkt.version import ClangVersion, LinuxVersion
 
 KERNEL_ARCH = 'powerpc'

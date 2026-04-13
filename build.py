@@ -1,18 +1,12 @@
 #!/usr/bin/env python3
 
-from argparse import ArgumentParser
 import datetime
 import os
-from pathlib import Path
 import shutil
 import signal
 import sys
-
-import lkt.report
-from lkt.runner import MakeVars
-import lkt.source
-import lkt.utils
-from lkt.version import ClangVersion, LinuxVersion
+from argparse import ArgumentParser
+from pathlib import Path
 
 import lkt.arm
 import lkt.arm64
@@ -21,9 +15,14 @@ import lkt.i386
 import lkt.loongarch
 import lkt.mips
 import lkt.powerpc
+import lkt.report
 import lkt.riscv
 import lkt.s390
+import lkt.source
+import lkt.utils
 import lkt.x86_64
+from lkt.runner import MakeVars
+from lkt.version import ClangVersion, LinuxVersion
 
 # This is the minimum version of Linux that can be used with this test
 # framework due to assumptions made throughout the framework with regards to
@@ -171,7 +170,7 @@ if __name__ == '__main__':
     if args.log_folder:
         log_folder = Path(args.log_folder).resolve()
     else:
-        log_folder = Path(REPO, 'logs', datetime.datetime.now().strftime('%Y%m%d-%H%M'))
+        log_folder = Path(REPO, 'logs', datetime.datetime.now().strftime('%Y%m%d-%H%M'))  # noqa: DTZ005
 
     (boot_utils_json := Path(log_folder, '.boot-utils.json')).parent.mkdir(
         exist_ok=True, parents=True
