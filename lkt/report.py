@@ -77,7 +77,7 @@ class LKTReport:
                 issues = [
                     line.replace(f"{self.folders.source}/", '')
                     for line in result.log.read_text(encoding='utf-8').splitlines()
-                    if re.search('error:|warning:|undefined', line)
+                    if re.search(r"error:|warning:|undefined", line)
                 ]
                 if issues:
                     kernel_result.append('\n'.join(issues))
