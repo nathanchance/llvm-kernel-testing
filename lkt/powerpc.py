@@ -305,7 +305,7 @@ class PowerPCLKTRunner(lkt.runner.LKTRunner):
         ]
         for distro, config_name in configs:
             reason = None
-            if distro in ('fedora', 'opensuse') and self.lsm.version < (5, 17, 0):
+            if distro in {'fedora', 'opensuse'} and self.lsm.version < (5, 17, 0):
                 # Drop OpenSUSE's PowerPC configuration from 5.15
                 reason = 'https://github.com/ClangBuiltLinux/continuous-integration2/pull/775'
 

@@ -113,9 +113,9 @@ class LLVMKernelRunner:
                 el1_32 = Path(boot_qemu.parent, 'utils/aarch64_32_bit_el1_supported')
                 using_kvm = lkt.utils.run_check_rc_zero(el1_32) and HAVE_DEV_KVM_ACCESS
             else:
-                using_kvm = self.boot_utils_arch in ('arm64', 'arm64be') and HAVE_DEV_KVM_ACCESS
+                using_kvm = self.boot_utils_arch in {'arm64', 'arm64be'} and HAVE_DEV_KVM_ACCESS
         elif machine == 'x86_64':
-            using_kvm = self.boot_utils_arch in ('x86', 'x86_64') and HAVE_DEV_KVM_ACCESS
+            using_kvm = self.boot_utils_arch in {'x86', 'x86_64'} and HAVE_DEV_KVM_ACCESS
         # i386 may not have highmem automatically enabled after
         # x86/mm: Remove CONFIG_HIGHMEM64G support
         # v6.14-rc3-38-gbbeb69ce3013 (Thu Feb 27 11:21:53 2025 +0100)
@@ -209,7 +209,7 @@ class LLVMKernelRunner:
             # Nothing is explicitly wrong with this configuration option but it
             # changes the default image target, which boot-utils does not expect,
             # so explicitly add the bootable image target to the end of the command
-            if base_config.stem in ('aarch64', 'arm64', 'riscv64') and lkt.utils.is_set(
+            if base_config.stem in {'aarch64', 'arm64', 'riscv64'} and lkt.utils.is_set(
                 self.folders.source, base_config, 'EFI_ZBOOT'
             ):
                 self.make_targets.append(self.image_target)
@@ -287,7 +287,7 @@ class LLVMKernelRunner:
                 # CONFIG_FOO="", we should only add it to the missing configs
                 # list if it is present with some other value because it may
                 # not be visible, which means it is implicitly 'n' or '""'.
-                if cfg_val in ('n', '""') and re.search(
+                if cfg_val in {'n', '""'} and re.search(
                     f"^{cfg_name}=", config_text, flags=re.MULTILINE
                 ):
                     missing_configs.append(item)
@@ -797,7 +797,7 @@ class LLVMKernelRunner:
 
         if (
             distro == 'fedora'
-            and config.stem in ('aarch64', 'riscv64', 'x86_64')
+            and config.stem in {'aarch64', 'riscv64', 'x86_64'}
             and lkt.utils.is_set(self.folders.source, config, 'EFI_SBAT_FILE')
         ):
             self.configs.append('CONFIG_EFI_SBAT_FILE=""')

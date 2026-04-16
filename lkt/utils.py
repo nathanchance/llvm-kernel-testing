@@ -53,7 +53,7 @@ def is_modular(*args) -> bool:
 
 
 def is_set(*args) -> bool:
-    return get_config_val(*args) not in ('', 'n', 'undef')
+    return get_config_val(*args) not in {'', 'n', 'undef'}
 
 
 def get_time_diff(start_time: float, end_time: float | None = None) -> str:
