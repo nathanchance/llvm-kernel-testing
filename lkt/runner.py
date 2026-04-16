@@ -257,9 +257,10 @@ class LLVMKernelRunner:
         start_time = time.time()
         sys.stderr.flush()
         sys.stdout.flush()
-        with Popen(base_make_cmd, stderr=STDOUT, stdout=PIPE) as proc, self.result.log.open(
-            'bw'
-        ) as file:
+        with (
+            Popen(base_make_cmd, stderr=STDOUT, stdout=PIPE) as proc,
+            self.result.log.open('bw') as file,
+        ):
             cmd_log_str = '\n'.join(f"{lkt.utils.cmd_str(cmd)}\n" for cmd in cmds_to_log)
             file.write(cmd_log_str.encode('utf-8'))
             if not proc.stdout:
