@@ -32,13 +32,15 @@ class Version:
         if isinstance(other, Version):
             # pylint: disable-next=protected-access
             return other._key  # noqa: SLF001
-        raise ValueError('Cannot get _key?')
+        msg = 'Cannot get _key?'
+        raise ValueError(msg)
 
     def _gen_key(self, **kwargs) -> VersionTuple:
         return tuple(map(int, self._gen_ver_iter(**kwargs)))
 
     def _gen_ver_iter(self, **kwargs) -> VersionIterator:
-        raise NotImplementedError('Version has no generate version iterator method')
+        msg = 'Version has no generate version iterator method'
+        raise NotImplementedError(msg)
 
     def __eq__(self, other: object) -> bool:
         if not self._is_valid_operand(other):
@@ -101,9 +103,8 @@ class LinuxVersion(Version):
         folder: Path = kwargs.get('folder', Path.cwd())
 
         if not Path(folder, 'Makefile').exists():
-            raise RuntimeError(
-                f"Provided kernel source ('{folder}') does not look like a Linux kernel tree?"
-            )
+            msg = f"Provided kernel source ('{folder}') does not look like a Linux kernel tree?"
+            raise RuntimeError(msg)
 
         output = lkt.utils.chronic(['make', '-s', 'kernelversion'], cwd=folder).stdout.strip()
         return output.split('-', 1)[0].split('.')
@@ -146,6 +147,7 @@ class QemuVersion(Version):
 
         qemu_ver = lkt.utils.chronic([binary, '--version']).stdout.splitlines()[0]
         if not (match := re.search(r'version (\d+\.\d+.\d+)', qemu_ver)):
-            raise RuntimeError('Could not find QEMU version?')
+            msg = 'Could not find QEMU version?'
+            raise RuntimeError(msg)
 
         return match.groups()[0].split('.')

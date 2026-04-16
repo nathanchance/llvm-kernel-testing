@@ -105,7 +105,8 @@ class S390LKTRunner(lkt.runner.LKTRunner):
 
         # https://github.com/llvm/llvm-project/pull/75643
         if not (ld_lld := shutil.which('ld.lld')):
-            raise RuntimeError('ld.lld not in PATH?')
+            msg = 'ld.lld not in PATH?'
+            raise RuntimeError(msg)
         lld_res = lkt.utils.chronic([ld_lld, '-m', 'elf64_s390'], check=False)
         no_s390_support_in_lld = 'error: unknown emulation:' in lld_res.stderr
         # https://lore.kernel.org/20240207-s390-lld-and-orphan-warn-v1-11-8a665b3346ab@kernel.org/
@@ -117,7 +118,8 @@ class S390LKTRunner(lkt.runner.LKTRunner):
             self.make_vars['LD'] = f"{CROSS_COMPILE}ld"
         # https://github.com/llvm/llvm-project/pull/81841
         if not (llvm_objcopy := shutil.which('llvm-objcopy')):
-            raise RuntimeError('llvm-objcopy not in PATH?')
+            msg = 'llvm-objcopy not in PATH?'
+            raise RuntimeError(msg)
         objcopy_res = lkt.utils.chronic(
             [llvm_objcopy, '-I', 'binary', '-O', 'elf64-s390', '-', '/dev/null'],
             check=False,

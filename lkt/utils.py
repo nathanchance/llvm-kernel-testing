@@ -36,7 +36,8 @@ def cmd_str(cmd: ValidCmd) -> str:
 def get_config_val(linux: Path, path: Path, config: str) -> str:
     config_file: Path = path if path.is_file() else Path(path, '.config')
     if not path.exists():
-        raise FileNotFoundError('Could not find configuration?')
+        msg = 'Could not find configuration?'
+        raise FileNotFoundError(msg)
     scripts_config_cmd: CmdList = [
         Path(linux, 'scripts/config'),
         '--file',

@@ -11,7 +11,8 @@ from lkt.runner import Folders, Result
 
 def get_cmd_info(cmd: str) -> tuple[str, Path]:
     if not (full_cmd := shutil.which(cmd)):
-        raise RuntimeError(f"{cmd} is not in PATH?")
+        msg = f"{cmd} is not in PATH?"
+        raise RuntimeError(msg)
     version = lkt.utils.chronic([full_cmd, '--version']).stdout.splitlines()[0]
     location = Path(full_cmd).parent
     return version, location
@@ -50,9 +51,11 @@ class LKTReport:
 
     def _generate_env_info(self) -> None:
         if not lkt.utils.path_is_set(self.folders.source):
-            raise RuntimeError('Cannot generate environment information without source location!')
+            msg = 'Cannot generate environment information without source location!'
+            raise RuntimeError(msg)
         if not self.folders.source.exists():
-            raise FileNotFoundError('Provided source location does not exist?')
+            msg = 'Provided source location does not exist?'
+            raise FileNotFoundError(msg)
 
         uname = platform.uname()
 
@@ -89,7 +92,8 @@ class LKTReport:
             elif result.build == 'successful':
                 dst = self.results['good']
             else:
-                raise ValueError(f"Could not handle build result '{result.build}'!")
+                msg = f"Could not handle build result '{result.build}'!"
+                raise ValueError(msg)
             dst.append('\n'.join(kernel_result))
 
             if result.boot:
@@ -100,7 +104,8 @@ class LKTReport:
                 elif result.boot.startswith('successful'):
                     dst = self.results['good']
                 else:
-                    raise ValueError(f"Could not handle boot result '{result.boot}'!")
+                    msg = f"Could not handle boot result '{result.boot}'!"
+                    raise ValueError(msg)
                 dst.append(f"{result.name} qemu boot {result.boot}")
 
         total_duration = f"Total script duration: {lkt.utils.get_time_diff(self.start_time)}"

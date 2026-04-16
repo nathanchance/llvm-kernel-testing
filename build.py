@@ -145,7 +145,8 @@ if __name__ == '__main__':
 
     # Folders
     if not (linux_folder := Path(args.linux_folder).resolve()).exists():
-        raise FileNotFoundError(f"Supplied Linux source folder ('{args.linux_folder}') not found?")
+        msg = f"Supplied Linux source folder ('{args.linux_folder}') not found?"
+        raise FileNotFoundError(msg)
     lsm = lkt.source.LinuxSourceManager(linux_folder)
 
     if args.boot_utils_folder:
@@ -184,9 +185,8 @@ if __name__ == '__main__':
         'https://api.github.com/repos/ClangBuiltLinux/boot-utils/releases/latest',
     ]
     if not (lkt.utils.run_check_rc_zero(boot_utils_json_cmd) or boot_utils_json.exists()):
-        raise FileNotFoundError(
-            f"{boot_utils_json} failed to download and a previous copy is not available!"
-        )
+        msg = f"{boot_utils_json} failed to download and a previous copy is not available!"
+        raise FileNotFoundError(msg)
 
     # Add prefixes to PATH if they exist
     path = os.environ['PATH'].split(':')
@@ -195,9 +195,11 @@ if __name__ == '__main__':
         if not item:
             continue
         if not (prefix := Path(item)).exists():
-            raise FileNotFoundError(f"Supplied prefix ('{prefix}') does not exist?")
+            msg = f"Supplied prefix ('{prefix}') does not exist?"
+            raise FileNotFoundError(msg)
         if not (bin_folder := Path(prefix, 'bin')).exists():
-            raise FileNotFoundError(f"Supplied prefix ('{prefix}') has no 'bin' folder?")
+            msg = f"Supplied prefix ('{prefix}') has no 'bin' folder?"
+            raise FileNotFoundError(msg)
         if (bin_folder := str(bin_folder)) not in path:
             path.insert(0, bin_folder)
     os.environ['PATH'] = ':'.join(path)

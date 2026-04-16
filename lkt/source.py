@@ -17,7 +17,8 @@ class LinuxSourceManager:
             or Path(self.folder, 'include/config').is_dir()
             or list(self.folder.glob('arch/*/include/generated'))
         ):
-            raise RuntimeError(f"Supplied Linux source ('{self.folder}') is not clean!")
+            msg = f"Supplied Linux source ('{self.folder}') is not clean!"
+            raise RuntimeError(msg)
 
         self.commits: list[str] = []
         self.configs: list[str] = []

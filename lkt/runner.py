@@ -84,18 +84,23 @@ class LLVMKernelRunner:
             self.result.boot = 'skipped'
             return
         if not self.boot_utils_arch:
-            raise RuntimeError('No boot-utils architecture set?')
+            msg = 'No boot-utils architecture set?'
+            raise RuntimeError(msg)
         if not self.qemu_arch:
-            raise RuntimeError('No QEMU architecture set?')
+            msg = 'No QEMU architecture set?'
+            raise RuntimeError(msg)
         if not shutil.which(qemu_bin := f"qemu-system-{self.qemu_arch}"):
             self.result.boot = f"skipped due to missing {qemu_bin}"
             return
         if not lkt.utils.path_is_set(self.folders.boot_utils):
-            raise RuntimeError('No boot-utils folder set?')
+            msg = 'No boot-utils folder set?'
+            raise RuntimeError(msg)
         if not self.folders.boot_utils.exists():
-            raise RuntimeError('boot-utils could not be found?')
+            msg = 'boot-utils could not be found?'
+            raise RuntimeError(msg)
         if not (boot_qemu := Path(self.folders.boot_utils, 'boot-qemu.py')).exists():
-            raise RuntimeError('boot-qemu.py could not be found?')
+            msg = 'boot-qemu.py could not be found?'
+            raise RuntimeError(msg)
         boot_utils_cmd: lkt.utils.CmdList = [
             boot_qemu,
             '-a',
@@ -168,15 +173,18 @@ class LLVMKernelRunner:
         requested_options: list[str] = []
         for item in self.configs[1:]:
             if not isinstance(item, str):
-                raise TypeError(f"{item} is not a string?")
+                msg = f"{item} is not a string?"
+                raise TypeError(msg)
             if item.endswith('.config'):
                 requested_fragments.append(item)
             elif item.startswith('CONFIG_'):
                 if '=' not in item:
-                    raise ValueError(f"{item} does not contain '='?")
+                    msg = f"{item} does not contain '='?"
+                    raise ValueError(msg)
                 requested_options.append(item)
             else:
-                raise ValueError(f"Cannot handle {item}?")
+                msg = f"Cannot handle {item}?"
+                raise ValueError(msg)
         extra_configs = requested_options.copy()
         need_olddefconfig = False
 
@@ -192,9 +200,8 @@ class LLVMKernelRunner:
                 base_make_cmd += [base_config, *requested_fragments]
         elif isinstance(base_config, Path):
             if requested_fragments:
-                raise RuntimeError(
-                    'config fragments are not supported with out of tree configurations! Add support if this is needed.',
-                )
+                msg = 'config fragments are not supported with out of tree configurations! Add support if this is needed.'
+                raise RuntimeError(msg)
 
             self.folders.build.mkdir(parents=True)
 
@@ -262,7 +269,8 @@ class LLVMKernelRunner:
             cmd_log_str = '\n'.join(f"{lkt.utils.cmd_str(cmd)}\n" for cmd in cmds_to_log)
             file.write(cmd_log_str.encode('utf-8'))
             if not proc.stdout:
-                raise RuntimeError('proc.stdout is None??')
+                msg = 'proc.stdout is None??'
+                raise RuntimeError(msg)
             while byte := proc.stdout.read(1):
                 sys.stdout.buffer.write(byte)
                 sys.stdout.flush()
@@ -311,7 +319,8 @@ class LLVMKernelRunner:
 
         config = self.configs[0]
         if not isinstance(config, Path):
-            raise TypeError(f"{config} must be a Path object!")
+            msg = f"{config} must be a Path object!"
+            raise TypeError(msg)
         distro = config.parts[-2]
 
         if distro == 'alpine':
@@ -690,7 +699,8 @@ class LLVMKernelRunner:
             elif isinstance(locations, tuple):
                 files = locations
             else:
-                raise TypeError('locations neither a string nor a tuple?')
+                msg = 'locations neither a string nor a tuple?'
+                raise TypeError(msg)
 
             can_be_m = False
             for file in files:
@@ -762,7 +772,8 @@ class LLVMKernelRunner:
     def _initial_distro_prep(self) -> None:
         config = self.configs[0]
         if not isinstance(config, Path):
-            raise TypeError(f"{config} must be a Path object!")
+            msg = f"{config} must be a Path object!"
+            raise TypeError(msg)
         distro = config.parts[-2]
 
         # CONFIG_DEBUG_INFO_BTF has two conditions:
@@ -811,13 +822,17 @@ class LLVMKernelRunner:
 
     def run(self) -> Result:
         if not lkt.utils.path_is_set(self.folders.source):
-            raise RuntimeError('No source location set?')
+            msg = 'No source location set?'
+            raise RuntimeError(msg)
         if not lkt.utils.path_is_set(self.folders.build):
-            raise RuntimeError('No build folder set?')
+            msg = 'No build folder set?'
+            raise RuntimeError(msg)
         if not self.configs:
-            raise RuntimeError('No configuration to build?')
+            msg = 'No configuration to build?'
+            raise RuntimeError(msg)
         if not lkt.utils.path_is_set(self.lsm.folder):
-            raise RuntimeError('No source manager set?')
+            msg = 'No source manager set?'
+            raise RuntimeError(msg)
 
         self._config = Path(self.folders.build, '.config')
 
@@ -914,7 +929,8 @@ class LKTRunner:
             runner.folders = self.folders
             if not lkt.utils.path_is_set(runner.lsm.folder):
                 if not lkt.utils.path_is_set(self.lsm.folder):
-                    raise RuntimeError('LinuxSourceManager is completely uninitialized!')
+                    msg = 'LinuxSourceManager is completely uninitialized!'
+                    raise RuntimeError(msg)
                 runner.lsm = self.lsm
             runner.make_vars.update(self.make_vars)
             self._results.append(runner.run())
