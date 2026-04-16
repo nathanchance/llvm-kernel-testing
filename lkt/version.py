@@ -20,10 +20,12 @@ class Version:
         else:
             self._key: VersionTuple = self._gen_key(**kwargs)
 
-    def _is_valid_operand(self, other: object) -> bool:
+    @staticmethod
+    def _is_valid_operand(other: object) -> bool:
         return isinstance(other, (tuple, Version))
 
-    def _get_key(self, other: object) -> tuple:
+    @staticmethod
+    def _get_key(other: object) -> tuple:
         if isinstance(other, tuple):
             return other
         if isinstance(other, Version):
