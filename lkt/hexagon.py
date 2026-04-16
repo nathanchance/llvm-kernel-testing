@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import lkt.runner
 from lkt.version import ClangVersion, LinuxVersion
 
