@@ -3,6 +3,7 @@ import re
 import shutil
 from functools import total_ordering
 from pathlib import Path
+from typing import override
 
 import lkt.utils
 
@@ -63,6 +64,7 @@ class Version:
 
 
 class BinutilsVersion(Version):
+    @override
     def _gen_ver_iter(self, **kwargs) -> VersionIterator:
         binary: Path | str = kwargs.get('binary', 'as')
 
@@ -80,6 +82,7 @@ class BinutilsVersion(Version):
 
 
 class ClangVersion(Version):
+    @override
     def _gen_ver_iter(self, **kwargs) -> VersionIterator:
         binary: Path | str = kwargs.get('binary', 'clang')
 
@@ -93,6 +96,7 @@ class ClangVersion(Version):
 
 
 class LinuxVersion(Version):
+    @override
     def _gen_ver_iter(self, **kwargs) -> VersionIterator:
         folder: Path = kwargs.get('folder', Path.cwd())
 
@@ -106,6 +110,7 @@ class LinuxVersion(Version):
 
 
 class MinToolVersion(Version):
+    @override
     def _gen_ver_iter(self, **kwargs) -> VersionIterator:
         folder: Path = kwargs.get('folder', Path.cwd())
         arch: str = kwargs['arch']
@@ -132,6 +137,7 @@ class MinToolVersion(Version):
 
 
 class QemuVersion(Version):
+    @override
     def _gen_ver_iter(self, **kwargs) -> VersionIterator:
         arch: str = kwargs.get('arch', 'x86_64')
 
