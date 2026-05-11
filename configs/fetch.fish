@@ -51,7 +51,7 @@ for distro in $distros
             set pkgbase linux-base
 
             for arch in $deb_arches
-                set package_version_signed 7.0.3
+                set package_version_signed 7.1-rc2
                 if string match -qr -- -rc $package_version_signed
                     set kernel_version_signed (string replace - '~' $package_version_signed)-1~exp1
                     set package_version_signed (string split -f 1 - $package_version_signed)
