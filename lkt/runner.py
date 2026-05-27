@@ -592,6 +592,10 @@ class LLVMKernelRunner:
             # v6.12-rc7-5-ge0260d530b73 (Fri Nov 22 23:48:14 2024 +0900)
             # https://git.kernel.org/linus/e0260d530b73ee969ae971d14daa02376dcfc93f
             ('NET_9P_USBG', 'net/9p/Kconfig'),
+            # netfilter: allow nfnetlink built-in only
+            # v7.1-rc4-953-gd4349ba9872d (Sun May 24 22:55:47 2026 +0200)
+            # https://git.kernel.org/linus/d4349ba9872d0c97a31fb2a18789297731061e88
+            ('NETFILTER_NETLINK', 'net/netfilter/Kconfig'),
             # net: dsa: realtek: merge rtl83xx and interface modules into realtek_dsa
             # v6.8-rc3-845-g98b75c1c149c (Mon Feb 12 10:42:17 2024 +0000)
             # https://git.kernel.org/linus/98b75c1c149c653ad11a440636213eb070325158
