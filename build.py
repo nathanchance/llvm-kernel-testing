@@ -21,7 +21,7 @@ import lkt.s390
 import lkt.source
 import lkt.utils
 import lkt.x86_64
-from lkt.runner import MakeVars
+from lkt.runner import MakeVars, Result
 from lkt.version import ClangVersion, LinuxVersion
 
 # This is the minimum version of Linux that can be used with this test
@@ -209,22 +209,20 @@ if __name__ == '__main__':
     report.folders.source = linux_folder
     report.show_env_info()
 
-    results = []
+    results: list[Result] = []
 
     if lsm.version < MINIMUM_SUPPORTED_LINUX_VERSION:
-        RESULT = {
-            'name': 'build matrix',
-            'build': 'skipped',
-            'reason': f"found Linux version ('{lsm.version}') is older than the minimum supported version ('{MINIMUM_SUPPORTED_LINUX_VERSION}') of llvm-kernel-testing",
-        }  # fmt: off
-        results.append(RESULT)
+        result = Result()
+        result.name = 'build matrix'
+        result.build = 'skipped'
+        result.reason = f"found Linux version ('{lsm.version}') is older than the minimum supported version ('{MINIMUM_SUPPORTED_LINUX_VERSION}') of llvm-kernel-testing"
+        results.append(result)
     elif (llvm_ver := ClangVersion()) < (min_llvm_ver := lsm.get_min_llvm_ver()):
-        RESULT = {
-            'name': 'build matrix',
-            'build': 'skipped',
-            'reason': f"found LLVM version ('{llvm_ver}') less than minimum LLVM version ('{min_llvm_ver}') for supplied tree",
-        }  # fmt: off
-        results.append(RESULT)
+        result = Result()
+        result.name = 'build matrix'
+        result.build = 'skipped'
+        result.reason = f"found LLVM version ('{llvm_ver}') less than minimum LLVM version ('{min_llvm_ver}') for supplied tree"
+        results.append(result)
 
     if len(results) == 0:
         make_vars: MakeVars = {}
