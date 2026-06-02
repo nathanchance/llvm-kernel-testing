@@ -162,7 +162,7 @@ class LLVMKernelRunner:
         base_make_cmd: lkt.utils.CmdList = [
             'make',
             *self.make_args,
-            *[f"{var}={self.make_vars[var]}" for var in sorted(self.make_vars)],
+            *[f"{var}={self.make_vars[var]}" for var in sorted(self.make_vars)],  # ty: ignore[invalid-key]
         ]
 
         ##########################
