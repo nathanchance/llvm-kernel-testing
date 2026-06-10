@@ -65,7 +65,6 @@ class LLVMKernelRunner:
         self.make_args: list[lkt.utils.PathString] = [f"-skj{os.cpu_count()}"]
         self.make_targets: list[str] = []
         self.make_vars: MakeVars = {
-            'HOSTLDFLAGS': '-fuse-ld=lld',
             'LLVM': '1',
             'LLVM_IAS': '1',
             'LOCALVERSION': '-cbl',
@@ -158,6 +157,11 @@ class LLVMKernelRunner:
         # Remove LLVM_IAS if the value is the default
         if self.make_vars['LLVM_IAS'] == '1':
             del self.make_vars['LLVM_IAS']
+
+        # Link host programs with ld.lld when necessary
+        makefile_txt = self.folders.source.joinpath('Makefile').read_text(encoding='utf-8')
+        if 'HOSTLDFLAGS += -fuse-ld=lld' not in makefile_txt:
+            self.make_vars['HOSTLDFLAGS'] = '-fuse-ld=lld'
 
         base_make_cmd: lkt.utils.CmdList = [
             'make',
