@@ -650,6 +650,10 @@ class LLVMKernelRunner:
             # v5.17-rc1-108-g3dc0d7091778 (Thu Feb 10 15:19:12 2022 +0000)
             # https://git.kernel.org/linus/3dc0d709177828a22dfc9d0072e3ac937ef90d06
             ('SND_SOC_SOF_DEBUG_PROBES', 'sound/soc/sof/Kconfig'),
+            # ASoC: amd: acp: Fix linker error with SDCA quirks
+            # v7.2-rc2-3-gdbbb5bc5176e (Mon Jul 6 14:41:50 2026 +0100)
+            # https://git.kernel.org/linus/dbbb5bc5176e36b13aa22e2174ab4779c5ae1dca
+            ('SND_SOC_ACPI_AMD_SDCA_QUIRKS', 'sound/soc/amd/acp/Kconfig'),
             # ASoC: SOF: Kconfig: Make SND_SOC_SOF_HDA_PROBES tristate
             # v5.18-rc1-175-ge18610eaa66a (Tue Apr 19 16:30:31 2022 +0100)
             # https://git.kernel.org/linus/e18610eaa66a1849aaa00ca43d605fb1a6fed800
