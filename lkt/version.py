@@ -31,7 +31,7 @@ class Version:
             return other
         if isinstance(other, Version):
             # pylint: disable-next=protected-access
-            return other._key  # noqa: SLF001
+            return other._key  # ruff:ignore[private-member-access]
         msg = 'Cannot get _key?'
         raise ValueError(msg)
 

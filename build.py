@@ -171,7 +171,7 @@ if __name__ == '__main__':
     if args.log_folder:
         log_folder = Path(args.log_folder).resolve()
     else:
-        log_folder = Path(REPO, 'logs', datetime.datetime.now().strftime('%Y%m%d-%H%M'))  # noqa: DTZ005
+        log_folder = Path(REPO, 'logs', datetime.datetime.now().strftime('%Y%m%d-%H%M'))  # ruff:ignore[call-datetime-now-without-tzinfo]
 
     (boot_utils_json := Path(log_folder, '.boot-utils.json')).parent.mkdir(
         exist_ok=True, parents=True

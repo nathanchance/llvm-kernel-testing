@@ -32,7 +32,7 @@ class MakeVars(TypedDict, total=False):
     KGZIP: str
     OBJCOPY: str
     OBJDUMP: str
-    O: Path  # noqa: E741
+    O: Path  # ruff:ignore[ambiguous-variable-name]
 
 
 class Folders:

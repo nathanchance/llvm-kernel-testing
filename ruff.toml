@@ -33,17 +33,17 @@ extend-select = [
     'W', # pycodestyle
 ]
 ignore = [
-    'COM812', # missing-trailing-comma (use is discouraged when using the formatter)
-    'E501', # line-too-long
-    'PLR0911', # too-many-return-statments
-    'PLR0912', # too-many-branches
-    'PLR0913', # too-many-arguments
-    'PLR0914', # too-many-locals
-    'PLR0915', # too-many-statements
-    'PLR0917', # too-many-positional-arguments
-    'PLR2004', # magic-value-comparison
-    'S404', # suspicious-subprocess-import
-    'S603', # subprocess-without-shell-equals-true
-    'S607', # start-process-with-partial-path
+    'missing-trailing-comma', # use is discouraged when using the formatter
+    'line-too-long',
+    'too-many-return-statements',
+    'too-many-branches',
+    'too-many-arguments',
+    'too-many-locals',
+    'too-many-statements',
+    'too-many-positional-arguments',
+    'magic-value-comparison',
+    'suspicious-subprocess-import',
+    'subprocess-without-shell-equals-true',
+    'start-process-with-partial-path',
 ]
 preview = true
