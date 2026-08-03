@@ -130,16 +130,21 @@ class LLVMKernelRunner:
         lkt.utils.show_cmd(boot_utils_cmd)
         sys.stderr.flush()
         sys.stdout.flush()
+        start_time = time.time()
         with self.result.log.open('a', encoding='utf-8') as file:
             proc = lkt.utils.run(
                 boot_utils_cmd, check=False, errors='replace', stderr=STDOUT, stdout=PIPE
             )
             file.write(proc.stdout)
+            boot_duration = lkt.utils.get_time_diff(start_time)
             if proc.returncode == 0:
-                self.result.boot = 'successful'
+                self.result.boot = f"successful in {boot_duration}"
             else:
-                self.result.boot = 'failed'
+                self.result.boot = f"failed in {boot_duration}"
                 print(proc.stdout, end='')
+            time_str = f"\nReal\t{boot_duration}\n"
+            print(time_str, end='')
+            file.write(time_str)
 
     def _build_kernel(self) -> None:
         self.make_args += ['-C', self.folders.source]
