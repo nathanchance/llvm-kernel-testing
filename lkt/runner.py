@@ -577,6 +577,10 @@ class LLVMKernelRunner:
             # v6.17-rc1-16-ge3ec97c3abaf (Wed Oct 1 00:00:45 2025 +0000)
             # https://git.kernel.org/linus/e3ec97c3abaf2fb68cc755cae3229288696b9f3d
             ('HYPERV', 'drivers/hv/Kconfig'),
+            # pmdomain: imx: Make IMX8M/IMX9 BLK_CTRL tristate
+            # v7.2-rc2-19-gce2bf9837092 (Tue Jul 14 15:21:18 2026 +0200)
+            # https://git.kernel.org/linus/ce2bf9837092be587050697a4d64ee43a1ead2f2
+            ('IMX9_BLK_CTRL', 'drivers/pmdomain/imx/Kconfig'),
             # RDMA/hns: Clean up the legacy CONFIG_INFINIBAND_HNS
             # v6.13-rc1-49-g8977b561216c (Mon Jan 6 08:41:06 2025 -0500)
             # https://git.kernel.org/linus/8977b561216c7e693d61c6442657e33f134bfeb5
