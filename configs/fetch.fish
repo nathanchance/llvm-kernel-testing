@@ -51,10 +51,12 @@ for distro in $distros
             set pkgbase linux-base
 
             for arch in $deb_arches
-                set package_version_signed 7.2-rc7
+                set package_version_signed 7.2
                 if string match -qr -- -rc $package_version_signed
                     set kernel_version_signed (string replace - '~' $package_version_signed)-1~exp1
                     set package_version_signed (string split -f 1 - $package_version_signed)
+                else if test $package_version_signed = 7.2
+                    set kernel_version_signed $package_version_signed.2-1~exp1
                 else
                     set kernel_version_signed $package_version_signed-1
                     set package_version_signed $package_version_signed+deb14
@@ -99,7 +101,7 @@ for distro in $distros
                     and curl -Lo $deb http://ftp.us.debian.org/debian/pool/main/l/$url_suffix
                     and ar x --output $work_dir $deb
                     and tar -C $work_dir -xJf $work_dir/data.tar.xz
-                    and cp -v $work_dir/boot/config-*-$deb_arch_config $dest/$arch.config
+                    and cp -v $work_dir/usr/lib/modules/*-$deb_arch_config/config $dest/$arch.config
                 end
                 or begin
                     __print_error "Issue processing Debian configuration for $arch!"
