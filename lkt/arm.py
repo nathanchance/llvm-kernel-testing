@@ -1,4 +1,3 @@
-import re
 from pathlib import Path
 
 import lkt.runner
@@ -15,13 +14,6 @@ MIN_IAS_LLVM_VER = ClangVersion(13, 0, 0)
 # llvmorg-16-init-11473-gcacd3e73d7f8 (Tue Nov 22 23:01:18 2022 +0000)
 # https://github.com/llvm/llvm-project/commit/cacd3e73d7f87ef3593443271ab3f170d0360934
 MIN_LLVM_VER_CFI = ClangVersion(16, 0, 0)
-
-
-def disable_be(linux: Path) -> bool:
-    text = Path(linux, 'arch/arm/mm/Kconfig').read_text(encoding='utf-8')
-    first_pattern = 'bool "Build big-endian kernel"'
-    second_pattern = 'depends on ARCH_SUPPORTS_BIG_ENDIAN'
-    return not re.search(f"({first_pattern}|{second_pattern})\n\tdepends on !LD_IS_LLD", text)
 
 
 class ArmLLVMKernelRunner(lkt.runner.LLVMKernelRunner):
@@ -89,8 +81,6 @@ class ArmLKTRunner(lkt.runner.LKTRunner):
         for config_target in ('allmodconfig', 'allnoconfig', 'tinyconfig'):
             runner = ArmLLVMKernelRunner()
             runner.configs = [config_target]
-            if config_target == 'allmodconfig' and disable_be(self.folders.source):
-                runner.configs.append('CONFIG_CPU_BIG_ENDIAN=n')
             self._runners.append(runner)
 
     def _add_distroconfig_runners(self) -> None:
