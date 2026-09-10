@@ -22,17 +22,18 @@ class MakeVars(TypedDict, total=False):
     ARCH: str
     CC: str
     CROSS_COMPILE: str
-    LLVM: str
-    LLVM_IAS: str
-    LD: str
-    LOCALVERSION: str
     HOSTCC: str
     HOSTLDFLAGS: str
     KBZIP2: str
     KGZIP: str
+    LD: str
+    LIBCLANG_PATH: str
+    LLVM: str
+    LLVM_IAS: str
+    LOCALVERSION: str
+    O: Path  # ruff:ignore[ambiguous-variable-name]
     OBJCOPY: str
     OBJDUMP: str
-    O: Path  # ruff:ignore[ambiguous-variable-name]
 
 
 class Folders:
@@ -167,6 +168,20 @@ class LLVMKernelRunner:
         makefile_txt = self.folders.source.joinpath('Makefile').read_text(encoding='utf-8')
         if 'HOSTLDFLAGS += -fuse-ld=lld' not in makefile_txt:
             self.make_vars['HOSTLDFLAGS'] = '-fuse-ld=lld'
+
+        if not (clang := shutil.which('clang')):
+            msg = 'clang not found late in _build_kernel()??'
+            raise RuntimeError(msg)
+        clang_prefix = Path(clang).resolve().parents[1]
+        found_libclang: Path | None = None
+        # upstream
+        if (libclang := clang_prefix.joinpath('lib/libclang.so')).exists():
+            found_libclang = libclang
+        # debian
+        elif possible_libclangs := list(clang_prefix.glob('lib/libclang-*.so.1')):
+            found_libclang = possible_libclangs[0]
+        if found_libclang:
+            self.make_vars['LIBCLANG_PATH'] = found_libclang.as_posix()
 
         base_make_cmd: lkt.utils.CmdList = [
             'make',
