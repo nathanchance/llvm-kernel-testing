@@ -69,16 +69,22 @@ class BinutilsVersion(Version):
     @override
     def _gen_ver_iter(self, **kwargs) -> VersionIterator:
         binary: Path | str = kwargs.get('binary', 'as')
+        as_output: str = kwargs.get('version_string', '')
 
-        if not shutil.which(binary):
-            return DEFAULT_VERSION
+        if not as_output:
+            if not shutil.which(binary):
+                return DEFAULT_VERSION
 
-        as_output = lkt.utils.chronic([binary, '--version']).stdout.splitlines()[0]
+            as_output = lkt.utils.chronic([binary, '--version']).stdout.splitlines()[0]
+
         # "GNU assembler (GNU Binutils) 2.39.50.20221024" -> "2.39.50.20221024" -> ['2', '39', '50']
+        # "GNU assembler version 2.47.20260726" -> "2.47.20260726" -> ['2', '47', '20260726'] -> ['2', '47', '0']
         # "GNU assembler version 2.39-3.fc38" -> "2.39-3.fc38" -> ['2.39'] -> ['2', '39'] -> ['2', '39', '0']
         as_iter = as_output.split(' ')[-1].split('-')[0].split('.')[0:3]
         if len(as_iter) == 2:
             as_iter.append('0')
+        if len(as_iter[2]) > 2:
+            as_iter[2] = '0'
 
         return as_iter
 
@@ -101,12 +107,17 @@ class LinuxVersion(Version):
     @override
     def _gen_ver_iter(self, **kwargs) -> VersionIterator:
         folder: Path = kwargs.get('folder', Path.cwd())
+        release: str = kwargs.get('version_string', '')
 
-        if not Path(folder, 'Makefile').exists():
-            msg = f"Provided kernel source ('{folder}') does not look like a Linux kernel tree?"
-            raise RuntimeError(msg)
+        if release:
+            output = release
+        else:
+            if not Path(folder, 'Makefile').exists():
+                msg = f"Provided kernel source ('{folder}') does not look like a Linux kernel tree?"
+                raise RuntimeError(msg)
 
-        output = lkt.utils.chronic(['make', '-s', 'kernelversion'], cwd=folder).stdout.strip()
+            output = lkt.utils.chronic(['make', '-s', 'kernelversion'], cwd=folder).stdout.strip()
+
         return output.split('-', 1)[0].split('.')
 
 
@@ -141,11 +152,13 @@ class QemuVersion(Version):
     @override
     def _gen_ver_iter(self, **kwargs) -> VersionIterator:
         arch: str = kwargs.get('arch', 'x86_64')
+        qemu_ver: str = kwargs.get('version_string', '')
 
-        if not shutil.which(binary := f"qemu-system-{arch}"):
-            return DEFAULT_VERSION
+        if not qemu_ver:
+            if not shutil.which(binary := f"qemu-system-{arch}"):
+                return DEFAULT_VERSION
+            qemu_ver = lkt.utils.chronic([binary, '--version']).stdout.splitlines()[0]
 
-        qemu_ver = lkt.utils.chronic([binary, '--version']).stdout.splitlines()[0]
         if not (match := re.search(r'version (\d+\.\d+.\d+)', qemu_ver)):
             msg = 'Could not find QEMU version?'
             raise RuntimeError(msg)

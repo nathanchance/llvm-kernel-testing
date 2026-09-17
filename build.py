@@ -2,27 +2,14 @@
 
 import datetime
 import os
-import shutil
 import signal
 import sys
 from argparse import ArgumentParser
 from pathlib import Path
 
-import lkt.arm
-import lkt.arm64
-import lkt.hexagon
-import lkt.i386
-import lkt.loongarch
-import lkt.mips
-import lkt.powerpc
-import lkt.report
-import lkt.riscv
-import lkt.s390
 import lkt.source
 import lkt.utils
-import lkt.x86_64
-from lkt.runner import MakeVars, Result
-from lkt.version import ClangVersion, LinuxVersion
+from lkt.version import LinuxVersion
 
 # This is the minimum version of Linux that can be used with this test
 # framework due to assumptions made throughout the framework with regards to
@@ -147,7 +134,7 @@ if __name__ == '__main__':
     if not (linux_folder := Path(args.linux_folder).resolve()).exists():
         msg = f"Supplied Linux source folder ('{args.linux_folder}') not found?"
         raise FileNotFoundError(msg)
-    lsm = lkt.source.LinuxSourceManager(linux_folder)
+    lst = lkt.source.LinuxSourceTree(linux_folder)
 
     if args.boot_utils_folder:
         boot_utils_folder = Path(args.boot_utils_folder).resolve()
@@ -203,61 +190,3 @@ if __name__ == '__main__':
         if (bin_folder := str(bin_folder)) not in path:
             path.insert(0, bin_folder)
     os.environ['PATH'] = ':'.join(path)
-
-    report = lkt.report.LKTReport()
-    report.folders.log = log_folder
-    report.folders.source = linux_folder
-    report.show_env_info()
-
-    results: list[Result] = []
-
-    if lsm.version < MINIMUM_SUPPORTED_LINUX_VERSION:
-        result = Result()
-        result.name = 'build matrix'
-        result.build = 'skipped'
-        result.reason = f"found Linux version ('{lsm.version}') is older than the minimum supported version ('{MINIMUM_SUPPORTED_LINUX_VERSION}') of llvm-kernel-testing"
-        results.append(result)
-    elif (llvm_ver := ClangVersion()) < (min_llvm_ver := lsm.get_min_llvm_ver()):
-        result = Result()
-        result.name = 'build matrix'
-        result.build = 'skipped'
-        result.reason = f"found LLVM version ('{llvm_ver}') less than minimum LLVM version ('{min_llvm_ver}') for supplied tree"
-        results.append(result)
-
-    if len(results) == 0:
-        make_vars: MakeVars = {}
-        if args.use_ccache and shutil.which('ccache'):
-            make_vars['CC'] = 'ccache clang'
-            make_vars['HOSTCC'] = 'ccache clang'
-        if shutil.which('pbzip2'):
-            make_vars['KBZIP2'] = 'pbzip2'
-        if shutil.which('pigz'):
-            make_vars['KGZIP'] = 'pigz'
-
-        lkt_runners = {
-            'arm': lkt.arm.ArmLKTRunner,
-            'arm64': lkt.arm64.Arm64LKTRunner,
-            'hexagon': lkt.hexagon.HexagonLKTRunner,
-            'i386': lkt.i386.I386LKTRunner,
-            'loongarch': lkt.loongarch.LoongArchLKTRunner,
-            'mips': lkt.mips.MipsLKTRunner,
-            'powerpc': lkt.powerpc.PowerPCLKTRunner,
-            'riscv': lkt.riscv.RISCVLKTRunner,
-            's390': lkt.s390.S390LKTRunner,
-            'x86_64': lkt.x86_64.X8664LKTRunner,
-        }
-        for arch in sorted(args.architectures):
-            runner = lkt_runners[arch]()
-            runner.folders.boot_utils = boot_utils_folder
-            runner.folders.build = build_folder
-            runner.folders.configs = Path(REPO, 'configs')
-            runner.folders.log = log_folder
-            runner.folders.source = linux_folder
-            runner.lsm = lsm
-            runner.make_vars.update(make_vars)
-            runner.only_test_boot = args.only_test_boot
-            runner.save_objects = args.save_objects
-            runner.targets = args.targets_to_build
-            results += runner.run()
-
-    report.generate_report(results)

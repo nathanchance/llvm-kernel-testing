@@ -1,15 +1,14 @@
 import re
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import lkt.utils
 from lkt.version import LinuxVersion, MinToolVersion
 
 
-class LinuxSourceManager:
-    def __init__(self, linux_source: Path | None = None) -> None:
-        self.folder: Path = linux_source or lkt.utils.DEFAULT_PATH
-        if not lkt.utils.path_is_set(self.folder):
-            return
+class LinuxSourceTree:
+    def __init__(self, folder: Path) -> None:
+        self.folder = folder
 
         # Perform same check as Linux for clean source tree to catch early failures
         if (
@@ -20,10 +19,11 @@ class LinuxSourceManager:
             msg = f"Supplied Linux source ('{self.folder}') is not clean!"
             raise RuntimeError(msg)
 
+        self.release: str = self._gen_release()
+        self.version: LinuxVersion = LinuxVersion(version_string=self.release)
+
         self.commits: list[str] = []
         self.configs: list[str] = []
-
-        self.version: LinuxVersion = LinuxVersion(folder=self.folder)
 
         self._cfi_y_config: str = ''
 
@@ -35,7 +35,9 @@ class LinuxSourceManager:
         # drm: Add CONFIG_DRM_WERROR
         # v6.8-rc6-1133-gf89632a9e5fa (Tue Mar 5 18:19:54 2024 +0200)
         # https://git.kernel.org/linus/f89632a9e5fa6c4787c14458cd42a9ef42025434
-        self._add_config('CONFIG_DRM_WERROR', 'drivers/gpu/drm/Kconfig')
+        self._add_config(
+            'CONFIG_DRM_WERROR', ('drivers/gpu/drm/Kconfig.debug', 'drivers/gpu/drm/Kconfig')
+        )
 
         # kbuild: link symbol CRCs at final link, removing CONFIG_MODULE_REL_CRCS
         # v5.18-rc1-54-g7b4537199a4a (Tue May 24 16:33:20 2022 +0900)
@@ -198,13 +200,39 @@ class LinuxSourceManager:
         if re.search(regex, file_text):
             self.commits.append(commit)
 
-    def _add_config(self, config: str, file_path: Path | str) -> None:
-        if not (file := Path(self.folder, file_path)).exists():
-            return
+    def _add_config(self, config: str, paths: Path | str | tuple[Path | str, ...]) -> None:
         definition = config.replace('CONFIG_', 'config ')
-        file_text = file.read_text(encoding='utf-8')
-        if definition in file_text:
-            self.configs.append(config)
+
+        search_paths = paths if isinstance(paths, tuple) else (paths,)
+        for search_path in search_paths:
+            if not (file := Path(self.folder, search_path)).exists():
+                continue
+            if definition in file.read_text(encoding='utf-8'):
+                self.configs.append(config)
+                break
+
+    def _gen_release(self) -> str:
+        with TemporaryDirectory() as tempdir:
+            (include_config := Path(tempdir, 'include/config')).mkdir(exist_ok=True, parents=True)
+            Path(include_config, 'auto.conf').write_text(
+                'CONFIG_LOCALVERSION_AUTO=y\n', encoding='utf-8'
+            )
+            (include_generated := Path(tempdir, 'include/generated')).mkdir(
+                exist_ok=True, parents=True
+            )
+            Path(include_generated, 'autoconf.h').touch(exist_ok=True)
+
+            base_make_cmd = ['make', '-C', self.folder, '-s', f"O={tempdir}"]
+            setlocalver = Path(self.folder, 'scripts/setlocalversion')
+            if 'KERNELVERSION is not set' in setlocalver.read_text(encoding='utf-8'):
+                kernelrelease = lkt.utils.chronic([*base_make_cmd, 'kernelrelease']).stdout.strip()
+            else:
+                kernelrelease = [
+                    lkt.utils.chronic([*base_make_cmd, 'kernelversion']).stdout.strip()
+                ]
+                kernelrelease.append(lkt.utils.chronic(setlocalver, cwd=self.folder).stdout.strip())
+
+        return ''.join(kernelrelease)
 
     def arch_supports_kcfi(self, srcarch: str) -> bool:
         arch_kconfig_txt = Path(self.folder, 'arch', srcarch, 'Kconfig').read_text(encoding='utf-8')
