@@ -5,12 +5,31 @@ import subprocess
 import time
 from collections.abc import Sequence
 from pathlib import Path
+from typing import TypedDict
 
 DEFAULT_PATH = Path('/intentionally/does/not/exist')
 PathString = Path | str
 ValidSingleCmd = str | bytes | os.PathLike
 ValidCmd = ValidSingleCmd | Sequence[ValidSingleCmd]
 CmdList = list[ValidSingleCmd]
+
+
+class MakeVars(TypedDict, total=False):
+    ARCH: str
+    CC: str
+    CROSS_COMPILE: str
+    HOSTCC: str
+    HOSTLDFLAGS: str
+    KBZIP2: str
+    KGZIP: str
+    LD: str
+    LIBCLANG_PATH: str
+    LLVM: str
+    LLVM_IAS: str
+    LOCALVERSION: str
+    O: Path  # ruff:ignore[ambiguous-variable-name]
+    OBJCOPY: str
+    OBJDUMP: str
 
 
 def chronic(args: ValidCmd, **kwargs) -> subprocess.CompletedProcess:
