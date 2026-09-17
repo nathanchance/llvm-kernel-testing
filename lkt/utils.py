@@ -7,6 +7,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import TypedDict
 
+CONFIGS = Path(__file__).resolve().parents[1].joinpath('configs')
 DEFAULT_PATH = Path('/intentionally/does/not/exist')
 PathString = Path | str
 ValidSingleCmd = str | bytes | os.PathLike

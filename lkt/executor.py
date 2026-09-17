@@ -7,12 +7,15 @@ from lkt.job import TestJob
 from lkt.matrix import ArchMatrix
 from lkt.source import LinuxSourceTree
 
+
 class MakeJob:
-    def __init__(self, name: str, prereqs: list[str], cmds: list[str], variables: dict[str, str]) -> None:
+    def __init__(
+        self, name: str, prereqs: list[str], cmds: list[str], variables: dict[str, str]
+    ) -> None:
         self.cmds: list[str] = cmds
         self.name: str = name
         self.prereqs: list[str] = prereqs
-        self.variables: list[str] = variables
+        self.variables: dict[str, str] = variables
 
     def __str__(self) -> str:
         parts = [f"{self.name}: {key} := {value}" for key, value in self.variables]
@@ -20,8 +23,19 @@ class MakeJob:
         parts += [f"\t{cmd}" for cmd in self.cmds]
         return '\n'.join(parts)
 
+
 class Executor:
-    def __init__(self, matrices: list[ArchMatrix], lst: LinuxSourceTree, env_info: EnvInfo, boot_utils_folder: Path, build_folder: Path, output_folder: Path, only_boot_testing: bool = False, save_objects: bool = False) -> None:
+    def __init__(
+        self,
+        matrices: list[ArchMatrix],
+        lst: LinuxSourceTree,
+        env_info: EnvInfo,
+        boot_utils_folder: Path,
+        build_folder: Path,
+        output_folder: Path,
+        only_boot_testing: bool = False,
+        save_objects: bool = False,
+    ) -> None:
         self.matrices: list[ArchMatrix] = matrices
         self.lst: LinuxSourceTree = lst
         self.env_info: EnvInfo = env_info
@@ -52,21 +66,33 @@ class Executor:
     def _transform_job(self, job: TestJob) -> MakeJob:
         if job.make_vars['LLVM_IAS'] == '1':
             del job.make_vars['LLVM_IAS']
-        job.make_targets.append(job.image_target if self.only_boot_testing else 'all')
         job.make_vars.update(self.make_vars)
 
-        pretty_job_name = f"{job.make_vars['ARCH']} {' + '.join(configs)}"
-        make_job_name = pretty_job_name.replace(' ', '_').replace('_+_', '_').replace('""', '')
+        make_vars = [f"{var}={job.make_vars[var]}" for var in sorted(job.make_vars)]  # ty: ignore[invalid-key]
+        base_make_cmd = f"$(MAKE_KERNEL) {' '.join(make_vars)}"
 
-        job_make_vars = [f"{var}={job.make_vars[var]}" for var in sorted(job.make_vars)]
-        base_make_cmd = f"$(MAKE_KERNEL) {' '.join(job_make_vars)}"
-
-        cmds = [
-            "@rm -fr $(BUILD_OUTPUT)",
-            f"@echo '$$ {make_cmd}' $(LOG_OUTPUT)",
-            f"+{make_cmd}",
+        make_targets = [
+            job.image_target if self.only_boot_testing else 'all',
+            *job.extra_make_targets,
         ]
-        if job.bootable:
+
+        pretty_job_name = f"{job.make_vars['ARCH']} {' + '.join(map(str, job.configs))}"
+
+        make_job_name = pretty_job_name.replace(' ', '_').replace('_+_', '_').replace('""', '')
+        make_job_prereqs = ['prepare']
+        make_job_cmds = [
+            "@rm -fr $(BUILD_OUTPUT)",
+            f"@echo '$$ {base_make_cmd}' $(LOG_OUTPUT)",
+            f"+{base_make_cmd}",
+        ]
+        make_job_variables = {}
+
+        return MakeJob(
+            name=make_job_name,
+            prereqs=make_job_prereqs,
+            cmds=make_job_cmds,
+            variables=make_job_variables,
+        )
 
     def run(self) -> None:
         if self.build_folder.exists():
