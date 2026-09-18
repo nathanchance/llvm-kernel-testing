@@ -75,17 +75,23 @@ class Executor:
         # update job make variables with executor wide make variables
         job.make_vars.update(self.make_vars)
 
+        make_job_variables: dict[str, str] = {
+            'MAKE_VARIABLES': ' '.join(
+                f"{var}={job.make_vars[var]}"  # ty: ignore[invalid-key]
+                for var in sorted(job.make_vars)
+            )
+        }
+
         pretty_job_name = f"{job.make_vars['ARCH']} {' + '.join(map(str, job.configs))}"
 
         # base make command to run
-        base_make_cmd: list[str] = ['$(MAKE_KERNEL)'] + [
-            f"{var}={job.make_vars[var]}"  # ty: ignore[invalid-key]
-            for var in sorted(job.make_vars)
-        ]
+        base_make_cmd: list[str] = ['$(MAKE_KERNEL) $(MAKE_VARIABLES)']
         make_job_cmds: list[str] = [
             f"@echo >&2 'Building {pretty_job_name}...'",
             # clean up previous build output if present
             '@rm -fr $(BUILD_OUTPUT)',
+            # create results directory
+            '@mkdir -p $(RESULTS)/$@',
         ]
 
         # sift configurations
@@ -144,7 +150,10 @@ class Executor:
             make_job_cmds += [gen_log_cmd(cat_cmd), f"@{cat_cmd} $(LOG_OUTPUT_SILENT)"]
 
             merge_config_cmd: str = '$(SRC)/scripts/kconfig/merge_config.sh -m -O $(BUILD_OUTPUT) $(CONFIG_FILE) $(MERGE_CONFIG_FILE)'
-            make_job_cmds += [gen_log_cmd(merge_config_cmd), f"{merge_config_cmd} $(LOG_OUTPUT_SILENT)"]
+            make_job_cmds += [
+                gen_log_cmd(merge_config_cmd),
+                f"{merge_config_cmd} $(LOG_OUTPUT_SILENT)",
+            ]
 
             need_olddefconfig = True
 
@@ -155,23 +164,30 @@ class Executor:
         if need_olddefconfig:
             make_targets.insert(0, 'olddefconfig')
         final_make_cmd: str = ' '.join([*base_make_cmd, *make_targets])
-        make_job_cmds += [gen_log_cmd(final_make_cmd), f"+{final_make_cmd} $(LOG_OUTPUT)"]
+        make_job_cmds += [
+            gen_log_cmd(final_make_cmd),
+            f"+{final_make_cmd} $(LOG_OUTPUT) || {{ echo failed >$(BUILD_RESULT);{' echo skipped >$(BOOT_RESULT);' if job.bootable else ''}' exit 1; }}",
+            '@echo success >$(BOOT_RESULT)',
+        ]
 
         make_job_prereqs = ['prepare']
-        make_job_variables = {}
         if job.bootable:
             make_job_prereqs.append('$(BOOT_UTILS_JSON)')
             make_job_variables['BOOT_UTILS_ARCH'] = job.boot_utils_arch
             make_job_cmds += [
                 gen_log_cmd('$(BOOT_KERNEL)'),
-                '$(BOOT_KERNEL) $(LOG_OUTPUT_SILENT) || { cat $(LOGS)/$@.log; /bin/false; }',
+                '$(BOOT_KERNEL) $(LOG_OUTPUT_SILENT) || { echo failed >$(BOOT_RESULT); exit 1; }',
+                '@echo success >$(BOOT_RESULT)',
             ]
 
         if not self.save_objects:
             make_job_cmds.append('@rm -fr $(BUILD_OUTPUT)')
 
         return MakeJob(
-            name=pretty_job_name.replace(' ', '_').replace('_+_', '_').replace('""', '').replace('=', '_'),
+            name=pretty_job_name.replace(' ', '_')
+            .replace('_+_', '_')
+            .replace('""', '')
+            .replace('=', '_'),
             prereqs=make_job_prereqs,
             cmds=make_job_cmds,
             variables=make_job_variables,
@@ -199,6 +215,8 @@ BOOT_UTILS_JSON := {self.logs_folder.parent.joinpath('.boot-utils.json')}
 BUILD_OUTPUT = $(BUILD)/$@
 CONFIG_FILE = $(BUILD_OUTPUT)/.config
 MERGE_CONFIG_FILE = $(BUILD_OUTPUT)/.merge.config
+BUILD_RESULT = $(RESULTS)/$@/build
+BOOT_RESULT = $(RESULTS)/$@/boot
 LOG_OUTPUT = 2>&1 | tee -a $(LOGS)/$@.log
 LOG_OUTPUT_SILENT = 2>&1 >>$(LOGS)/$@.log
 MAKE_KERNEL = $(MAKE) -C $(SRC) -s O=$(BUILD_OUTPUT)
