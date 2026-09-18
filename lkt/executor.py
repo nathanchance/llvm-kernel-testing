@@ -92,12 +92,13 @@ class Executor:
             'PRETTY_JOB_NAME': f"{job.make_vars['ARCH']} {' + '.join(map(str, job.configs))}",
         }
         make_job_cmds: list[str] = [
-            "@echo >&2 'Building $(PRETTY_JOB_NAME)...'",
-            "@echo '$(PRETTY_JOB_NAME)' >$(NAME_RESULT)",
             # clean up previous build output if present
             '@rm -fr $(BUILD_OUTPUT)',
             # create results directory
             '@mkdir -p $(RESULTS)/$@',
+            # print initial information about build
+            "@echo >&2 'Building $(PRETTY_JOB_NAME)...'",
+            "@echo '$(PRETTY_JOB_NAME)' >$(NAME_RESULT)",
         ]
         failed_preamble = f"; if [ ${{PIPESTATUS[0]}} -ne 0 ]; then echo failed >$(BUILD_RESULT);{' echo skipped >$(BOOT_RESULT);' if job.bootable else ''} exit 1; fi"
 
