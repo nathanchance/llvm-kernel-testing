@@ -76,7 +76,6 @@ class Executor:
         job.make_vars.update(self.make_vars)
 
         # base make command to run
-        pretty_job_name = f"{job.make_vars['ARCH']} {' + '.join(map(str, job.configs))}"
         base_make_cmd: list[str] = ['$(MAKE_KERNEL) $(MAKE_VARIABLES)']
 
         # initial make job information
@@ -85,10 +84,12 @@ class Executor:
             'MAKE_VARIABLES': ' '.join(
                 f"{var}={job.make_vars[var]}"  # ty: ignore[invalid-key]
                 for var in sorted(job.make_vars)
-            )
+            ),
+            'PRETTY_JOB_NAME': f"{job.make_vars['ARCH']} {' + '.join(map(str, job.configs))}",
         }
         make_job_cmds: list[str] = [
-            f"@echo >&2 'Building {pretty_job_name}...'",
+            "'@echo >&2 'Building $(PRETTY_JOB_NAME)...'",
+            '@echo $(PRETTY_JOB_NAME) >$(NAME)',
             # clean up previous build output if present
             '@rm -fr $(BUILD_OUTPUT)',
             # create results directory
@@ -194,7 +195,8 @@ class Executor:
             make_job_cmds.append('@rm -fr $(BUILD_OUTPUT)')
 
         return MakeJob(
-            name=pretty_job_name.replace(' ', '_')
+            name=make_job_variables['PRETTY_JOB_NAME']
+            .replace(' ', '_')
             .replace('_+_', '_')
             .replace('""', '')
             .replace('=', '_'),
@@ -225,6 +227,7 @@ CONFIG_FILE = $(BUILD_OUTPUT)/.config
 MERGE_CONFIG_FILE = $(BUILD_OUTPUT)/.merge.config
 BUILD_RESULT = $(RESULTS)/$@/build
 BOOT_RESULT = $(RESULTS)/$@/boot
+NAME_RESULT = $(RESULTS)/$@/name
 LOG_OUTPUT = 2>&1 | tee -a $(LOGS)/$@.log
 LOG_OUTPUT_SILENT = 2>&1 >>$(LOGS)/$@.log
 MAKE_KERNEL = $(MAKE) -C $(SRC) -s O=$(BUILD_OUTPUT)
