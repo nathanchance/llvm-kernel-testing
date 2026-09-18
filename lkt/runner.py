@@ -654,6 +654,10 @@ class LLVMKernelRunner:
             # v5.16-rc1-22-g0746ae1be121 (Thu Jan 6 13:37:47 2022 +0000)
             # https://git.kernel.org/linus/0746ae1be12177ebda0666eefa82583cbaeeefd6
             ('PCI_MVEBU', 'drivers/pci/controller/Kconfig'),
+            # pinctrl: mediatek: enable module build support for all SoC drivers
+            # v7.2-rc1-51-g5f30668104fe (Mon Jul 27 11:11:13 2026 +0200)
+            # https://git.kernel.org/linus/5f30668104fe7ed2959ffeb67459a0288022b50e
+            ('PINCTRL_MT6397', 'drivers/pinctrl/mediatek/Kconfig'),
             # pinctrl: spacemit: enable config option
             # v6.14-rc4-3-g7ff4faba6357 (Tue Feb 25 17:22:36 2025 +0100)
             # https://git.kernel.org/linus/7ff4faba63571c51004280f7eb5d6362b15ec61f
