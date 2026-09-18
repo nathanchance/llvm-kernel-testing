@@ -100,7 +100,7 @@ class Executor:
             "@echo >&2 'Building $(PRETTY_JOB_NAME)...'",
             "@echo '$(PRETTY_JOB_NAME)' >$(NAME_RESULT)",
         ]
-        failed_preamble = f"; if [ ${{PIPESTATUS[0]}} -ne 0 ]; then echo failed >$(BUILD_RESULT);{' echo skipped >$(BOOT_RESULT);' if job.bootable else ''} exit 1; fi"
+        failed_preamble = f"; if [ $${{PIPESTATUS[0]}} -ne 0 ]; then echo failed >$(BUILD_RESULT);{' echo skipped >$(BOOT_RESULT);' if job.bootable else ''} exit 1; fi"
 
         # sift configurations
         base_config: lkt.utils.PathString = job.configs[0]
