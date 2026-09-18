@@ -20,7 +20,11 @@ class MakeJob:
 
     def __str__(self) -> str:
         parts = [f".PHONY: {self.name}"]
-        parts += [f"{self.name}: {key} := {self.variables[key]}" for key in sorted(self.variables)]
+        parts += [
+            f"{self.name}: {key} := {value}"
+            for key in sorted(self.variables)
+            if (value := self.variables[key])
+        ]
         parts.append(f"{self.name}: {' '.join(self.prereqs)}")
         parts += [f"\t{cmd}" for cmd in self.cmds]
         return '\n'.join(parts)
@@ -88,8 +92,8 @@ class Executor:
             'PRETTY_JOB_NAME': f"{job.make_vars['ARCH']} {' + '.join(map(str, job.configs))}",
         }
         make_job_cmds: list[str] = [
-            "'@echo >&2 'Building $(PRETTY_JOB_NAME)...'",
-            '@echo $(PRETTY_JOB_NAME) >$(NAME)',
+            "@echo >&2 'Building $(PRETTY_JOB_NAME)...'",
+            "@echo '$(PRETTY_JOB_NAME)' >$(NAME_RESULT)",
             # clean up previous build output if present
             '@rm -fr $(BUILD_OUTPUT)',
             # create results directory
@@ -114,6 +118,7 @@ class Executor:
             else:
                 msg = f"Cannot handle {item}?"
                 raise ValueError(msg)
+        make_job_variables['REQUESTED_CONFIGS'] = ' '.join(requested_options)
         extra_configs = requested_options.copy()
         need_olddefconfig = False
 
@@ -169,14 +174,14 @@ class Executor:
         ]
         if need_olddefconfig:
             make_targets.insert(0, 'olddefconfig')
-        final_make_cmd: str = ' '.join([*base_make_cmd, *make_targets])
+        final_make_cmd = ' '.join([*base_make_cmd, *make_targets])
         make_job_cmds += [
             gen_log_cmd(final_make_cmd),
             f"+{final_make_cmd} $(LOG_OUTPUT) || {{ echo failed >$(BUILD_RESULT);{' echo skipped >$(BOOT_RESULT);' if job.bootable else ''} exit 1; }}",
             '@echo success >$(BUILD_RESULT)',
         ]
         if need_olddefconfig:
-            chk_cmd = f"$(CHKCFG) $(CONFIG_FILE) {' '.join(requested_options)}"
+            chk_cmd = '$(CHKCFG) $(CONFIG_FILE) $(REQUESTED_CONFIGS)'
             make_job_cmds += [
                 gen_log_cmd(chk_cmd),
                 f"@{chk_cmd} $(LOG_OUTPUT)",
@@ -212,6 +217,7 @@ class Executor:
 
         makefile = self.build_folder.joinpath('Makefile')
         makefile_txt = f"""\
+# Folders
 BOOT_UTILS := {self.boot_utils_folder}
 BUILD := {self.build_folder}
 CONFIGS := {lkt.utils.CONFIGS}
@@ -219,20 +225,27 @@ LOGS := {self.logs_folder}
 RESULTS := {self.results_folder}
 SRC := {self.lst.folder}
 
+# Files
 BOOT_UTILS_JSON := {self.logs_folder.parent.joinpath('.boot-utils.json')}
 CHKCFG := {lkt.utils.CONFIGS.parent.joinpath('scripts/check_olddefconfig.py')}
+MERGE_CONFIG := $(SRC)//scripts/kconfig/merge_config.sh
 
+# Recursive macros
 BUILD_OUTPUT = $(BUILD)/$@
 CONFIG_FILE = $(BUILD_OUTPUT)/.config
 MERGE_CONFIG_FILE = $(BUILD_OUTPUT)/.merge.config
+
 BUILD_RESULT = $(RESULTS)/$@/build
 BOOT_RESULT = $(RESULTS)/$@/boot
 NAME_RESULT = $(RESULTS)/$@/name
+
 LOG_OUTPUT = 2>&1 | tee -a $(LOGS)/$@.log
 LOG_OUTPUT_SILENT = 2>&1 >>$(LOGS)/$@.log
+
 MAKE_KERNEL = $(MAKE) -C $(SRC) -s O=$(BUILD_OUTPUT)
 BOOT_KERNEL = $(BOOT_UTILS)/boot-qemu.py -a $(BOOT_UTILS_ARCH) -k $(BUILD_OUTPUT) --gh-json-file $(BOOT_UTILS_JSON)
 
+# Rules
 .PHONY: all
 all: {' '.join(job.name for job in make_jobs)}
 
