@@ -1,3 +1,4 @@
+import os
 import shutil
 from pathlib import Path
 
@@ -47,7 +48,6 @@ class Executor:
         self.boot_utils_folder: Path = boot_utils_folder
         self.build_folder: Path = build_folder
         self.logs_folder: Path = Path(output_folder, 'logs')
-        self.make_jobs: list[MakeJob] = []
         self.make_vars: lkt.utils.MakeVars = {}
         self.only_boot_testing: bool = only_boot_testing
         self.results_folder: Path = Path(output_folder, 'results')
@@ -166,8 +166,8 @@ class Executor:
         final_make_cmd: str = ' '.join([*base_make_cmd, *make_targets])
         make_job_cmds += [
             gen_log_cmd(final_make_cmd),
-            f"+{final_make_cmd} $(LOG_OUTPUT) || {{ echo failed >$(BUILD_RESULT);{' echo skipped >$(BOOT_RESULT);' if job.bootable else ''}' exit 1; }}",
-            '@echo success >$(BOOT_RESULT)',
+            f"+{final_make_cmd} $(LOG_OUTPUT) || {{ echo failed >$(BUILD_RESULT);{' echo skipped >$(BOOT_RESULT);' if job.bootable else ''} exit 1; }}",
+            '@echo success >$(BUILD_RESULT)',
         ]
 
         make_job_prereqs = ['prepare']
@@ -193,14 +193,10 @@ class Executor:
             variables=make_job_variables,
         )
 
-    def run(self) -> None:
-        if self.build_folder.exists():
-            shutil.rmtree(self.build_folder)
-        self.build_folder.mkdir(parents=True)
-
-        for matrix in self.matrices:
-            for job in matrix.jobs:
-                self.make_jobs.append(self._transform_test_into_make(job))
+    def _generate_makefile(self) -> Path:
+        make_jobs: list[MakeJob] = [
+            self._transform_test_into_make(job) for matrix in self.matrices for job in matrix.jobs
+        ]
 
         makefile = self.build_folder.joinpath('Makefile')
         makefile_txt = f"""\
@@ -223,7 +219,7 @@ MAKE_KERNEL = $(MAKE) -C $(SRC) -s O=$(BUILD_OUTPUT)
 BOOT_KERNEL = $(BOOT_UTILS)/boot-qemu.py -a $(BOOT_UTILS_ARCH) -k $(BUILD_OUTPUT) --gh-json-file $(BOOT_UTILS_JSON)
 
 .PHONY: all
-all: {' '.join(job.name for job in self.make_jobs)}
+all: {' '.join(job.name for job in make_jobs)}
 
 .PHONY: prepare
 prepare:
@@ -233,6 +229,15 @@ prepare:
 $(BOOT_UTILS_JSON): prepare
 \t@curl -LSso $(BOOT_UTILS_JSON) https://api.github.com/repos/ClangBuiltLinux/boot-utils/releases/latest || test -f $(BOOT_UTILS_JSON)
 
-{'\n'.join(str(job) for job in self.make_jobs)}
+{'\n'.join(str(job) for job in make_jobs)}
 """
         makefile.write_text(makefile_txt, encoding='utf-8')
+        return makefile
+
+    def run(self) -> None:
+        if self.build_folder.exists():
+            shutil.rmtree(self.build_folder)
+        self.build_folder.mkdir(parents=True)
+
+        makefile = self._generate_makefile()
+        lkt.utils.run(['make', '-f', makefile, f"-kj{os.cpu_count()}"], show_cmd=True)
