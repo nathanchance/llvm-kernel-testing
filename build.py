@@ -7,9 +7,12 @@ import sys
 from argparse import ArgumentParser
 from pathlib import Path
 
-import lkt.source
 import lkt.utils
+from lkt.env import EnvInfo
+from lkt.executor import Executor
+from lkt.source import LinuxSourceTree
 from lkt.version import LinuxVersion
+from lkt.x86_64 import X8664Matrix
 
 # This is the minimum version of Linux that can be used with this test
 # framework due to assumptions made throughout the framework with regards to
@@ -19,19 +22,8 @@ MINIMUM_SUPPORTED_LINUX_VERSION = LinuxVersion(5, 15, 0)
 REPO = Path(__file__).resolve().parent
 SUPPORTED_TARGETS = [
     'def',
-    'distro',
-    'other',
 ]
 SUPPORTED_ARCHITECTURES = [
-    'arm',
-    'arm64',
-    'hexagon',
-    'i386',
-    'loongarch',
-    'mips',
-    'powerpc',
-    'riscv',
-    's390',
     'x86_64',
 ]
 EXPERIMENTAL_ARCHITECTURES = []
@@ -78,12 +70,12 @@ def parse_arguments():
         help="Path to LLVM installation (parent of 'bin' folder, default: Use LLVM from PATH).",
     )
     parser.add_argument(
-        '--log-folder', type=str, help='Folder to store log files in (default: %(default)s).'
-    )
-    parser.add_argument(
         '--only-test-boot',
         action='store_true',
         help='Only build configs that can be booted in QEMU and only build kernel images (no modules)',
+    )
+    parser.add_argument(
+        '--output-folder', type=str, help='Folder to store output files in (default: %(default)s).'
     )
     parser.add_argument(
         '--save-objects',
@@ -155,25 +147,10 @@ if __name__ == '__main__':
         build_folder = Path(args.build_folder).resolve()
     else:
         build_folder = Path(linux_folder, 'build')
-    if args.log_folder:
-        log_folder = Path(args.log_folder).resolve()
+    if args.output_folder:
+        output_folder = Path(args.output_folder).resolve()
     else:
-        log_folder = Path(REPO, 'logs', datetime.datetime.now().strftime('%Y%m%d-%H%M'))  # ruff:ignore[call-datetime-now-without-tzinfo]
-
-    (boot_utils_json := Path(log_folder, '.boot-utils.json')).parent.mkdir(
-        exist_ok=True, parents=True
-    )
-
-    boot_utils_json_cmd = [
-        'curl',
-        '-LSs',
-        '-o',
-        boot_utils_json,
-        'https://api.github.com/repos/ClangBuiltLinux/boot-utils/releases/latest',
-    ]
-    if not (lkt.utils.run_check_rc_zero(boot_utils_json_cmd) or boot_utils_json.exists()):
-        msg = f"{boot_utils_json} failed to download and a previous copy is not available!"
-        raise FileNotFoundError(msg)
+        output_folder = Path(REPO, 'output', datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%d-%H%M'))
 
     # Add prefixes to PATH if they exist
     path = os.environ['PATH'].split(':')
@@ -190,3 +167,24 @@ if __name__ == '__main__':
         if (bin_folder := str(bin_folder)) not in path:
             path.insert(0, bin_folder)
     os.environ['PATH'] = ':'.join(path)
+    env_info = EnvInfo()
+
+    arch_to_matrix = {
+        'x86_64': X8664Matrix,
+    }
+    matrices = [arch_to_matrix[arch](lst=lst, env_info=env_info, targets=args.targets_to_build) for arch in args.architectures]
+    executor = Executor(
+        matrices=matrices,
+        lst=lst,
+        env_info=env_info,
+        boot_utils_folder=boot_utils_folder,
+        build_folder=build_folder,
+        output_folder=output_folder,
+        only_boot_testing=args.only_test_boot,
+        save_objects=args.save_objects,
+    )
+    if args.use_ccache and shutil.which('ccache'):
+        executor.make_vars['CC'] = 'ccache clang'
+        executor.make_vars['HOSTCC'] = 'ccache clang'
+
+    executor.run()
