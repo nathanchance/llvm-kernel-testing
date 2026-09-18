@@ -245,6 +245,8 @@ $(BOOT_UTILS_JSON): prepare
         return makefile
 
     def run(self) -> None:
+        lkt.utils.header('Running test matrix')
+
         if self.build_folder.exists():
             shutil.rmtree(self.build_folder)
         self.build_folder.mkdir(parents=True)
