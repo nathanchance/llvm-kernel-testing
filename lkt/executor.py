@@ -14,7 +14,7 @@ class MakeJob:
         self, name: str, prereqs: list[str], cmds: list[str], variables: dict[str, str]
     ) -> None:
         self.cmds: list[str] = cmds
-        self.name: str = name
+        self.name: str = name[0:251]  # allow job name to be used as a log file name
         self.prereqs: list[str] = prereqs
         self.variables: dict[str, str] = variables
 
