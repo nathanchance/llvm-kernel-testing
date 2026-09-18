@@ -99,6 +99,7 @@ class Executor:
             # create results directory
             '@mkdir -p $(RESULTS)/$@',
         ]
+        failed_preamble = f"; if [ ${{PIPESTATUS[0]}} -ne 0 ]; then echo failed >$(BUILD_RESULT);{' echo skipped >$(BOOT_RESULT);' if job.bootable else ''} exit 1; fi"
 
         # sift configurations
         base_config: lkt.utils.PathString = job.configs[0]
@@ -130,7 +131,7 @@ class Executor:
                 )
                 make_job_cmds += [
                     gen_log_cmd(initial_make_cmd_str),
-                    f"+{initial_make_cmd_str} $(LOG_OUTPUT)",
+                    f"+{initial_make_cmd_str} $(LOG_OUTPUT){failed_preamble}",
                 ]
             else:
                 base_make_cmd += [base_config, *requested_fragments]
@@ -159,7 +160,9 @@ class Executor:
             make_job_cmds += [gen_log_cmd(cat_cmd), f"@{cat_cmd} $(LOG_OUTPUT_SILENT)"]
 
             # run merge_config.sh
-            merge_config_cmd: str = '$(SRC)/scripts/kconfig/merge_config.sh -m -O $(BUILD_OUTPUT) $(CONFIG_FILE) $(MERGE_CONFIG_FILE)'
+            merge_config_cmd: str = (
+                '$(MERGE_CONFIG_SH) -m -O $(BUILD_OUTPUT) $(CONFIG_FILE) $(MERGE_CONFIG_FILE)'
+            )
             make_job_cmds += [
                 gen_log_cmd(merge_config_cmd),
                 f"{merge_config_cmd} $(LOG_OUTPUT_SILENT)",
@@ -177,7 +180,7 @@ class Executor:
         final_make_cmd = ' '.join([*base_make_cmd, *make_targets])
         make_job_cmds += [
             gen_log_cmd(final_make_cmd),
-            f"+{final_make_cmd} $(LOG_OUTPUT) || {{ echo failed >$(BUILD_RESULT);{' echo skipped >$(BOOT_RESULT);' if job.bootable else ''} exit 1; }}",
+            f"+{final_make_cmd} $(LOG_OUTPUT){failed_preamble}",
             '@echo success >$(BUILD_RESULT)',
         ]
         if need_olddefconfig:
@@ -217,6 +220,8 @@ class Executor:
 
         makefile = self.build_folder.joinpath('Makefile')
         makefile_txt = f"""\
+SHELL := /bin/bash
+
 # Folders
 BOOT_UTILS := {self.boot_utils_folder}
 BUILD := {self.build_folder}
@@ -228,7 +233,7 @@ SRC := {self.lst.folder}
 # Files
 BOOT_UTILS_JSON := {self.logs_folder.parent.joinpath('.boot-utils.json')}
 CHKCFG := {lkt.utils.CONFIGS.parent.joinpath('scripts/check_olddefconfig.py')}
-MERGE_CONFIG := $(SRC)//scripts/kconfig/merge_config.sh
+MERGE_CONFIG_SH := $(SRC)/scripts/kconfig/merge_config.sh
 
 # Recursive macros
 BUILD_OUTPUT = $(BUILD)/$@
