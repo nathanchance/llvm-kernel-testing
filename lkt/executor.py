@@ -75,17 +75,18 @@ class Executor:
         # update job make variables with executor wide make variables
         job.make_vars.update(self.make_vars)
 
+        # base make command to run
+        pretty_job_name = f"{job.make_vars['ARCH']} {' + '.join(map(str, job.configs))}"
+        base_make_cmd: list[str] = ['$(MAKE_KERNEL) $(MAKE_VARIABLES)']
+
+        # initial make job information
+        make_job_prereqs = ['prepare']
         make_job_variables: dict[str, str] = {
             'MAKE_VARIABLES': ' '.join(
                 f"{var}={job.make_vars[var]}"  # ty: ignore[invalid-key]
                 for var in sorted(job.make_vars)
             )
         }
-
-        pretty_job_name = f"{job.make_vars['ARCH']} {' + '.join(map(str, job.configs))}"
-
-        # base make command to run
-        base_make_cmd: list[str] = ['$(MAKE_KERNEL) $(MAKE_VARIABLES)']
         make_job_cmds: list[str] = [
             f"@echo >&2 'Building {pretty_job_name}...'",
             # clean up previous build output if present
@@ -149,6 +150,7 @@ class Executor:
             cat_cmd: str = 'cat $(MERGE_CONFIG_FILE)'
             make_job_cmds += [gen_log_cmd(cat_cmd), f"@{cat_cmd} $(LOG_OUTPUT_SILENT)"]
 
+            # run merge_config.sh
             merge_config_cmd: str = '$(SRC)/scripts/kconfig/merge_config.sh -m -O $(BUILD_OUTPUT) $(CONFIG_FILE) $(MERGE_CONFIG_FILE)'
             make_job_cmds += [
                 gen_log_cmd(merge_config_cmd),
@@ -157,6 +159,7 @@ class Executor:
 
             need_olddefconfig = True
 
+        # build kernel and additional targets
         make_targets = [
             job.image_target if self.only_boot_testing else 'all',
             *job.extra_make_targets,
@@ -169,8 +172,13 @@ class Executor:
             f"+{final_make_cmd} $(LOG_OUTPUT) || {{ echo failed >$(BUILD_RESULT);{' echo skipped >$(BOOT_RESULT);' if job.bootable else ''} exit 1; }}",
             '@echo success >$(BUILD_RESULT)',
         ]
+        if need_olddefconfig:
+            chk_cmd = f"$(CHKCFG) $(CONFIG_FILE) {' '.join(requested_options)}"
+            make_job_cmds += [
+                gen_log_cmd(chk_cmd),
+                f"@{chk_cmd} $(LOG_OUTPUT)",
+            ]
 
-        make_job_prereqs = ['prepare']
         if job.bootable:
             make_job_prereqs.append('$(BOOT_UTILS_JSON)')
             make_job_variables['BOOT_UTILS_ARCH'] = job.boot_utils_arch
@@ -206,7 +214,9 @@ CONFIGS := {lkt.utils.CONFIGS}
 LOGS := {self.logs_folder}
 RESULTS := {self.results_folder}
 SRC := {self.lst.folder}
+
 BOOT_UTILS_JSON := {self.logs_folder.parent.joinpath('.boot-utils.json')}
+CHKCFG := {lkt.utils.CONFIGS.parent.joinpath('scripts/check_olddefconfig.py')}
 
 BUILD_OUTPUT = $(BUILD)/$@
 CONFIG_FILE = $(BUILD_OUTPUT)/.config
