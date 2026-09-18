@@ -20,7 +20,7 @@ class MakeJob:
 
     def __str__(self) -> str:
         parts = [f".PHONY: {self.name}"]
-        parts += [f"{self.name}: {key} := {value}" for key, value in self.variables.items()]
+        parts += [f"{self.name}: {key} := {self.variables[key]}" for key in sorted(self.variables)]
         parts.append(f"{self.name}: {' '.join(self.prereqs)}")
         parts += [f"\t{cmd}" for cmd in self.cmds]
         return '\n'.join(parts)
@@ -143,8 +143,10 @@ class Executor:
             if 'CONFIG_CPU_LITTLE_ENDIAN=y' in extra_configs:
                 extra_configs.append('CONFIG_CPU_BIG_ENDIAN=n')
 
+            make_job_variables['EXTRA_CONFIGS'] = ' '.join(extra_configs)
+
             # generate .merge.config from extra_configs
-            make_job_cmds.append(f"@printf '%s\\n' {' '.join(extra_configs)} >$(MERGE_CONFIG_FILE)")
+            make_job_cmds.append("@printf '%s\\n' $(EXTRA_CONFIGS) >$(MERGE_CONFIG_FILE)")
 
             # show .merge.config in log for reproduction
             cat_cmd: str = 'cat $(MERGE_CONFIG_FILE)'

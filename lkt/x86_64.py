@@ -42,12 +42,12 @@ class X8664Matrix(ArchMatrix):
 
         return jobs
 
-    def _add_otherconfig_jobs(self) -> list[TestJob]:
+    def _add_otherconfig_jobs(self) -> list[TestJob]:  # ruff: ignore[no-self-use]
         jobs: list[TestJob] = []
 
         return jobs
 
-    def _add_distroconfig_jobs(self) -> list[TestJob]:
+    def _add_distroconfig_jobs(self) -> list[TestJob]:  # ruff: ignore[no-self-use]
         jobs: list[TestJob] = []
 
         return jobs

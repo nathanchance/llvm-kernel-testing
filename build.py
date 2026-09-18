@@ -2,6 +2,7 @@
 
 import datetime
 import os
+import shutil
 import signal
 import sys
 from argparse import ArgumentParser
@@ -10,6 +11,7 @@ from pathlib import Path
 import lkt.utils
 from lkt.env import EnvInfo
 from lkt.executor import Executor
+from lkt.matrix import ArchMatrix
 from lkt.source import LinuxSourceTree
 from lkt.version import LinuxVersion
 from lkt.x86_64 import X8664Matrix
@@ -126,7 +128,7 @@ if __name__ == '__main__':
     if not (linux_folder := Path(args.linux_folder).resolve()).exists():
         msg = f"Supplied Linux source folder ('{args.linux_folder}') not found?"
         raise FileNotFoundError(msg)
-    lst = lkt.source.LinuxSourceTree(linux_folder)
+    lst = LinuxSourceTree(linux_folder)
 
     if args.boot_utils_folder:
         boot_utils_folder = Path(args.boot_utils_folder).resolve()
@@ -150,7 +152,9 @@ if __name__ == '__main__':
     if args.output_folder:
         output_folder = Path(args.output_folder).resolve()
     else:
-        output_folder = Path(REPO, 'output', datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%d-%H%M'))
+        output_folder = Path(
+            REPO, 'output', datetime.datetime.now(datetime.UTC).strftime('%Y%m%d-%H%M')
+        )
 
     # Add prefixes to PATH if they exist
     path = os.environ['PATH'].split(':')
@@ -169,10 +173,13 @@ if __name__ == '__main__':
     os.environ['PATH'] = ':'.join(path)
     env_info = EnvInfo()
 
-    arch_to_matrix = {
+    arch_to_matrix: dict[str, type] = {
         'x86_64': X8664Matrix,
     }
-    matrices = [arch_to_matrix[arch](lst=lst, env_info=env_info, targets=args.targets_to_build) for arch in args.architectures]
+    matrices: list[ArchMatrix] = [
+        arch_to_matrix[arch](lst=lst, env_info=env_info, targets=args.targets_to_build)
+        for arch in args.architectures
+    ]
     executor = Executor(
         matrices=matrices,
         lst=lst,

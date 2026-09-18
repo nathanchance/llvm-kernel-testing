@@ -5,7 +5,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 
-def parse_arguments() -> None:
+def parse_arguments():
     parser = ArgumentParser(description='Check .config after running olddefconfig')
 
     parser.add_argument('config_file', type=Path, help='Path to .config')
