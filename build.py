@@ -12,6 +12,7 @@ import lkt.utils
 from lkt.env import EnvInfo
 from lkt.executor import Executor
 from lkt.matrix import ArchMatrix
+from lkt.report import Report
 from lkt.source import LinuxSourceTree
 from lkt.version import LinuxVersion
 from lkt.x86_64 import X8664Matrix
@@ -133,6 +134,7 @@ if __name__ == '__main__':
         msg = f"Supplied Linux source folder ('{args.linux_folder}') not found?"
         raise FileNotFoundError(msg)
     lst = LinuxSourceTree(linux_folder)
+    lst.show()
 
     if args.boot_utils_folder:
         boot_utils_folder = Path(args.boot_utils_folder).resolve()
@@ -176,6 +178,7 @@ if __name__ == '__main__':
             path.insert(0, bin_folder)
     os.environ['PATH'] = ':'.join(path)
     env_info = EnvInfo()
+    env_info.show()
 
     arch_to_matrix: dict[str, type] = {
         'x86_64': X8664Matrix,
@@ -199,3 +202,5 @@ if __name__ == '__main__':
         executor.make_vars['HOSTCC'] = 'ccache clang'
 
     executor.run()
+
+    Report(executor).generate()
