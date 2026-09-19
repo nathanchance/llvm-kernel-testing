@@ -23,7 +23,7 @@ class X8664Matrix(ArchMatrix):
         # https://git.kernel.org/linus/89245600941e4e0f87d77f60ee269b5e61ef4e49
         if self.env_info.clang.version < MIN_LLVM_VER_CFI:
             cfi_skip_reason = f"LLVM < {MIN_LLVM_VER_CFI} (using '{self.env_info.clang.version}')"
-        elif '89245600941e4e0f87d77f60ee269b5e61ef4e49' in self.lst.commits:
+        elif '89245600941e4e0f87d77f60ee269b5e61ef4e49' not in self.lst.commits:
             cfi_skip_reason = f"Linux < {LinuxVersion(6, 1, 0)} (have '{self.lst.version}')"
         else:
             cfi_skip_reason = ''

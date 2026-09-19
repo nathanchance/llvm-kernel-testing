@@ -124,18 +124,34 @@ def interrupt_handler(_signum, _frame):
     sys.exit(130)
 
 
+def modify_path(prefixes: list[Path | None]) -> None:
+    path = os.environ['PATH'].split(os.pathsep)
+    for item in prefixes:
+        if not item:
+            continue
+        if not (prefix := Path(item)).exists():
+            msg = f"Supplied prefix ('{prefix}') does not exist?"
+            raise FileNotFoundError(msg)
+        if not (bin_folder := Path(prefix, 'bin')).exists():
+            msg = f"Supplied prefix ('{prefix}') has no 'bin' folder?"
+            raise FileNotFoundError(msg)
+        if (bin_folder := str(bin_folder)) not in path:
+            path.insert(0, bin_folder)
+    os.environ['PATH'] = os.pathsep.join(path)
+
+
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, interrupt_handler)
 
     args = parse_arguments()
 
-    # Folders
+    # Process supplied Linux folder
     if not (linux_folder := Path(args.linux_folder).resolve()).exists():
         msg = f"Supplied Linux source folder ('{args.linux_folder}') not found?"
         raise FileNotFoundError(msg)
     lst = LinuxSourceTree(linux_folder)
-    lst.show()
 
+    # Download boot-utils if necessary
     if args.boot_utils_folder:
         boot_utils_folder = Path(args.boot_utils_folder).resolve()
     else:
@@ -151,10 +167,12 @@ if __name__ == '__main__':
             )
         lkt.utils.run(['git', 'pull', '--no-edit'], cwd=boot_utils_folder)
 
+    # Build folder for holding kernel build artifacts
     if args.build_folder:
         build_folder = Path(args.build_folder).resolve()
     else:
         build_folder = Path(linux_folder, 'build')
+    # Output folder for holding build logs and matrix results
     if args.output_folder:
         output_folder = Path(args.output_folder).resolve()
     else:
@@ -163,23 +181,12 @@ if __name__ == '__main__':
         )
 
     # Add prefixes to PATH if they exist
-    path = os.environ['PATH'].split(':')
-    prefixes = [args.binutils_prefix, args.llvm_prefix, args.tc_prefix, args.qemu_prefix]
-    for item in prefixes:
-        if not item:
-            continue
-        if not (prefix := Path(item)).exists():
-            msg = f"Supplied prefix ('{prefix}') does not exist?"
-            raise FileNotFoundError(msg)
-        if not (bin_folder := Path(prefix, 'bin')).exists():
-            msg = f"Supplied prefix ('{prefix}') has no 'bin' folder?"
-            raise FileNotFoundError(msg)
-        if (bin_folder := str(bin_folder)) not in path:
-            path.insert(0, bin_folder)
-    os.environ['PATH'] = ':'.join(path)
-    env_info = EnvInfo()
-    env_info.show()
+    modify_path([args.binutils_prefix, args.llvm_prefix, args.tc_prefix, args.qemu_prefix])
 
+    # Get environment information
+    env_info = EnvInfo()
+
+    # Generate full matrix
     arch_to_matrix: dict[str, type] = {
         'x86_64': X8664Matrix,
     }
@@ -187,6 +194,8 @@ if __name__ == '__main__':
         arch_to_matrix[arch](lst=lst, env_info=env_info, targets=args.targets_to_build)
         for arch in args.architectures
     ]
+
+    # Build executor
     executor = Executor(
         matrices=matrices,
         lst=lst,
@@ -201,6 +210,12 @@ if __name__ == '__main__':
         executor.make_vars['CC'] = 'ccache clang'
         executor.make_vars['HOSTCC'] = 'ccache clang'
 
+    # Print information to user
+    lst.show()
+    env_info.show()
+
+    # Run test matrix
     executor.run()
 
+    # Generate report from results of run
     Report(executor).generate()
