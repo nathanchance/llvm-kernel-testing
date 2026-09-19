@@ -2,7 +2,7 @@ from pathlib import Path
 
 from lkt.job import TestJob
 from lkt.matrix import ArchMatrix
-from lkt.version import ClangVersion
+from lkt.version import ClangVersion, LinuxVersion
 
 KERNEL_ARCH = 'x86_64'
 
@@ -21,18 +21,26 @@ class X8664Matrix(ArchMatrix):
         # cfi: Switch to -fsanitize=kcfi
         # v6.0-rc4-5-g89245600941e (Mon Sep 26 10:13:13 2022 -0700)
         # https://git.kernel.org/linus/89245600941e4e0f87d77f60ee269b5e61ef4e49
-        if (
-            self.env_info.clang.version >= MIN_LLVM_VER_CFI
-            and '89245600941e4e0f87d77f60ee269b5e61ef4e49' in self.lst.commits
-        ):
-            cfi_y_config = self.lst.get_cfi_y_config()
+        if self.env_info.clang.version < MIN_LLVM_VER_CFI:
+            cfi_skip_reason = f"LLVM < {MIN_LLVM_VER_CFI} (using '{self.env_info.clang.version}')"
+        elif '89245600941e4e0f87d77f60ee269b5e61ef4e49' in self.lst.commits:
+            cfi_skip_reason = f"Linux < {LinuxVersion(6, 1, 0)} (have '{self.lst.version}')"
+        else:
+            cfi_skip_reason = ''
+        cfi_y_config = self.lst.get_cfi_y_config()
 
-            jobs += [
-                TestJob(arch=KERNEL_ARCH, configs=['defconfig', cfi_y_config]),
-                TestJob(
-                    arch=KERNEL_ARCH, configs=['defconfig', cfi_y_config, 'CONFIG_LTO_CLANG_THIN=y']
-                ),
-            ]
+        jobs += [
+            TestJob(
+                arch=KERNEL_ARCH,
+                configs=['defconfig', cfi_y_config],
+                skip_build_reason=cfi_skip_reason,
+            ),
+            TestJob(
+                arch=KERNEL_ARCH,
+                configs=['defconfig', cfi_y_config, 'CONFIG_LTO_CLANG_THIN=y'],
+                skip_build_reason=cfi_skip_reason,
+            ),
+        ]
 
         if Path(self.lst.folder, 'kernel/configs/hardening.config').exists():
             jobs.append(TestJob(arch=KERNEL_ARCH, configs=['defconfig', 'hardening.config']))

@@ -14,6 +14,10 @@ def gen_log_cmd(cmd_str: str) -> str:
     return f"@echo '$$ {cmd_str}' $(LOG_OUTPUT_SILENT)"
 
 
+def pretty_name_to_make_name(pretty_job_name: str) -> str:
+    return pretty_job_name.replace(' ', '_').replace('_+_', '_').replace('""', '').replace('=', '_')
+
+
 class Executor:
     def __init__(
         self,
@@ -67,10 +71,6 @@ class Executor:
         # initial make job information
         make_job_prereqs = ['prepare']
         make_job_variables: dict[str, str] = {
-            'MAKE_VARIABLES': ' '.join(
-                f"{var}={job.make_vars[var]}"  # ty: ignore[invalid-key]
-                for var in sorted(job.make_vars)
-            ),
             'PRETTY_JOB_NAME': f"{job.make_vars['ARCH']} {' + '.join(map(str, job.configs))}",
         }
         make_job_cmds: list[str] = [
@@ -78,11 +78,31 @@ class Executor:
             '@rm -fr $(BUILD_OUTPUT)',
             # create results directory
             '@mkdir -p $(RESULTS)/$@',
-            # print initial information about build
-            "@echo >&2 'Building $(PRETTY_JOB_NAME)...'",
+            # save build name
             "@echo '$(PRETTY_JOB_NAME)' >$(NAME_RESULT)",
         ]
-        failed_preamble = f"; if [ $${{PIPESTATUS[0]}} -ne 0 ]; then echo failed >$(BUILD_RESULT);{' echo skipped >$(BOOT_RESULT);' if job.bootable else ''} exit 1; fi"
+        make_job_name = pretty_name_to_make_name(make_job_variables['PRETTY_JOB_NAME'])
+        if job.skip_build_reason:
+            make_job_variables['SKIP_BUILD_REASON'] = job.skip_build_reason
+            make_job_cmds += [
+                # log skip reason into result
+                "@echo 'skipped due to $(SKIP_BUILD_REASON)' >$(BUILD_RESULT)",
+                # show skipped build to user
+                "@echo >&2 'Skipping $(PRETTY_JOB_NAME) due to $(SKIP_BUILD_REASON)...'",
+            ]
+            return MakeJob(
+                name=make_job_name,
+                prereqs=make_job_prereqs,
+                cmds=make_job_cmds,
+                variables=make_job_variables,
+            )
+
+        failed_build_handling = f"; if [ $${{PIPESTATUS[0]}} -ne 0 ]; then echo failed >$(BUILD_RESULT);{' echo skipped >$(BOOT_RESULT);' if job.bootable else ''} exit 1; fi"
+        make_job_variables['MAKE_VARIABLES'] = ' '.join(
+            f"{var}={job.make_vars[var]}"  # ty: ignore[invalid-key]
+            for var in sorted(job.make_vars)
+        )
+        make_job_cmds.append("@echo >&2 'Building $(PRETTY_JOB_NAME)...'")
 
         # sift configurations
         base_config: lkt.utils.PathString = job.configs[0]
@@ -114,7 +134,7 @@ class Executor:
                 )
                 make_job_cmds += [
                     gen_log_cmd(initial_make_cmd_str),
-                    f"+{initial_make_cmd_str} $(LOG_OUTPUT){failed_preamble}",
+                    f"+{initial_make_cmd_str} $(LOG_OUTPUT){failed_build_handling}",
                 ]
             else:
                 base_make_cmd += [base_config, *requested_fragments]
@@ -163,7 +183,7 @@ class Executor:
         final_make_cmd = ' '.join([*base_make_cmd, *make_targets])
         make_job_cmds += [
             gen_log_cmd(final_make_cmd),
-            f"+{final_make_cmd} $(LOG_OUTPUT){failed_preamble}",
+            f"+{final_make_cmd} $(LOG_OUTPUT){failed_build_handling}",
             '@echo success >$(BUILD_RESULT)',
         ]
         if need_olddefconfig:
@@ -173,7 +193,15 @@ class Executor:
                 f"@{chk_cmd} $(LOG_OUTPUT)",
             ]
 
-        if job.bootable:
+        if job.skip_boot_reason:
+            make_job_variables['SKIP_BOOT_REASON'] = job.skip_boot_reason
+            make_job_cmds += [
+                # log skip reason into result
+                "@echo 'skipped due to $(SKIP_BOOT_REASON)' >$(BOOT_RESULT)",
+                # show skipped build to user
+                "@echo >&2 'Skipping $(PRETTY_JOB_NAME) boot due to $(SKIP_BOOT_REASON)...'",
+            ]
+        elif job.bootable:
             make_job_prereqs.append('$(BOOT_UTILS_JSON)')
             make_job_variables['BOOT_UTILS_ARCH'] = job.boot_utils_arch
             make_job_cmds += [
@@ -186,11 +214,7 @@ class Executor:
             make_job_cmds.append('@rm -fr $(BUILD_OUTPUT)')
 
         return MakeJob(
-            name=make_job_variables['PRETTY_JOB_NAME']
-            .replace(' ', '_')
-            .replace('_+_', '_')
-            .replace('""', '')
-            .replace('=', '_'),
+            name=make_job_name,
             prereqs=make_job_prereqs,
             cmds=make_job_cmds,
             variables=make_job_variables,

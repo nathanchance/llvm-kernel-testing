@@ -30,6 +30,8 @@ class TestJob:
         bootable: bool = False,
         boot_utils_arch: str = '',
         image_target: str = '',
+        skip_build_reason: str = '',
+        skip_boot_reason: str = '',
     ) -> None:
         if not boot_utils_arch:
             boot_utils_arch = arch
@@ -46,3 +48,5 @@ class TestJob:
             'LOCALVERSION': '-cbl',
         }
         self.override_make_vars: lkt.utils.MakeVars = {}
+        self.skip_build_reason: str = skip_build_reason
+        self.skip_boot_reason: str = skip_boot_reason
