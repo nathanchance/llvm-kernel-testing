@@ -73,12 +73,15 @@ def parse_arguments():
         help="Path to LLVM installation (parent of 'bin' folder, default: Use LLVM from PATH).",
     )
     parser.add_argument(
+        '-o',
+        '--output-folder',
+        type=str,
+        help='Folder to store output files in (default: %(default)s).',
+    )
+    parser.add_argument(
         '--only-test-boot',
         action='store_true',
         help='Only build configs that can be booted in QEMU and only build kernel images (no modules)',
-    )
-    parser.add_argument(
-        '--output-folder', type=str, help='Folder to store output files in (default: %(default)s).'
     )
     parser.add_argument(
         '--save-objects',
