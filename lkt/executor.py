@@ -237,9 +237,13 @@ class Executor:
         )
 
     def _generate_makefile(self) -> Path:
-        make_jobs: list[MakeJob] = [
-            self._transform_test_into_make(job) for matrix in self.matrices for job in matrix.jobs
+        test_jobs: list[TestJob] = [
+            job
+            for matrix in self.matrices
+            for job in matrix.jobs
+            if not self.only_boot_testing or job.bootable
         ]
+        make_jobs: list[MakeJob] = [self._transform_test_into_make(job) for job in test_jobs]
 
         makefile = self.build_folder.joinpath('Makefile')
         makefile_txt = f"""\
