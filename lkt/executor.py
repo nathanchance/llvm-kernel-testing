@@ -1,5 +1,6 @@
 import os
 import shutil
+import time
 from pathlib import Path
 
 import lkt.utils
@@ -35,6 +36,8 @@ class Executor:
         self.only_boot_testing: bool = only_boot_testing
         self.results_folder: Path = Path(output_folder, 'results')
         self.save_objects: bool = save_objects
+
+        self.duration: str = ''
 
         makefile_txt = self.lst.folder.joinpath('Makefile').read_text(encoding='utf-8')
         if 'HOSTLDFLAGS += -fuse-ld=lld' not in makefile_txt:
@@ -255,4 +258,6 @@ $(BOOT_UTILS_JSON): prepare
         self.build_folder.mkdir(parents=True)
 
         makefile = self._generate_makefile()
+        start = time.time()
         lkt.utils.run(['make', '-f', makefile, f"-kj{os.cpu_count()}"], show_cmd=True)
+        self.duration = lkt.utils.get_time_diff(start)
