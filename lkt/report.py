@@ -37,7 +37,7 @@ class Report:
         for result in self.results:
             kernel_result = [f"{result.name} {result.build}"]
 
-            if result.build == 'failed':
+            if result.build.startswith('failed'):
                 issues = [
                     line.replace(f"{self.executor.lst.folder}/", '')
                     for line in result.log.read_text(encoding='utf-8').splitlines()
@@ -47,9 +47,9 @@ class Report:
                     kernel_result.append('\n'.join(issues))
 
                 dst = bad_results
-            elif result.build == 'skipped':
+            elif result.build.startswith('skipped'):
                 dst = skip_results
-            elif result.build == 'success':
+            elif result.build.startswith('success'):
                 dst = good_results
             else:
                 msg = f"Could not handle build result '{result.build}'!"
