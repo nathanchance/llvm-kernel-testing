@@ -198,7 +198,7 @@ class Executor:
         make_job_cmds += [
             gen_log_cmd(final_make_cmd),
             f"+{final_make_cmd} $(LOG_OUTPUT){failed_build_handling}",
-            '@echo success >$(BUILD_RESULT)',
+            '@echo successful >$(BUILD_RESULT)',
         ]
         if need_olddefconfig:
             chk_cmd = '$(CHKCFG) $(CONFIG_FILE) $(REQUESTED_CONFIGS)'
@@ -223,7 +223,7 @@ class Executor:
             make_job_cmds += [
                 gen_log_cmd('$(BOOT_KERNEL)'),
                 '$(BOOT_KERNEL) $(LOG_OUTPUT_SILENT) || { echo failed >$(BOOT_RESULT); exit 1; }',
-                '@echo success >$(BOOT_RESULT)',
+                '@echo successful >$(BOOT_RESULT)',
             ]
 
         if not self.save_objects:

@@ -49,7 +49,7 @@ class Report:
                 dst = bad_results
             elif result.build.startswith('skipped'):
                 dst = skip_results
-            elif result.build.startswith('success'):
+            elif result.build.startswith('successful'):
                 dst = good_results
             else:
                 msg = f"Could not handle build result '{result.build}'!"
@@ -61,7 +61,7 @@ class Report:
                     dst = bad_results
                 elif result.boot.startswith('skipped'):
                     dst = skip_results
-                elif result.boot.startswith('success'):
+                elif result.boot.startswith('successful'):
                     dst = good_results
                 else:
                     msg = f"Could not handle boot result '{result.boot}'!"
