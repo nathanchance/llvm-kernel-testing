@@ -24,6 +24,7 @@ MINIMUM_SUPPORTED_LINUX_VERSION = LinuxVersion(5, 15, 0)
 REPO = Path(__file__).resolve().parent
 SUPPORTED_TARGETS = [
     'def',
+    'other',
 ]
 SUPPORTED_ARCHITECTURES = [
     'x86_64',

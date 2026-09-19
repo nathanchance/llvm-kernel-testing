@@ -9,6 +9,8 @@ from lkt.job import MakeJob, TestJob
 from lkt.matrix import ArchMatrix
 from lkt.source import LinuxSourceTree
 
+KNOWN_SUBSYS_WERROR_CONFIGS = ('DRM_WERROR',)
+
 
 def gen_log_cmd(cmd_str: str) -> str:
     return f"@echo '$$ {cmd_str}' $(LOG_OUTPUT_SILENT)"
@@ -86,9 +88,9 @@ class Executor:
             make_job_variables['SKIP_BUILD_REASON'] = job.skip_build_reason
             make_job_cmds += [
                 # log skip reason into result
-                "@echo 'skipped due to $(SKIP_BUILD_REASON)' >$(BUILD_RESULT)",
+                '@echo "skipped due to $(SKIP_BUILD_REASON)" >$(BUILD_RESULT)',
                 # show skipped build to user
-                "@echo >&2 'Skipping $(PRETTY_JOB_NAME) due to $(SKIP_BUILD_REASON)...'",
+                '@echo >&2 "Skipping $(PRETTY_JOB_NAME) due to $(SKIP_BUILD_REASON)..."',
             ]
             return MakeJob(
                 name=make_job_name,
@@ -108,6 +110,8 @@ class Executor:
         base_config: lkt.utils.PathString = job.configs[0]
         requested_fragments: list[str] = []
         requested_options: list[str] = []
+        if base_config == 'allmodconfig':
+            requested_options.append('CONFIG_WERROR=n')
         for item in job.configs[1:]:
             if not isinstance(item, str):
                 msg = f"{item} is not a string?"
@@ -122,6 +126,16 @@ class Executor:
             else:
                 msg = f"Cannot handle {item}?"
                 raise ValueError(msg)
+        if 'CONFIG_WERROR=n' in requested_options:
+            # We do not want to have to maintain these in the callers but it is
+            # important to note them in the build logs, so we add them here.
+            # We should not add configurations that do not exist in the
+            # tree that we are testing.
+            requested_options += [
+                f"{full_cfg}=n"
+                for val in KNOWN_SUBSYS_WERROR_CONFIGS
+                if (full_cfg := f"CONFIG_{val}") in self.lst.configs
+            ]
         make_job_variables['REQUESTED_CONFIGS'] = ' '.join(requested_options)
         extra_configs = requested_options.copy()
         need_olddefconfig = False
@@ -193,6 +207,7 @@ class Executor:
                 f"@{chk_cmd} $(LOG_OUTPUT)",
             ]
 
+        # handle skipped boot if reason is provided
         if job.skip_boot_reason:
             make_job_variables['SKIP_BOOT_REASON'] = job.skip_boot_reason
             make_job_cmds += [
@@ -201,6 +216,7 @@ class Executor:
                 # show skipped build to user
                 "@echo >&2 'Skipping $(PRETTY_JOB_NAME) boot due to $(SKIP_BOOT_REASON)...'",
             ]
+        # boot kernel if requested
         elif job.bootable:
             make_job_prereqs.append('$(BOOT_UTILS_JSON)')
             make_job_variables['BOOT_UTILS_ARCH'] = job.boot_utils_arch

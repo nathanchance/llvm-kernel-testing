@@ -50,24 +50,23 @@ class X8664Matrix(ArchMatrix):
 
         return jobs
 
-    def _add_otherconfig_jobs(self) -> list[TestJob]:  # ruff: ignore[no-self-use]
-        jobs: list[TestJob] = []
-
-        return jobs
-
-    def _add_distroconfig_jobs(self) -> list[TestJob]:  # ruff: ignore[no-self-use]
-        jobs: list[TestJob] = []
-
-        return jobs
-
     def _generate_jobs(self) -> list[TestJob]:
         jobs: list[TestJob] = []
 
         if 'def' in self.targets:
             jobs += self._add_defconfig_jobs()
         if 'other' in self.targets:
-            jobs += self._add_otherconfig_jobs()
-        if 'distro' in self.targets:
-            jobs += self._add_distroconfig_jobs()
+            jobs += [
+                TestJob(arch=KERNEL_ARCH, configs=['allmodconfig']),
+                TestJob(
+                    arch=KERNEL_ARCH,
+                    configs=[
+                        'allmodconfig',
+                        'CONFIG_GCOV_KERNEL=n',
+                        'CONFIG_KASAN=n',
+                        'CONFIG_LTO_CLANG_THIN=y',
+                    ],
+                ),
+            ]
 
         return jobs
