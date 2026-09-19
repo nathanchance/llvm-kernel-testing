@@ -4,30 +4,9 @@ from pathlib import Path
 
 import lkt.utils
 from lkt.env import EnvInfo
-from lkt.job import TestJob
+from lkt.job import MakeJob, TestJob
 from lkt.matrix import ArchMatrix
 from lkt.source import LinuxSourceTree
-
-
-class MakeJob:
-    def __init__(
-        self, name: str, prereqs: list[str], cmds: list[str], variables: dict[str, str]
-    ) -> None:
-        self.cmds: list[str] = cmds
-        self.name: str = name[0:251]  # allow job name to be used as a log file name
-        self.prereqs: list[str] = prereqs
-        self.variables: dict[str, str] = variables
-
-    def __str__(self) -> str:
-        parts = [f".PHONY: {self.name}"]
-        parts += [
-            f"{self.name}: {key} := {value}"
-            for key in sorted(self.variables)
-            if (value := self.variables[key])
-        ]
-        parts.append(f"{self.name}: {' '.join(self.prereqs)}")
-        parts += [f"\t{cmd}" for cmd in self.cmds]
-        return '\n'.join(parts)
 
 
 def gen_log_cmd(cmd_str: str) -> str:
