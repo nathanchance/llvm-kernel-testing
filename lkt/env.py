@@ -28,12 +28,15 @@ class EnvInfo:
         uname = platform.uname()
         self.uname: str = f"{uname.system} {uname.node} {uname.release} {uname.version} {uname.machine}"  # fmt: skip
 
-    def show(self) -> None:
-        lkt.utils.header('Environment information')
-        print(f"""\
+    def __str__(self) -> str:
+        return f"""\
 clang version: {self.clang.original_version_string}
 clang location: {self.clang.location}
 binutils version: {self.binutils.original_version_string}
 binutils location: {self.binutils.location}
 host uname: {self.uname}
-PATH: {self.path.replace(os.pathsep, ' ')}""")
+PATH: {self.path.replace(os.pathsep, ' ')}"""
+
+    def show(self) -> None:
+        lkt.utils.header('Environment information')
+        print(str(self))

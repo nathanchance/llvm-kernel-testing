@@ -256,3 +256,10 @@ class LinuxSourceTree:
 
     def get_min_llvm_ver(self, arch=None) -> MinToolVersion:
         return MinToolVersion(folder=self.folder, arch=arch, tool='llvm')
+
+    def __str__(self) -> str:
+        return f"Linux source version: {self.release}\nLinux source location: {self.folder}"
+
+    def show(self) -> None:
+        lkt.utils.header('Source information')
+        print(str(self))
