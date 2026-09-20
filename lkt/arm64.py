@@ -4,14 +4,14 @@ from lkt.env import EnvInfo
 from lkt.job import TestJob
 from lkt.matrix import ArchMatrix
 from lkt.source import LinuxSourceTree
-from lkt.version import ClangVersion, LinuxVersion
+from lkt.version import ClangVersion, Version
 
 KERNEL_ARCH = 'arm64'
 CLANG_TARGET = 'aarch64-linux-gnu'
 
 
-def can_build_arm64_big_endian(lst: LinuxSourceTree, llvm_version: ClangVersion) -> bool:
-    arm64_kconfig_txt = Path(lsm.folder, 'arch/arm64/Kconfig').read_text(encoding='utf-8')
+def can_build_arm64_big_endian(lst: LinuxSourceTree, llvm_version: Version) -> bool:
+    arm64_kconfig_txt = Path(lst.folder, 'arch/arm64/Kconfig').read_text(encoding='utf-8')
 
     # Detect if big endian support is present and working in the kernel
     # arm64: Kconfig: Make CPU_BIG_ENDIAN depend on BROKEN
@@ -52,7 +52,11 @@ class Arm64Matrix(ArchMatrix):
         if Path(self.lst.folder, 'kernel/configs/hardening.config').exists():
             jobs.append(TestJob(arch=KERNEL_ARCH, configs=['defconfig', 'hardening.config']))
 
-        be_job = TestJob(arch=KERNEL_ARCH, configs=['defconfig', 'CONFIG_CPU_BIG_ENDIAN=y'], boot_utils_arch='arm64be')
+        be_job = TestJob(
+            arch=KERNEL_ARCH,
+            configs=['defconfig', 'CONFIG_CPU_BIG_ENDIAN=y'],
+            boot_utils_arch='arm64be',
+        )
         if not can_build_arm64_big_endian(self.lst, self.env_info.clang.version):
             be_job.skip_build_reason = f"LLVM < 15.0.0 (using '{self.env_info.clang.version}') or no big endian support in Linux"
         jobs.append(be_job)
@@ -63,11 +67,28 @@ class Arm64Matrix(ArchMatrix):
             # v6.0-rc4-5-g89245600941e (Mon Sep 26 10:13:13 2022 -0700)
             # https://git.kernel.org/linus/89245600941e4e0f87d77f60ee269b5e61ef4e49
             if '89245600941e4e0f87d77f60ee269b5e61ef4e49' in self.lst.commits:
-                jobs.append(TestJob(arch=KERNEL_ARCH, configs=['defconfig', cfi_y_config, 'CONFIG_SHADOW_CALL_STACK=y']))
+                jobs.append(
+                    TestJob(
+                        arch=KERNEL_ARCH,
+                        configs=['defconfig', cfi_y_config, 'CONFIG_SHADOW_CALL_STACK=y'],
+                    )
+                )
 
-            jobs.append(TestJob(arch=KERNEL_ARCH, configs=['defconfig', cfi_y_config, 'CONFIG_LTO_CLANG_THIN=y', 'CONFIG_SHADOW_CALL_STACK=y']))
+            jobs.append(
+                TestJob(
+                    arch=KERNEL_ARCH,
+                    configs=[
+                        'defconfig',
+                        cfi_y_config,
+                        'CONFIG_LTO_CLANG_THIN=y',
+                        'CONFIG_SHADOW_CALL_STACK=y',
+                    ],
+                )
+            )
         else:
-            jobs.append(TestJob(arch=KERNEL_ARCH, configs=['defconfig', 'CONFIG_SHADOW_CALL_STACK=y'])
+            jobs.append(
+                TestJob(arch=KERNEL_ARCH, configs=['defconfig', 'CONFIG_SHADOW_CALL_STACK=y'])
+            )
 
         for job in jobs:
             job.bootable = True
