@@ -12,6 +12,21 @@ from lkt.source import LinuxSourceTree
 KNOWN_SUBSYS_WERROR_CONFIGS = ('DRM_WERROR',)
 
 
+def using_kvm(boot_utils_arch: str, boot_utils_folder: Path) -> bool:
+    if lkt.utils.MACHINE == 'aarch64':
+        if boot_utils_arch in {'arm', 'arm32_v7'}:
+            can_use_kvm = lkt.utils.run_check_rc_zero(
+                Path(boot_utils_folder, 'utils/aarch64_32_bit_el1_supported')
+            )
+        else:
+            can_use_kvm = boot_utils_arch in {'arm64', 'arm64be'}
+    elif lkt.utils.MACHINE == 'x86_64':
+        can_use_kvm = boot_utils_arch in {'x86', 'x86_64'}
+    else:
+        can_use_kvm = False
+    return can_use_kvm and lkt.utils.HAVE_DEV_KVM_ACCESS
+
+
 def gen_log_cmd(cmd_str: str) -> str:
     return f"@echo '$$ {cmd_str}' $(LOG_OUTPUT_SILENT)"
 
@@ -224,6 +239,8 @@ class Executor:
         elif job.bootable:
             make_job_prereqs.append('$(BOOT_UTILS_JSON)')
             make_job_variables['BOOT_UTILS_ARCH'] = job.boot_utils_arch
+            if using_kvm(job.boot_utils_arch, self.boot_utils_folder):
+                make_job_variables['ADDITIONAL_BOOT_QEMU_ARGS'] = '-m 2G'
             make_job_cmds += [
                 gen_log_cmd('$(BOOT_KERNEL)'),
                 '$(BOOT_KERNEL) $(LOG_OUTPUT_SILENT) || { echo failed >$(BOOT_RESULT); exit 1; }',
@@ -279,7 +296,7 @@ LOG_OUTPUT = 2>&1 | tee -a $(LOGS)/$@.log
 LOG_OUTPUT_SILENT = 2>&1 >>$(LOGS)/$@.log
 
 MAKE_KERNEL = $(MAKE) -C $(SRC) -s O=$(BUILD_OUTPUT)
-BOOT_KERNEL = $(BOOT_UTILS)/boot-qemu.py -a $(BOOT_UTILS_ARCH) -k $(BUILD_OUTPUT) --gh-json-file $(BOOT_UTILS_JSON)
+BOOT_KERNEL = $(BOOT_UTILS)/boot-qemu.py -a $(BOOT_UTILS_ARCH) -k $(BUILD_OUTPUT) --gh-json-file $(BOOT_UTILS_JSON) $(ADDITIONAL_BOOT_QEMU_ARGS)
 
 # Rules
 .PHONY: all

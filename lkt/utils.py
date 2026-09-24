@@ -1,5 +1,6 @@
 import copy
 import os
+import platform
 import shlex
 import subprocess
 import time
@@ -9,6 +10,9 @@ from typing import TypedDict
 
 CONFIGS = Path(__file__).resolve().parents[1].joinpath('configs')
 DEFAULT_PATH = Path('/intentionally/does/not/exist')
+HAVE_DEV_KVM_ACCESS = os.access('/dev/kvm', os.R_OK | os.W_OK)
+MACHINE = platform.machine()
+
 PathString = Path | str
 ValidSingleCmd = str | bytes | os.PathLike
 ValidCmd = ValidSingleCmd | Sequence[ValidSingleCmd]
