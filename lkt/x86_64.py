@@ -8,6 +8,7 @@ from lkt.version import ClangVersion, LinuxVersion
 
 KERNEL_ARCH = 'x86_64'
 CLANG_TARGET = 'x86_64-linux-gnu'
+QEMU_ARCH = 'x86_64'
 
 # KCFI sanitizer
 # llvmorg-16-init-2791-gcff5bef948c9 (Wed Aug 24 22:41:38 2022 +0000)
@@ -19,7 +20,7 @@ class X8664Matrix(ArchMatrix):
     def __init__(
         self, lst: LinuxSourceTree, env_info: EnvInfo, targets: list[str], **kwargs
     ) -> None:
-        super().__init__(lst, env_info, targets, CLANG_TARGET, **kwargs)
+        super().__init__(lst, env_info, targets, CLANG_TARGET, QEMU_ARCH, **kwargs)
 
     def _add_defconfig_jobs(self) -> list[TestJob]:
         jobs: list[TestJob] = [

@@ -8,6 +8,7 @@ from lkt.version import ClangVersion, Version
 
 KERNEL_ARCH = 'arm64'
 CLANG_TARGET = 'aarch64-linux-gnu'
+QEMU_ARCH = 'aarch64'
 
 
 def can_build_arm64_big_endian(lst: LinuxSourceTree, llvm_version: Version) -> bool:
@@ -46,7 +47,7 @@ class Arm64Matrix(ArchMatrix):
     def __init__(
         self, lst: LinuxSourceTree, env_info: EnvInfo, targets: list[str], **kwargs
     ) -> None:
-        super().__init__(lst, env_info, targets, CLANG_TARGET, **kwargs)
+        super().__init__(lst, env_info, targets, CLANG_TARGET, QEMU_ARCH, **kwargs)
 
     def _add_defconfig_jobs(self) -> list[TestJob]:
         jobs: list[TestJob] = [
