@@ -31,6 +31,7 @@ class Executor:
         output_folder: Path,
         only_boot_testing: bool = False,
         save_objects: bool = False,
+        verbose: bool = False,
     ) -> None:
         self.matrices: list[ArchMatrix] = matrices
         self.lst: LinuxSourceTree = lst
@@ -42,6 +43,7 @@ class Executor:
         self.only_boot_testing: bool = only_boot_testing
         self.results_folder: Path = Path(output_folder, 'results')
         self.save_objects: bool = save_objects
+        self.verbose: bool = verbose
 
         self.duration: str = ''
 
@@ -305,5 +307,8 @@ $(BOOT_UTILS_JSON): prepare
 
         makefile = self.generate_makefile()
         start = time.time()
-        lkt.utils.run(['make', '-f', makefile, f"-kj{os.cpu_count()}"], show_cmd=True)
+        make_cmd = ['make', '-f', makefile, f"-kj{os.cpu_count()}"]
+        if not self.verbose:
+            make_cmd.append('-s')
+        lkt.utils.run(make_cmd, show_cmd=True)
         self.duration = lkt.utils.get_time_diff(start)

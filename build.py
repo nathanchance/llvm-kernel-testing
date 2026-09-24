@@ -78,6 +78,9 @@ def parse_arguments():
         action='store_true',
         help='Use ccache for building (default: Do not use ccache).',
     )
+    build_options_group.add_argument(
+        '-v', '--verbose', action='store_true', help='Show executed make commands'
+    )
 
     folders_group = parser.add_argument_group('options to customize folders')
     folders_group.add_argument(
@@ -219,6 +222,7 @@ if __name__ == '__main__':
         output_folder=output_folder,
         only_boot_testing=args.only_test_boot,
         save_objects=args.save_objects,
+        verbose=args.verbose,
     )
     if args.use_ccache and shutil.which('ccache'):
         executor.make_vars['CC'] = 'ccache clang'
