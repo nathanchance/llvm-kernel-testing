@@ -141,17 +141,18 @@ class Executor:
         need_olddefconfig = False
 
         if isinstance(base_config, str):
+            make_job_variables['INITIAL_MAKE_TARGETS'] = ' '.join(
+                [base_config, *requested_fragments]
+            )
             if extra_configs:
                 # generate .config file for merge_config.sh
-                initial_make_cmd_str: str = ' '.join(
-                    [*base_make_cmd, base_config, *requested_fragments]
-                )
+                initial_make_cmd_str: str = ' '.join([*base_make_cmd, '$(INITIAL_MAKE_TARGETS)'])
                 make_job_cmds += [
                     gen_log_cmd(initial_make_cmd_str),
                     f"+{initial_make_cmd_str} $(LOG_OUTPUT){failed_build_handling}",
                 ]
             else:
-                base_make_cmd += [base_config, *requested_fragments]
+                base_make_cmd.append('$(INITIAL_MAKE_TARGETS)')
         else:
             msg = f"Unsupported base configuration: {base_config}"
             raise TypeError(msg)
@@ -237,7 +238,7 @@ class Executor:
             variables=make_job_variables,
         )
 
-    def _generate_makefile(self) -> Path:
+    def generate_makefile(self) -> Path:
         test_jobs: list[TestJob] = [
             job
             for matrix in self.matrices
@@ -302,7 +303,7 @@ $(BOOT_UTILS_JSON): prepare
             shutil.rmtree(self.build_folder)
         self.build_folder.mkdir(parents=True)
 
-        makefile = self._generate_makefile()
+        makefile = self.generate_makefile()
         start = time.time()
         lkt.utils.run(['make', '-f', makefile, f"-kj{os.cpu_count()}"], show_cmd=True)
         self.duration = lkt.utils.get_time_diff(start)

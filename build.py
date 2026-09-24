@@ -49,6 +49,12 @@ def parse_arguments():
         help='Architectures to build for (default: %(default)s).',
     )
     build_options_group.add_argument(
+        '-g',
+        '--generate-makefile-only',
+        action='store_true',
+        help='Only generate Makefile, do not execute it',
+    )
+    build_options_group.add_argument(
         '--only-test-boot',
         action='store_true',
         help='Only build configs that can be booted in QEMU and only build kernel images (no modules)',
@@ -223,7 +229,10 @@ if __name__ == '__main__':
     env_info.show()
 
     # Run test matrix
-    executor.run()
+    if args.generate_makefile_only:
+        executor.generate_makefile()
+    else:
+        executor.run()
 
-    # Generate report from results of run
-    Report(executor).generate()
+        # Generate report from results of run
+        Report(executor).generate()
