@@ -194,7 +194,8 @@ class Executor:
         ]
         if need_olddefconfig:
             make_targets.insert(0, 'olddefconfig')
-        final_make_cmd = ' '.join([*base_make_cmd, *make_targets])
+        make_job_variables['FINAL_MAKE_TARGETS'] = ' '.join(make_targets)
+        final_make_cmd = ' '.join([*base_make_cmd, '$(FINAL_MAKE_TARGETS)'])
         make_job_cmds += [
             gen_log_cmd(final_make_cmd),
             f"+{final_make_cmd} $(LOG_OUTPUT){failed_build_handling}",
