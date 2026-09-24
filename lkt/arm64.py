@@ -100,6 +100,7 @@ class Arm64Matrix(ArchMatrix):
 
         for job in jobs:
             job.bootable = True
+            job.image_target = 'Image.gz'
 
         return jobs
 

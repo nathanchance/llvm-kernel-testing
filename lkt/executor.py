@@ -241,7 +241,7 @@ class Executor:
             job
             for matrix in self.matrices
             for job in matrix.jobs
-            if not self.only_boot_testing or job.bootable
+            if not self.only_boot_testing or (job.bootable and job.image_target)
         ]
         make_jobs: list[MakeJob] = [self._transform_test_into_make(job) for job in test_jobs]
 

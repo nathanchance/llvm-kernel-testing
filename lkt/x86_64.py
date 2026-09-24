@@ -55,6 +55,7 @@ class X8664Matrix(ArchMatrix):
 
         for job in jobs:
             job.bootable = True
+            job.image_target = 'bzImage'
 
         return jobs
 
