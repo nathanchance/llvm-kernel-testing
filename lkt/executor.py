@@ -107,7 +107,7 @@ class Executor:
                 # log skip reason into result
                 '@echo "skipped due to $(SKIP_BUILD_REASON)" >$(BUILD_RESULT)',
                 # show skipped build to user
-                '@echo >&2 "Skipping $(PRETTY_JOB_NAME) due to $(SKIP_BUILD_REASON)..."',
+                '@echo >&2 "Skipping $(PRETTY_JOB_NAME) due to $(SKIP_BUILD_REASON)"',
             ]
             return MakeJob(
                 name=make_job_name,
@@ -121,7 +121,7 @@ class Executor:
             f"{var}={job.make_vars[var]}"  # ty: ignore[invalid-key]
             for var in sorted(job.make_vars)
         )
-        make_job_cmds.append("@echo >&2 'Building $(PRETTY_JOB_NAME)...'")
+        make_job_cmds.append("@echo >&2 'Building $(PRETTY_JOB_NAME)'")
 
         # sift configurations
         base_config: lkt.utils.PathString = job.configs[0]
@@ -233,7 +233,7 @@ class Executor:
                 # log skip reason into result
                 "@echo 'skipped due to $(SKIP_BOOT_REASON)' >$(BOOT_RESULT)",
                 # show skipped build to user
-                "@echo >&2 'Skipping $(PRETTY_JOB_NAME) boot due to $(SKIP_BOOT_REASON)...'",
+                "@echo >&2 'Skipping $(PRETTY_JOB_NAME) boot due to $(SKIP_BOOT_REASON)'",
             ]
         # boot kernel if requested
         elif job.bootable:
@@ -242,6 +242,7 @@ class Executor:
             if using_kvm(job.boot_utils_arch, self.boot_utils_folder):
                 make_job_variables['ADDITIONAL_BOOT_QEMU_ARGS'] = '-m 2G'
             make_job_cmds += [
+                "@echo >&2 'Booting $(PRETTY_JOB_NAME)'",
                 gen_log_cmd('$(BOOT_KERNEL)'),
                 '$(BOOT_KERNEL) $(LOG_OUTPUT_SILENT) || { echo failed >$(BOOT_RESULT); exit 1; }',
                 '@echo successful >$(BOOT_RESULT)',
@@ -327,5 +328,5 @@ $(BOOT_UTILS_JSON): prepare
         make_cmd = ['make', '-f', makefile, f"-kj{os.cpu_count()}"]
         if not self.verbose:
             make_cmd.append('-s')
-        lkt.utils.run(make_cmd, show_cmd=True)
+        lkt.utils.run(make_cmd, check=False, show_cmd=True)
         self.duration = lkt.utils.get_time_diff(start)
