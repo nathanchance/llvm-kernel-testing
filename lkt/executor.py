@@ -296,7 +296,7 @@ LOG_OUTPUT = 2>&1 | tee -a $(LOGS)/$@.log
 LOG_OUTPUT_SILENT = 2>&1 >>$(LOGS)/$@.log
 
 MAKE_KERNEL = $(MAKE) -C $(SRC) -s O=$(BUILD_OUTPUT)
-BOOT_KERNEL = $(BOOT_UTILS)/boot-qemu.py -a $(BOOT_UTILS_ARCH) -k $(BUILD_OUTPUT) --gh-json-file $(BOOT_UTILS_JSON) $(ADDITIONAL_BOOT_QEMU_ARGS)
+BOOT_KERNEL = $(BOOT_UTILS)/boot-qemu.py -a $(BOOT_UTILS_ARCH) --ephemeral-initrd -k $(BUILD_OUTPUT) --gh-json-file $(BOOT_UTILS_JSON) $(ADDITIONAL_BOOT_QEMU_ARGS)
 
 # Rules
 .PHONY: all
