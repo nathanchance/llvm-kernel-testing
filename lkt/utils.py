@@ -57,30 +57,6 @@ def cmd_str(cmd: ValidCmd) -> str:
     return f"$ {cmd_to_print}"
 
 
-def get_config_val(linux: Path, path: Path, config: str) -> str:
-    config_file: Path = path if path.is_file() else Path(path, '.config')
-    if not path.exists():
-        msg = 'Could not find configuration?'
-        raise FileNotFoundError(msg)
-    scripts_config_cmd: CmdList = [
-        Path(linux, 'scripts/config'),
-        '--file',
-        config_file,
-        '-k',
-        '-s',
-        config,
-    ]
-    return chronic(scripts_config_cmd).stdout.strip()
-
-
-def is_modular(*args) -> bool:
-    return get_config_val(*args) == 'm'
-
-
-def is_set(*args) -> bool:
-    return get_config_val(*args) not in {'', 'n', 'undef'}
-
-
 def get_time_diff(start_time: float, end_time: float | None = None) -> str:
     if not end_time:
         end_time = time.time()

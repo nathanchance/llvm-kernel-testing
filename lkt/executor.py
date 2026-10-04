@@ -31,6 +31,24 @@ def gen_log_cmd(cmd_str: str) -> str:
     return f"@echo '$$ {cmd_str}' $(LOG_OUTPUT_SILENT)"
 
 
+def initial_distro_prep(lst: LinuxSourceTree, config: Path) -> list[str]:
+    configs = []
+
+    if lst.is_config_set(config, 'DEBUG_INFO_BTF') and not shutil.which('pahole'):
+        configs.append('CONFIG_DEBUG_INFO_BTF=n')
+
+    if (
+        # bpf: Drop libbpf, libelf, libz dependency from bpf preload.
+        # v5.16-11580-ge96f2d64c812 (Tue Feb 1 23:56:18 2022 +0100)
+        # https://git.kernel.org/linus/e96f2d64c812d9c20adea38a9b5e08feaa21fcf5
+        'e96f2d64c812d9c20adea38a9b5e08feaa21fcf5' not in lst.commits
+        and lst.is_config_set(config, 'BPF_PRELOAD')
+    ):
+        configs.append('CONFIG_BPF_PRELOAD=n')
+
+    return configs
+
+
 def pretty_name_to_make_name(pretty_job_name: str) -> str:
     return pretty_job_name.replace(' ', '_').replace('_+_', '_').replace('""', '').replace('=', '_')
 
@@ -78,20 +96,12 @@ class Executor:
             self.make_vars['LIBCLANG_PATH'] = found_libclang.as_posix()
 
     def _transform_test_into_make(self, job: TestJob) -> MakeJob:
-        # delete LLVM_IAS if it is the default
-        if job.make_vars['LLVM_IAS'] == '1':
-            del job.make_vars['LLVM_IAS']
-        # update job make variables with executor wide make variables
-        job.make_vars.update(self.make_vars)
-
         # base make command to run
         base_make_cmd: list[str] = ['$(MAKE_KERNEL) $(MAKE_VARIABLES)']
 
         # initial make job information
         make_job_prereqs = ['prepare']
-        make_job_variables: dict[str, str] = {
-            'PRETTY_JOB_NAME': f"{job.make_vars['ARCH']} {' + '.join(map(str, job.configs))}",
-        }
+        make_job_variables: dict[str, str] = {}
         make_job_cmds: list[str] = [
             # clean up previous build output if present
             '@rm -fr $(BUILD_OUTPUT)',
@@ -100,33 +110,25 @@ class Executor:
             # save build name
             "@echo '$(PRETTY_JOB_NAME)' >$(NAME_RESULT)",
         ]
-        make_job_name = pretty_name_to_make_name(make_job_variables['PRETTY_JOB_NAME'])
-        if job.skip_build_reason:
-            make_job_variables['SKIP_BUILD_REASON'] = job.skip_build_reason
-            make_job_cmds += [
-                # log skip reason into result
-                '@echo "skipped due to $(SKIP_BUILD_REASON)" >$(BUILD_RESULT)',
-                # show skipped build to user
-                '@echo >&2 "Skipping $(PRETTY_JOB_NAME) due to $(SKIP_BUILD_REASON)"',
-            ]
-            return MakeJob(
-                name=make_job_name,
-                prereqs=make_job_prereqs,
-                cmds=make_job_cmds,
-                variables=make_job_variables,
-            )
 
-        failed_build_handling = f"; if [ $${{PIPESTATUS[0]}} -ne 0 ]; then echo failed >$(BUILD_RESULT);{' echo skipped >$(BOOT_RESULT);' if job.bootable else ''} exit 1; fi"
-        make_job_variables['MAKE_VARIABLES'] = ' '.join(
-            f"{var}={job.make_vars[var]}"  # ty: ignore[invalid-key]
-            for var in sorted(job.make_vars)
-        )
-        make_job_cmds.append("@echo >&2 'Building $(PRETTY_JOB_NAME)'")
+        # delete LLVM_IAS if it is the default
+        if job.make_vars['LLVM_IAS'] == '1':
+            del job.make_vars['LLVM_IAS']
+        # update job make variables with executor wide make variables
+        job.make_vars.update(self.make_vars)
 
         # sift configurations
         base_config: lkt.utils.PathString = job.configs[0]
         requested_fragments: list[str] = []
         requested_options: list[str] = []
+        if isinstance(base_config, Path):
+            job.configs += initial_distro_prep(self.lst, base_config)
+            pretty_configs: list[str] = [
+                f"{base_config.parts[-2]} config",
+                *list(map(str, job.configs[1:])),
+            ]
+        else:
+            pretty_configs: list[str] = list(map(str, job.configs))
         if base_config == 'allmodconfig':
             requested_options.append('CONFIG_WERROR=n')
         for item in job.configs[1:]:
@@ -157,6 +159,32 @@ class Executor:
         extra_configs = requested_options.copy()
         need_olddefconfig = False
 
+        make_job_variables['PRETTY_JOB_NAME'] = (
+            f"{job.make_vars['ARCH']} {' + '.join(pretty_configs)}"
+        )
+        make_job_name = pretty_name_to_make_name(make_job_variables['PRETTY_JOB_NAME'])
+        if job.skip_build_reason:
+            make_job_variables['SKIP_BUILD_REASON'] = job.skip_build_reason
+            make_job_cmds += [
+                # log skip reason into result
+                '@echo "skipped due to $(SKIP_BUILD_REASON)" >$(BUILD_RESULT)',
+                # show skipped build to user
+                '@echo >&2 "Skipping $(PRETTY_JOB_NAME) due to $(SKIP_BUILD_REASON)"',
+            ]
+            return MakeJob(
+                name=make_job_name,
+                prereqs=make_job_prereqs,
+                cmds=make_job_cmds,
+                variables=make_job_variables,
+            )
+
+        failed_build_handling = f"; if [ $${{PIPESTATUS[0]}} -ne 0 ]; then echo failed >$(BUILD_RESULT);{' echo skipped >$(BOOT_RESULT);' if job.bootable else ''} exit 1; fi"
+        make_job_variables['MAKE_VARIABLES'] = ' '.join(
+            f"{var}={job.make_vars[var]}"  # ty: ignore[invalid-key]
+            for var in sorted(job.make_vars)
+        )
+        make_job_cmds.append("@echo >&2 'Building $(PRETTY_JOB_NAME)'")
+
         if isinstance(base_config, str):
             make_job_variables['INITIAL_MAKE_TARGETS'] = ' '.join(
                 [base_config, *requested_fragments]
@@ -170,6 +198,32 @@ class Executor:
                 ]
             else:
                 base_make_cmd.append('$(INITIAL_MAKE_TARGETS)')
+        elif isinstance(base_config, Path):
+            if requested_fragments:
+                msg = 'config fragments are not supported with out of tree configurations! Add support if this is needed.'
+                raise RuntimeError(msg)
+
+            make_job_variables['SRC_CONFIG_FILE'] = str(base_config).replace(
+                str(lkt.utils.CONFIGS), '$(CONFIGS)'
+            )
+            mkdir_cmd = 'mkdir -p $(BUILD_OUTPUT)'
+            cp_cmd = 'cp -v $(SRC_CONFIG_FILE) $(CONFIG_FILE)'
+            make_job_cmds += [
+                gen_log_cmd(mkdir_cmd),
+                f"@{mkdir_cmd}",
+                gen_log_cmd(cp_cmd),
+                f"@{cp_cmd} $(LOG_OUTPUT_SILENT)",
+            ]
+
+            need_olddefconfig = True
+
+            # Nothing is explicitly wrong with this configuration option but it
+            # changes the default image target, which boot-utils does not expect,
+            # so explicitly add the bootable image target to the end of the command
+            if base_config.stem in {'aarch64', 'arm64', 'riscv64'} and self.lst.is_config_set(
+                base_config, 'EFI_ZBOOT'
+            ):
+                job.extra_make_targets.append(job.image_target)
         else:
             msg = f"Unsupported base configuration: {base_config}"
             raise TypeError(msg)
@@ -200,7 +254,7 @@ class Executor:
             )
             make_job_cmds += [
                 gen_log_cmd(merge_config_cmd),
-                f"{merge_config_cmd} $(LOG_OUTPUT_SILENT)",
+                f"@{merge_config_cmd} $(LOG_OUTPUT_SILENT)",
             ]
 
             need_olddefconfig = True
@@ -263,9 +317,14 @@ class Executor:
             job
             for matrix in self.matrices
             for job in matrix.jobs
-            if not self.only_boot_testing or (job.bootable and job.image_target)
+            if not self.only_boot_testing
+            or (job.bootable and job.image_target and isinstance(job.configs[0], str))
         ]
         make_jobs: list[MakeJob] = [self._transform_test_into_make(job) for job in test_jobs]
+
+        if self.build_folder.exists():
+            shutil.rmtree(self.build_folder)
+        self.build_folder.mkdir(parents=True)
 
         makefile = self.build_folder.joinpath('Makefile')
         makefile_txt = f"""\
@@ -318,10 +377,6 @@ $(BOOT_UTILS_JSON): prepare
 
     def run(self) -> None:
         lkt.utils.header('Running test matrix', end='')
-
-        if self.build_folder.exists():
-            shutil.rmtree(self.build_folder)
-        self.build_folder.mkdir(parents=True)
 
         makefile = self.generate_makefile()
         start = time.time()

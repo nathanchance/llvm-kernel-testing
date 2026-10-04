@@ -4,6 +4,7 @@ from lkt.env import EnvInfo
 from lkt.job import TestJob
 from lkt.matrix import ArchMatrix
 from lkt.source import LinuxSourceTree
+from lkt.utils import CONFIGS
 from lkt.version import ClangVersion, Version
 
 KERNEL_ARCH = 'arm64'
@@ -125,5 +126,22 @@ class Arm64Matrix(ArchMatrix):
                 TestJob(arch=KERNEL_ARCH, configs=['allnoconfig']),
                 TestJob(arch=KERNEL_ARCH, configs=['tinyconfig']),
             ]
+        if 'distro' in self.targets:
+            configs: list[tuple[str, str]] = [
+                ('alpine', 'aarch64'),
+                ('archlinux', 'aarch64'),
+                ('debian', KERNEL_ARCH),
+                ('fedora', 'aarch64'),
+                ('opensuse', KERNEL_ARCH),
+            ]
+            for distro, config_name in configs:
+                jobs.append(
+                    TestJob(
+                        arch=KERNEL_ARCH,
+                        bootable=True,
+                        configs=[Path(CONFIGS, distro, f"{config_name}.config")],
+                        image_target='Image.gz',
+                    )
+                )
 
         return jobs

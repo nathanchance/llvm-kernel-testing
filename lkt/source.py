@@ -230,7 +230,8 @@ class LinuxSourceTree:
                 kernelrelease = [
                     lkt.utils.chronic([*base_make_cmd, 'kernelversion']).stdout.strip()
                 ]
-                kernelrelease.append(lkt.utils.chronic(setlocalver, cwd=self.folder).stdout.strip())
+                setlocalver_cmd = [setlocalver, self.folder]
+                kernelrelease.append(lkt.utils.chronic(setlocalver_cmd, cwd=tempdir).stdout.strip())
 
         return ''.join(kernelrelease)
 
@@ -254,8 +255,29 @@ class LinuxSourceTree:
                 )
         return self._cfi_y_config
 
+    def get_config_val(self, path: Path, config: str) -> str:
+        config_file: Path = path if path.is_file() else Path(path, '.config')
+        if not path.exists():
+            msg = 'Could not find configuration?'
+            raise FileNotFoundError(msg)
+        scripts_config_cmd: lkt.utils.CmdList = [
+            Path(self.folder, 'scripts/config'),
+            '--file',
+            config_file,
+            '-k',
+            '-s',
+            config,
+        ]
+        return lkt.utils.chronic(scripts_config_cmd).stdout.strip()
+
     def get_min_llvm_ver(self, arch=None) -> MinToolVersion:
         return MinToolVersion(folder=self.folder, arch=arch, tool='llvm')
+
+    def is_config_modular(self, *args) -> bool:
+        return self.get_config_val(*args) == 'm'
+
+    def is_config_set(self, *args) -> bool:
+        return self.get_config_val(*args) not in {'', 'n', 'undef'}
 
     def __str__(self) -> str:
         return f"Linux source version: {self.release}\nLinux source location: {self.folder}"
