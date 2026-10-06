@@ -28,7 +28,7 @@ class ArchMatrix:
                 if not job.skip_build_reason:
                     job.skip_build_reason = 'missing clang target'
 
-        if env_info.qemu[qemu_arch].location == Path():
+        if qemu_arch and env_info.qemu[qemu_arch].location == Path():
             for job in self.jobs:
                 if job.bootable and not job.skip_boot_reason:
                     job.skip_boot_reason = f"missing qemu-system-{qemu_arch}"
