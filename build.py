@@ -13,6 +13,7 @@ from lkt.arm import ArmMatrix
 from lkt.arm64 import Arm64Matrix
 from lkt.env import EnvInfo
 from lkt.executor import Executor
+from lkt.i386 import I386Matrix
 from lkt.matrix import ArchMatrix
 from lkt.report import Report
 from lkt.source import LinuxSourceTree
@@ -33,6 +34,7 @@ SUPPORTED_TARGETS = [
 SUPPORTED_ARCHITECTURES = [
     'arm',
     'arm64',
+    'i386',
     'x86_64',
 ]
 EXPERIMENTAL_ARCHITECTURES = []
@@ -209,6 +211,7 @@ if __name__ == '__main__':
     arch_to_matrix: dict[str, type] = {
         'arm': ArmMatrix,
         'arm64': Arm64Matrix,
+        'i386': I386Matrix,
         'x86_64': X8664Matrix,
     }
     matrices: list[ArchMatrix] = [
