@@ -9,6 +9,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 import lkt.utils
+from lkt.arm import ArmMatrix
 from lkt.arm64 import Arm64Matrix
 from lkt.env import EnvInfo
 from lkt.executor import Executor
@@ -30,6 +31,7 @@ SUPPORTED_TARGETS = [
     'other',
 ]
 SUPPORTED_ARCHITECTURES = [
+    'arm',
     'arm64',
     'x86_64',
 ]
@@ -205,6 +207,7 @@ if __name__ == '__main__':
 
     # Generate full matrix
     arch_to_matrix: dict[str, type] = {
+        'arm': ArmMatrix,
         'arm64': Arm64Matrix,
         'x86_64': X8664Matrix,
     }
