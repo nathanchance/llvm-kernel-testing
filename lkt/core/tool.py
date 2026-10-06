@@ -2,7 +2,8 @@ import shutil
 from pathlib import Path
 
 import lkt.utils
-from lkt.version import BinutilsVersion, ClangVersion, QemuVersion, Version
+
+from .version import BinutilsVersion, ClangVersion, QemuVersion, Version
 
 
 class Tool:

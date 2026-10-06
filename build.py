@@ -9,17 +9,17 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 import lkt.utils
-from lkt.arm import ArmMatrix
-from lkt.arm64 import Arm64Matrix
-from lkt.env import EnvInfo
-from lkt.executor import Executor
-from lkt.hexagon import HexagonMatrix
-from lkt.i386 import I386Matrix
-from lkt.matrix import ArchMatrix
-from lkt.report import Report
-from lkt.source import LinuxSourceTree
-from lkt.version import LinuxVersion
-from lkt.x86_64 import X8664Matrix
+from lkt.arch.arm import ArmMatrix
+from lkt.arch.arm64 import Arm64Matrix
+from lkt.arch.hexagon import HexagonMatrix
+from lkt.arch.i386 import I386Matrix
+from lkt.arch.x86_64 import X8664Matrix
+from lkt.core.env import EnvInfo
+from lkt.core.executor import Executor
+from lkt.core.matrix import ArchMatrix
+from lkt.core.report import Report
+from lkt.core.source import LinuxSourceTree
+from lkt.core.version import LinuxVersion
 
 # This is the minimum version of Linux that can be used with this test
 # framework due to assumptions made throughout the framework with regards to

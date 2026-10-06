@@ -1,9 +1,10 @@
 from pathlib import Path
 
 import lkt.utils
-from lkt.env import EnvInfo
-from lkt.job import TestJob
-from lkt.source import LinuxSourceTree
+
+from .env import EnvInfo
+from .job import TestJob
+from .source import LinuxSourceTree
 
 
 class ArchMatrix:

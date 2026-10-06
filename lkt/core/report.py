@@ -3,7 +3,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import lkt.utils
-from lkt.executor import Executor
+
+from .executor import Executor
 
 
 @dataclass

@@ -1,11 +1,11 @@
 from pathlib import Path
 
-from lkt.env import EnvInfo
-from lkt.job import TestJob
-from lkt.matrix import ArchMatrix
-from lkt.source import LinuxSourceTree
-from lkt.utils import CONFIGS
-from lkt.version import ClangVersion, Version
+from ..core.env import EnvInfo
+from ..core.job import TestJob
+from ..core.matrix import ArchMatrix
+from ..core.source import LinuxSourceTree
+from ..core.version import ClangVersion, Version
+from ..utils import CONFIGS
 
 KERNEL_ARCH = 'arm64'
 CLANG_TARGET = 'aarch64-linux-gnu'

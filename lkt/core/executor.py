@@ -4,10 +4,11 @@ import time
 from pathlib import Path
 
 import lkt.utils
-from lkt.env import EnvInfo
-from lkt.job import MakeJob, TestJob
-from lkt.matrix import ArchMatrix
-from lkt.source import LinuxSourceTree
+
+from .env import EnvInfo
+from .job import MakeJob, TestJob
+from .matrix import ArchMatrix
+from .source import LinuxSourceTree
 
 KNOWN_SUBSYS_WERROR_CONFIGS = ('DRM_WERROR',)
 

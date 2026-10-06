@@ -2,7 +2,8 @@ import os
 import platform
 
 import lkt.utils
-from lkt.tool import Tool
+
+from .tool import Tool
 
 QEMU_ARCHES = (
     'arm',

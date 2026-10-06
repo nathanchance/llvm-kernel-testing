@@ -3,7 +3,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import lkt.utils
-from lkt.version import LinuxVersion, MinToolVersion
+
+from .version import LinuxVersion, MinToolVersion
 
 
 class LinuxSourceTree:

@@ -1,8 +1,8 @@
-from lkt.env import EnvInfo
-from lkt.job import TestJob
-from lkt.matrix import ArchMatrix
-from lkt.source import LinuxSourceTree
-from lkt.version import LinuxVersion
+from ..core.env import EnvInfo
+from ..core.job import TestJob
+from ..core.matrix import ArchMatrix
+from ..core.source import LinuxSourceTree
+from ..core.version import LinuxVersion
 
 KERNEL_ARCH = 'hexagon'
 CLANG_TARGET = 'hexagon-linux-musl'
