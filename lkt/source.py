@@ -279,6 +279,11 @@ class LinuxSourceTree:
     def is_config_set(self, *args) -> bool:
         return self.get_config_val(*args) not in {'', 'n', 'undef'}
 
+    def read_text(self, rel_file: str | Path) -> str:
+        if (file := Path(self.folder, rel_file)).exists():
+            return file.read_text(encoding='utf-8')
+        return ''
+
     def __str__(self) -> str:
         return f"Linux source version: {self.release}\nLinux source location: {self.folder}"
 
