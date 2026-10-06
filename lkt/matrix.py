@@ -14,9 +14,11 @@ class ArchMatrix:
         targets: list[str],
         clang_target: str,
         qemu_arch: str,
+        only_boot_testing: bool = False,
     ) -> None:
         self.env_info: EnvInfo = env_info
         self.lst: LinuxSourceTree = lst
+        self.only_boot_testing: bool = only_boot_testing
         self.targets: list[str] = targets
 
         self.jobs: list[TestJob] = self._generate_jobs()

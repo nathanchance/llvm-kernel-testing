@@ -19,9 +19,16 @@ MIN_LLVM_VER_CFI = ClangVersion(16, 0, 0)
 
 class X8664Matrix(ArchMatrix):
     def __init__(
-        self, lst: LinuxSourceTree, env_info: EnvInfo, targets: list[str], **kwargs
+        self,
+        lst: LinuxSourceTree,
+        env_info: EnvInfo,
+        targets: list[str],
+        only_boot_testing: bool = False,
+        **kwargs,
     ) -> None:
-        super().__init__(lst, env_info, targets, CLANG_TARGET, QEMU_ARCH, **kwargs)
+        super().__init__(
+            lst, env_info, targets, CLANG_TARGET, QEMU_ARCH, only_boot_testing, **kwargs
+        )
 
     def _add_defconfig_jobs(self) -> list[TestJob]:
         jobs: list[TestJob] = [
@@ -57,7 +64,8 @@ class X8664Matrix(ArchMatrix):
 
         for job in jobs:
             job.bootable = True
-            job.image_target = 'bzImage'
+            if self.only_boot_testing:
+                job.make_targets.append('bzImage')
 
         return jobs
 
@@ -66,6 +74,10 @@ class X8664Matrix(ArchMatrix):
 
         if 'def' in self.targets:
             jobs += self._add_defconfig_jobs()
+
+        if self.only_boot_testing:
+            return jobs
+
         if 'other' in self.targets:
             jobs += [
                 TestJob(arch=KERNEL_ARCH, configs=['allmodconfig']),
@@ -79,6 +91,7 @@ class X8664Matrix(ArchMatrix):
                     ],
                 ),
             ]
+
         if 'distro' in self.targets:
             configs: list[tuple[str, str]] = [
                 ('alpine', KERNEL_ARCH),
@@ -93,7 +106,6 @@ class X8664Matrix(ArchMatrix):
                         arch=KERNEL_ARCH,
                         bootable=True,
                         configs=[Path(CONFIGS, distro, f"{config_name}.config")],
-                        image_target='bzImage',
                     )
                 )
 

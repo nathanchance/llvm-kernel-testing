@@ -46,9 +46,16 @@ def can_build_arm64_big_endian(lst: LinuxSourceTree, llvm_version: Version) -> b
 
 class Arm64Matrix(ArchMatrix):
     def __init__(
-        self, lst: LinuxSourceTree, env_info: EnvInfo, targets: list[str], **kwargs
+        self,
+        lst: LinuxSourceTree,
+        env_info: EnvInfo,
+        targets: list[str],
+        only_boot_testing: bool = False,
+        **kwargs,
     ) -> None:
-        super().__init__(lst, env_info, targets, CLANG_TARGET, QEMU_ARCH, **kwargs)
+        super().__init__(
+            lst, env_info, targets, CLANG_TARGET, QEMU_ARCH, only_boot_testing, **kwargs
+        )
 
     def _add_defconfig_jobs(self) -> list[TestJob]:
         jobs: list[TestJob] = [
@@ -102,7 +109,8 @@ class Arm64Matrix(ArchMatrix):
 
         for job in jobs:
             job.bootable = True
-            job.image_target = 'Image.gz'
+            if self.only_boot_testing:
+                job.make_targets.append('Image.gz')
 
         return jobs
 
@@ -111,6 +119,10 @@ class Arm64Matrix(ArchMatrix):
 
         if 'def' in self.targets:
             jobs += self._add_defconfig_jobs()
+
+        if self.only_boot_testing:
+            return jobs
+
         if 'other' in self.targets:
             jobs += [
                 TestJob(arch=KERNEL_ARCH, configs=['allmodconfig']),
@@ -126,6 +138,7 @@ class Arm64Matrix(ArchMatrix):
                 TestJob(arch=KERNEL_ARCH, configs=['allnoconfig']),
                 TestJob(arch=KERNEL_ARCH, configs=['tinyconfig']),
             ]
+
         if 'distro' in self.targets:
             configs: list[tuple[str, str]] = [
                 ('alpine', 'aarch64'),
@@ -134,14 +147,18 @@ class Arm64Matrix(ArchMatrix):
                 ('fedora', 'aarch64'),
                 ('opensuse', KERNEL_ARCH),
             ]
+            extra_make_targets = ['Image.gz']
             for distro, config_name in configs:
-                jobs.append(
-                    TestJob(
-                        arch=KERNEL_ARCH,
-                        bootable=True,
-                        configs=[Path(CONFIGS, distro, f"{config_name}.config")],
-                        image_target='Image.gz',
-                    )
+                job = TestJob(
+                    arch=KERNEL_ARCH,
+                    bootable=True,
+                    configs=[config_file := Path(CONFIGS, distro, f"{config_name}.config")],
                 )
+                # Nothing is explicitly wrong with this configuration option but it
+                # changes the default image target, which boot-utils does not expect,
+                # so explicitly add the bootable image target to the end of the command
+                if self.lst.is_config_set(config_file, 'EFI_ZBOOT'):
+                    job.extra_make_targets = extra_make_targets
+                jobs.append(job)
 
         return jobs

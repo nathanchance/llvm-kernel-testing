@@ -29,7 +29,6 @@ class TestJob:
         configs: list[lkt.utils.PathString],
         bootable: bool = False,
         boot_utils_arch: str = '',
-        image_target: str = '',
         skip_build_reason: str = '',
         skip_boot_reason: str = '',
     ) -> None:
@@ -40,7 +39,7 @@ class TestJob:
         self.boot_utils_arch: str = boot_utils_arch
         self.configs: list[lkt.utils.PathString] = configs
         self.extra_make_targets: list[str] = []
-        self.image_target: str = image_target
+        self.make_targets: list[str] = []
         self.make_vars: lkt.utils.MakeVars = {
             'ARCH': arch,
             'LLVM': '1',

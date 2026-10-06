@@ -516,7 +516,6 @@ class Executor:
         boot_utils_folder: Path,
         build_folder: Path,
         output_folder: Path,
-        only_boot_testing: bool = False,
         save_objects: bool = False,
         verbose: bool = False,
     ) -> None:
@@ -527,7 +526,6 @@ class Executor:
         self.build_folder: Path = build_folder
         self.logs_folder: Path = Path(output_folder, 'logs')
         self.make_vars: lkt.utils.MakeVars = {}
-        self.only_boot_testing: bool = only_boot_testing
         self.results_folder: Path = Path(output_folder, 'results')
         self.save_objects: bool = save_objects
         self.verbose: bool = verbose
@@ -672,14 +670,6 @@ class Executor:
             extra_configs += distro_adjustments(self.lst, base_config)
 
             need_olddefconfig = True
-
-            # Nothing is explicitly wrong with this configuration option but it
-            # changes the default image target, which boot-utils does not expect,
-            # so explicitly add the bootable image target to the end of the command
-            if base_config.stem in {'aarch64', 'arm64', 'riscv64'} and self.lst.is_config_set(
-                base_config, 'EFI_ZBOOT'
-            ):
-                job.extra_make_targets.append(job.image_target)
         else:
             msg = f"Unsupported base configuration: {base_config}"
             raise TypeError(msg)
@@ -716,12 +706,11 @@ class Executor:
             need_olddefconfig = True
 
         # build kernel and additional targets
-        make_targets = [
-            job.image_target if self.only_boot_testing else 'all',
-            *job.extra_make_targets,
-        ]
+        make_targets = job.make_targets.copy() if job.make_targets else ['all']
         if need_olddefconfig:
             make_targets.insert(0, 'olddefconfig')
+        if job.extra_make_targets:
+            make_targets += job.extra_make_targets
         make_job_variables['FINAL_MAKE_TARGETS'] = ' '.join(make_targets)
         final_make_cmd = ' '.join([*base_make_cmd, '$(FINAL_MAKE_TARGETS)'])
         make_job_cmds += [
@@ -769,13 +758,7 @@ class Executor:
         )
 
     def generate_makefile(self) -> Path:
-        test_jobs: list[TestJob] = [
-            job
-            for matrix in self.matrices
-            for job in matrix.jobs
-            if not self.only_boot_testing
-            or (job.bootable and job.image_target and isinstance(job.configs[0], str))
-        ]
+        test_jobs: list[TestJob] = [job for matrix in self.matrices for job in matrix.jobs]
         make_jobs: list[MakeJob] = [self._transform_test_into_make(job) for job in test_jobs]
 
         if self.build_folder.exists():

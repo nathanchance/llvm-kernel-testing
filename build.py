@@ -209,7 +209,12 @@ if __name__ == '__main__':
         'x86_64': X8664Matrix,
     }
     matrices: list[ArchMatrix] = [
-        arch_to_matrix[arch](lst=lst, env_info=env_info, targets=args.targets_to_build)
+        arch_to_matrix[arch](
+            lst=lst,
+            env_info=env_info,
+            only_boot_testing=args.only_test_boot,
+            targets=args.targets_to_build,
+        )
         for arch in args.architectures
     ]
 
@@ -221,7 +226,6 @@ if __name__ == '__main__':
         boot_utils_folder=boot_utils_folder,
         build_folder=build_folder,
         output_folder=output_folder,
-        only_boot_testing=args.only_test_boot,
         save_objects=args.save_objects,
         verbose=args.verbose,
     )
