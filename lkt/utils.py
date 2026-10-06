@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import TypedDict
 
 CONFIGS = Path(__file__).resolve().parents[1].joinpath('configs')
-DEFAULT_PATH = Path('/intentionally/does/not/exist')
 HAVE_DEV_KVM_ACCESS = os.access('/dev/kvm', os.R_OK | os.W_OK)
 MACHINE = platform.machine()
 
@@ -85,10 +84,6 @@ def header(hdr_str: str, end: str = '\n') -> None:
     """
     border = ''.join(['=' for _x in range(len(hdr_str) + 6)])
     print(f"\n\033[1m{border}\n== {hdr_str} ==\n{border}\n\033[0m", end=end, flush=True)
-
-
-def path_is_set(path: Path) -> bool:
-    return path != DEFAULT_PATH
 
 
 def run(args: ValidCmd, **kwargs) -> subprocess.CompletedProcess:
