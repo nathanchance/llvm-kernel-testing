@@ -13,6 +13,7 @@ from lkt.arch.arm import ArmMatrix
 from lkt.arch.arm64 import Arm64Matrix
 from lkt.arch.hexagon import HexagonMatrix
 from lkt.arch.i386 import I386Matrix
+from lkt.arch.loongarch import LoongArchMatrix
 from lkt.arch.x86_64 import X8664Matrix
 from lkt.core.env import EnvInfo
 from lkt.core.executor import Executor
@@ -37,6 +38,7 @@ ARCH_TO_MATRIX: dict[str, type] = {
     'arm64': Arm64Matrix,
     'hexagon': HexagonMatrix,
     'i386': I386Matrix,
+    'loongarch': LoongArchMatrix,
     'x86_64': X8664Matrix,
 }
 
