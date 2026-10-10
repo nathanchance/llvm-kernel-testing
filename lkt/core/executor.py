@@ -769,6 +769,7 @@ class Executor:
         makefile = self.build_folder.joinpath('Makefile')
         makefile_txt = f"""\
 SHELL := /bin/bash
+export PATH := {os.environ['PATH']}
 
 # Folders
 BOOT_UTILS := {self.boot_utils_folder}
