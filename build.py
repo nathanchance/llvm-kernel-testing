@@ -34,13 +34,13 @@ SUPPORTED_TARGETS = [
     'distro',
     'other',
 ]
-ARCH_TO_MATRIX: dict[str, type | None] = {
+ARCH_TO_MATRIX: dict[str, type | tuple[type, ...]] = {
     'arm': ArmMatrix,
     'arm64': Arm64Matrix,
     'hexagon': HexagonMatrix,
     'i386': I386Matrix,
     'loongarch': LoongArchMatrix,
-    'mips': None,
+    'mips': (MipsMatrix, MipsELMatrix),
     'x86_64': X8664Matrix,
 }
 
@@ -215,13 +215,8 @@ if __name__ == '__main__':
     # Generate full matrix
     matrices: list[ArchMatrix] = []
     for arch in args.architectures:
-        if arch == 'mips':
-            classes = [MipsMatrix, MipsELMatrix]
-        elif matrix := ARCH_TO_MATRIX[arch]:
-            classes = [matrix]
-        else:
-            msg = f"No valid classes for {arch}!"
-            raise RuntimeError(msg)
+        if not isinstance(items := ARCH_TO_MATRIX[arch], tuple):
+            items = (items,)
         matrices.extend(
             item(
                 lst=lst,
@@ -229,7 +224,7 @@ if __name__ == '__main__':
                 only_boot_testing=args.only_test_boot,
                 targets=args.targets_to_build,
             )
-            for item in classes
+            for item in items
         )
 
     # Build executor
