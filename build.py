@@ -14,6 +14,7 @@ from lkt.arch.arm64 import Arm64Matrix
 from lkt.arch.hexagon import HexagonMatrix
 from lkt.arch.i386 import I386Matrix
 from lkt.arch.loongarch import LoongArchMatrix
+from lkt.arch.mips import MipsELMatrix, MipsMatrix
 from lkt.arch.x86_64 import X8664Matrix
 from lkt.core.env import EnvInfo
 from lkt.core.executor import Executor
@@ -33,12 +34,13 @@ SUPPORTED_TARGETS = [
     'distro',
     'other',
 ]
-ARCH_TO_MATRIX: dict[str, type] = {
+ARCH_TO_MATRIX: dict[str, type | None] = {
     'arm': ArmMatrix,
     'arm64': Arm64Matrix,
     'hexagon': HexagonMatrix,
     'i386': I386Matrix,
     'loongarch': LoongArchMatrix,
+    'mips': None,
     'x86_64': X8664Matrix,
 }
 
@@ -211,15 +213,24 @@ if __name__ == '__main__':
     env_info = EnvInfo()
 
     # Generate full matrix
-    matrices: list[ArchMatrix] = [
-        ARCH_TO_MATRIX[arch](
-            lst=lst,
-            env_info=env_info,
-            only_boot_testing=args.only_test_boot,
-            targets=args.targets_to_build,
+    matrices: list[ArchMatrix] = []
+    for arch in args.architectures:
+        if arch == 'mips':
+            classes = [MipsMatrix, MipsELMatrix]
+        elif matrix := ARCH_TO_MATRIX[arch]:
+            classes = [matrix]
+        else:
+            msg = f"No valid classes for {arch}!"
+            raise RuntimeError(msg)
+        matrices.extend(
+            item(
+                lst=lst,
+                env_info=env_info,
+                only_boot_testing=args.only_test_boot,
+                targets=args.targets_to_build,
+            )
+            for item in classes
         )
-        for arch in args.architectures
-    ]
 
     # Build executor
     executor = Executor(
