@@ -9,8 +9,15 @@ from .env import EnvInfo
 from .job import MakeJob, TestJob
 from .matrix import ArchMatrix
 from .source import LinuxSourceTree
+from .version import ClangVersion, LinuxVersion
 
 KNOWN_SUBSYS_WERROR_CONFIGS = ('DRM_WERROR',)
+
+# These are the minimum versions of Linux and LLVM that can be used with this
+# test framework due to assumptions made throughout the framework with regards
+# to present commits and make variables.
+MINIMUM_SUPPORTED_LINUX_VERSION = LinuxVersion(5, 15, 0)
+MINIMUM_SUPPORTED_LLVM_VERSION = ClangVersion(15, 0, 0)
 
 
 def using_kvm(boot_utils_arch: str, boot_utils_folder: Path) -> bool:
@@ -508,6 +515,23 @@ def pretty_name_to_make_name(pretty_job_name: str) -> str:
     return pretty_job_name.replace(' ', '_').replace('_+_', '_').replace('""', '').replace('=', '_')
 
 
+def skip_matrix(reason: str) -> MakeJob:
+    return MakeJob(
+        name='matrix',
+        prereqs=['prepare'],
+        cmds=[
+            '@mkdir -p $(RESULTS)/$@',
+            "@echo '$(PRETTY_JOB_NAME)' >$(NAME_RESULT)",
+            '@echo "skipped due to $(SKIP_BUILD_REASON)" >$(BUILD_RESULT)',
+            '@echo >&2 "Skipping $(PRETTY_JOB_NAME) because $(SKIP_BUILD_REASON)"',
+        ],
+        variables={
+            'PRETTY_JOB_NAME': 'build matrix',
+            'SKIP_BUILD_REASON': reason,
+        },
+    )
+
+
 class Executor:
     def __init__(
         self,
@@ -759,8 +783,24 @@ class Executor:
         )
 
     def generate_makefile(self) -> Path:
-        test_jobs: list[TestJob] = [job for matrix in self.matrices for job in matrix.jobs]
-        make_jobs: list[MakeJob] = [self._transform_test_into_make(job) for job in test_jobs]
+        make_jobs: list[MakeJob] = []
+        test_jobs: list[TestJob] = []
+
+        if self.lst.version < MINIMUM_SUPPORTED_LINUX_VERSION:
+            make_jobs.append(
+                skip_matrix(
+                    f"found Linux version ('{self.lst.version}') is older than the minimum supported version ('{MINIMUM_SUPPORTED_LINUX_VERSION}') of llvm-kernel-testing"
+                )
+            )
+        elif self.env_info.clang.version < MINIMUM_SUPPORTED_LLVM_VERSION:
+            make_jobs.append(
+                skip_matrix(
+                    f"found LLVM version ('{self.env_info.clang.version}') is older than the minimum supported version ('{MINIMUM_SUPPORTED_LLVM_VERSION}') of llvm-kernel-testing"
+                )
+            )
+        else:
+            test_jobs += [job for matrix in self.matrices for job in matrix.jobs]
+            make_jobs += [self._transform_test_into_make(job) for job in test_jobs]
 
         if self.build_folder.exists():
             shutil.rmtree(self.build_folder)
@@ -768,8 +808,8 @@ class Executor:
 
         makefile = self.build_folder.joinpath('Makefile')
         makefile_txt = f"""\
-SHELL := /bin/bash
 export PATH := {os.environ['PATH']}
+SHELL := /bin/bash
 
 # Folders
 BOOT_UTILS := {self.boot_utils_folder}
