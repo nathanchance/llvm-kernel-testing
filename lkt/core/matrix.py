@@ -29,6 +29,13 @@ class ArchMatrix:
                 if not job.skip_build_reason:
                     job.skip_build_reason = 'missing clang target'
 
+        if (
+            required_llvm_ver := self.lst.get_min_llvm_ver(self.jobs[0].make_vars['ARCH'])
+        ) < self.env_info.clang.version:
+            for job in self.jobs:
+                if not job.skip_build_reason:
+                    job.skip_build_reason = f"LLVM < required version ('{required_llvm_ver}', found '{self.env_info.clang.version}')"
+
         if qemu_arch and env_info.qemu[qemu_arch].location == Path():
             for job in self.jobs:
                 if job.bootable and not job.skip_boot_reason:

@@ -65,12 +65,12 @@ class RISCVMatrix(ArchMatrix):
         if llvm_ver < MIN_LLVM_VER_CFI:
             cfi_skip_reason = f"LLVM < {MIN_LLVM_VER_CFI} (using '{llvm_ver}')"
         elif not self.lst.arch_supports_kcfi(KERNEL_ARCH):
-            cfi_skip_reason = f"Linux < {LNX_VER_CFI} (have '{self.lst.version}')"
+            cfi_skip_reason = f"Linux < {LNX_VER_CFI} (have '{lnx_ver}')"
         else:
             cfi_skip_reason = ''
 
         if 'ARCH_SUPPORTS_LTO_CLANG' not in riscv_kconfig_txt:
-            lto_skip_reason = f"Linux < {EXPECTED_LNX_VER_LTO} (have '{self.lst.version}')"
+            lto_skip_reason = f"Linux < {EXPECTED_LNX_VER_LTO} (have '{lnx_ver}')"
             lto_allmod_skip_reason = lto_skip_reason
         elif BROKEN_LTO_START <= llvm_ver < BROKEN_LTO_END:
             lto_skip_reason = ''
