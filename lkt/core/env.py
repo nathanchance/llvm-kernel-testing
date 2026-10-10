@@ -18,11 +18,17 @@ QEMU_ARCHES = (
     's390x',
     'x86_64',
 )
+BINUTILS_ARCHES = {
+    lkt.utils.MACHINE: f"{lkt.utils.MACHINE}-linux-gnu",
+    's390x': 's390x-linux-gnu',
+}
 
 
 class EnvInfo:
     def __init__(self) -> None:
-        self.binutils: Tool = Tool('as')
+        self.binutils: dict[str, Tool] = {
+            arch: Tool(f"{triple}-as") for arch, triple in BINUTILS_ARCHES
+        }
         self.clang: Tool = Tool('clang')
         self.path: str = os.getenv('PATH', 'PATH unavailable?')
         self.qemu: dict[str, Tool] = {arch: Tool(f"qemu-system-{arch}") for arch in QEMU_ARCHES}
@@ -33,8 +39,8 @@ class EnvInfo:
         return f"""\
 clang version: {self.clang.original_version_string}
 clang location: {self.clang.location}
-binutils version: {self.binutils.original_version_string}
-binutils location: {self.binutils.location}
+binutils version: {self.binutils[lkt.utils.MACHINE].original_version_string}
+binutils location: {self.binutils[lkt.utils.MACHINE].location}
 host uname: {self.uname}
 PATH: {self.path.replace(os.pathsep, ' ')}"""
 
