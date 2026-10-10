@@ -19,15 +19,15 @@ QEMU_ARCHES = (
     'x86_64',
 )
 BINUTILS_ARCHES = {
-    lkt.utils.MACHINE: f"{lkt.utils.MACHINE}-linux-gnu",
-    's390x': 's390x-linux-gnu',
+    lkt.utils.MACHINE: '',
+    's390x': 's390x-linux-gnu-',
 }
 
 
 class EnvInfo:
     def __init__(self) -> None:
         self.binutils: dict[str, Tool] = {
-            arch: Tool(f"{triple}-as") for arch, triple in BINUTILS_ARCHES
+            arch: Tool(f"{triple}as") for arch, triple in BINUTILS_ARCHES.items()
         }
         self.clang: Tool = Tool('clang')
         self.path: str = os.getenv('PATH', 'PATH unavailable?')
