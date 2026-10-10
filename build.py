@@ -32,14 +32,13 @@ SUPPORTED_TARGETS = [
     'distro',
     'other',
 ]
-SUPPORTED_ARCHITECTURES = [
-    'arm',
-    'arm64',
-    'hexagon',
-    'i386',
-    'x86_64',
-]
-EXPERIMENTAL_ARCHITECTURES = []
+ARCH_TO_MATRIX: dict[str, type] = {
+    'arm': ArmMatrix,
+    'arm64': Arm64Matrix,
+    'hexagon': HexagonMatrix,
+    'i386': I386Matrix,
+    'x86_64': X8664Matrix,
+}
 
 
 def parse_arguments():
@@ -49,8 +48,8 @@ def parse_arguments():
     build_options_group.add_argument(
         '-a',
         '--architectures',
-        choices=[*SUPPORTED_ARCHITECTURES, *EXPERIMENTAL_ARCHITECTURES],
-        default=SUPPORTED_ARCHITECTURES,
+        choices=ARCH_TO_MATRIX.keys(),
+        default=ARCH_TO_MATRIX.keys(),
         metavar='ARCH',
         nargs='+',
         help='Architectures to build for (default: %(default)s).',
@@ -210,15 +209,8 @@ if __name__ == '__main__':
     env_info = EnvInfo()
 
     # Generate full matrix
-    arch_to_matrix: dict[str, type] = {
-        'arm': ArmMatrix,
-        'arm64': Arm64Matrix,
-        'hexagon': HexagonMatrix,
-        'i386': I386Matrix,
-        'x86_64': X8664Matrix,
-    }
     matrices: list[ArchMatrix] = [
-        arch_to_matrix[arch](
+        ARCH_TO_MATRIX[arch](
             lst=lst,
             env_info=env_info,
             only_boot_testing=args.only_test_boot,
