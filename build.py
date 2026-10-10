@@ -15,6 +15,7 @@ from lkt.arch.hexagon import HexagonMatrix
 from lkt.arch.i386 import I386Matrix
 from lkt.arch.loongarch import LoongArchMatrix
 from lkt.arch.mips import MipsELMatrix, MipsMatrix
+from lkt.arch.riscv import RISCVMatrix
 from lkt.arch.x86_64 import X8664Matrix
 from lkt.core.env import EnvInfo
 from lkt.core.executor import Executor
@@ -41,6 +42,7 @@ ARCH_TO_MATRIX: dict[str, type | tuple[type, ...]] = {
     'i386': I386Matrix,
     'loongarch': LoongArchMatrix,
     'mips': (MipsMatrix, MipsELMatrix),
+    'riscv': RISCVMatrix,
     'x86_64': X8664Matrix,
 }
 
