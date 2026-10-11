@@ -29,9 +29,9 @@ class ArchMatrix:
                 if not job.skip_build_reason:
                     job.skip_build_reason = 'missing clang target'
 
-        if (
+        if self.env_info.clang.version < (
             required_llvm_ver := self.lst.get_min_llvm_ver(self.jobs[0].make_vars['ARCH'])
-        ) < self.env_info.clang.version:
+        ):
             for job in self.jobs:
                 if not job.skip_build_reason:
                     job.skip_build_reason = f"LLVM < required version ('{required_llvm_ver}', found '{self.env_info.clang.version}')"
