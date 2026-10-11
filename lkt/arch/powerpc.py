@@ -14,10 +14,6 @@ CLANG_TARGET = 'powerpc64le-linux-gnu'
 # v5.17-rc2-28-g12318163737c (Mon Feb 7 21:03:10 2022 +1100)
 # https://git.kernel.org/linus/12318163737cd8808d13faa6e2393774191a6182
 MIN_IAS_LNX_VER = LinuxVersion(5, 18, 0)
-# [PowerPC] Allow absolute expressions in relocations
-# llvmorg-14.0.1-16-g33504b3bbe10 (Mon Apr 18 17:02:51 2022 -0700)
-# https://github.com/llvm/llvm-project/commit/33504b3bbe10d5d4caae13efcb99bd159c126070
-MIN_IAS_LLVM_VER = ClangVersion(14, 0, 2)
 
 
 def ppc64_be_defaults_to_elfv2(lst: LinuxSourceTree) -> bool:
@@ -142,8 +138,35 @@ class PowerPC64Matrix(ArchMatrix):
     def _generate_jobs(self) -> list[TestJob]:
         jobs: list[TestJob] = []
 
-        if self.only_boot_testing:
-            return jobs
+        if 'def' in self.targets:
+            jobs.append(
+                TestJob(
+                    arch=KERNEL_ARCH,
+                    bootable=True,
+                    boot_utils_arch='ppc64',
+                    configs=['ppc64_guest_defconfig'],
+                    make_targets=['vmlinux'] if self.only_boot_testing else [],
+                )
+            )
+
+            if not self.only_boot_testing:
+                jobs.append(TestJob(arch=KERNEL_ARCH, configs=['ppc64_defconfig']))
+
+        if (binutils := self.env_info.binutils[KERNEL_ARCH]).location == Path():
+            for job in jobs:
+                if not job.skip_build_reason:
+                    job.skip_build_reason = 'missing binutils'
+        else:
+            cross_compile = binutils.tool.replace('gnu-as', 'gnu-')
+            for job in jobs:
+                # https://github.com/ClangBuiltLinux/linux/issues/1601
+                job.make_vars['CROSS_COMPILE'] = cross_compile
+
+                if not ppc64_be_defaults_to_elfv2(self.lst):
+                    job.make_vars |= {
+                        'LD': f"{cross_compile}ld",
+                        'LLVM_IAS': '0',
+                    }
 
         return jobs
 
