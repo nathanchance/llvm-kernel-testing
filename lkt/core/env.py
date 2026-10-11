@@ -1,5 +1,6 @@
 import os
 import platform
+from pathlib import Path
 
 import lkt.utils
 
@@ -18,17 +19,23 @@ QEMU_ARCHES = (
     's390x',
     'x86_64',
 )
-BINUTILS_ARCHES = {
+BINUTILS_ARCHES: dict[str, str | tuple[str, ...]] = {
     lkt.utils.MACHINE: '',
+    'powerpc': ('powerpc64le-linux-gnu-', 'powerpc64-linux-gnu-', 'powerpc64-linux-gnu-'),
     's390x': 's390x-linux-gnu-',
 }
 
 
 class EnvInfo:
     def __init__(self) -> None:
-        self.binutils: dict[str, Tool] = {
-            arch: Tool(f"{triple}as") for arch, triple in BINUTILS_ARCHES.items()
-        }
+        self.binutils: dict[str, Tool] = {}
+        for arch, value in BINUTILS_ARCHES.items():
+            if not isinstance(triples := value, tuple):
+                triples = (triples,)
+            for triple in triples:
+                self.binutils[arch] = (gnu_as := Tool(f"{triple}as"))
+                if gnu_as.location != Path():
+                    break
         self.clang: Tool = Tool('clang')
         self.path: str = os.getenv('PATH', 'PATH unavailable?')
         self.qemu: dict[str, Tool] = {arch: Tool(f"qemu-system-{arch}") for arch in QEMU_ARCHES}

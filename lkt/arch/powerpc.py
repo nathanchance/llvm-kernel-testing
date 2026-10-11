@@ -1,0 +1,168 @@
+from pathlib import Path
+
+from ..core.env import EnvInfo
+from ..core.job import TestJob
+from ..core.matrix import ArchMatrix
+from ..core.source import LinuxSourceTree
+from ..core.version import ClangVersion, LinuxVersion
+
+KERNEL_ARCH = 'powerpc'
+CLANG_TARGET = 'powerpc64le-linux-gnu'
+
+# https://github.com/ClangBuiltLinux/linux/issues/1418
+# powerpc/32: Remove remaining .stabs annotations
+# v5.17-rc2-28-g12318163737c (Mon Feb 7 21:03:10 2022 +1100)
+# https://git.kernel.org/linus/12318163737cd8808d13faa6e2393774191a6182
+MIN_IAS_LNX_VER = LinuxVersion(5, 18, 0)
+# [PowerPC] Allow absolute expressions in relocations
+# llvmorg-14.0.1-16-g33504b3bbe10 (Mon Apr 18 17:02:51 2022 -0700)
+# https://github.com/llvm/llvm-project/commit/33504b3bbe10d5d4caae13efcb99bd159c126070
+MIN_IAS_LLVM_VER = ClangVersion(14, 0, 2)
+
+
+def ppc64_be_defaults_to_elfv2(lst: LinuxSourceTree) -> bool:
+    # If CONFIG_PPC64_BIG_ENDIAN_ELF_ABI_V2 does not exist in the current tree,
+    # the meaning changes depending on the Linux version. If the tree is newer
+    # than 6.2.0 (which first shipped CONFIG_PPC64_BIG_ENDIAN_ELF_ABI_V2), it
+    # means that [1] has been merged, which means that ELFv2 is the only ABI
+    # supported internally by the kernel. If it is not newer than 6.2.0, it
+    # means ELFv1 is the only option for the internal kernel ABI.
+    #
+    # [1]: https://lore.kernel.org/20230505071850.228734-5-npiggin@gmail.com/
+    if 'CONFIG_PPC64_BIG_ENDIAN_ELF_ABI_V2' not in lst.configs:
+        return lst.version >= (6, 2, 0)
+
+    kconfig_text = lst.read_text('arch/powerpc/Kconfig')
+    # powerpc/64: Force ELFv2 when building with LLVM linker
+    # v6.4-rc2-35-g9d90161ca5c7 (Wed Jun 14 12:46:42 2023 +1000)
+    # https://git.kernel.org/linus/9d90161ca5c7234e80e14e563d198f322ca0c1d0
+    patch_1_state = '"Build big-endian kernel using ELF ABI V2 (EXPERIMENTAL)" if LD_IS_BFD'
+    # powerpc/64: Make ELFv2 the default for big-endian builds
+    # v6.4-rc2-36-g8c5fa3b5c4df (Wed Jun 14 12:46:42 2023 +1000)
+    # https://git.kernel.org/linus/8c5fa3b5c4df3d071dab42b04b971df370d99354
+    patch_2_state = '"Build big-endian kernel using ELF ABI V2" if LD_IS_BFD && EXPERT'
+    return patch_1_state in kconfig_text or patch_2_state in kconfig_text
+
+
+class PowerPC32Matrix(ArchMatrix):
+    def __init__(
+        self,
+        lst: LinuxSourceTree,
+        env_info: EnvInfo,
+        targets: list[str],
+        only_boot_testing: bool = False,
+        **kwargs,
+    ) -> None:
+        super().__init__(lst, env_info, targets, CLANG_TARGET, 'ppc', only_boot_testing, **kwargs)
+
+    def _generate_jobs(self) -> list[TestJob]:
+        jobs: list[TestJob] = []
+
+        if 'def' in self.targets:
+            kconfig_text = self.lst.read_text('arch/powerpc/platforms/Kconfig.cputype')
+            has_44x_hack = (
+                '"440 (44x family)"\n\tdepends on 44x\n\tdepends on !CC_IS_CLANG' in kconfig_text
+            )
+
+            # powerpc/44x: Fix build failure with GCC 12 (unrecognized opcode: `wrteei')
+            # v5.19-rc2-164-g2255411d1d0f (Wed Jul 27 21:36:06 2022 +1000)
+            # https://git.kernel.org/linus/2255411d1d0f0661d1e5acd5f6edf4e6652a345a
+            cbl_1814 = (
+                '2255411d1d0f0661d1e5acd5f6edf4e6652a345a' in self.lst.commits and not has_44x_hack
+            )
+
+            ppc44x_job = TestJob(
+                arch=KERNEL_ARCH, boot_utils_arch='ppc32', configs=['ppc44x_defconfig']
+            )
+            # https://github.com/ClangBuiltLinux/linux/issues/1679
+            if (
+                self.env_info.clang.version < (cbl_1679_fixed_ver := ClangVersion(16, 0, 0))
+                and cbl_1814
+            ):
+                ppc44x_job.skip_build_reason = f"LLVM < {cbl_1679_fixed_ver} (using '{self.env_info.clang.version}') with 2255411d1d0f0 (from {LinuxVersion(6, 0, 0)}) present (https://github.com/ClangBuiltLinux/linux/issues/1679)"
+            if self.only_boot_testing:
+                ppc44x_job.make_targets.append('uImage')
+            else:
+                ppc44x_job.extra_make_targets.append('uImage')
+            ppc44x_job.bootable = not cbl_1814
+            if not ppc44x_job.bootable:
+                ppc44x_job.skip_boot_reason = (
+                    '"-mcpu=440" (https://github.com/ClangBuiltLinux/linux/issues/1814)'
+                )
+            jobs.append(ppc44x_job)
+
+            ppc32_mac_job = TestJob(
+                arch=KERNEL_ARCH,
+                bootable=True,
+                boot_utils_arch='ppc32_mac',
+                configs=['pmac32_defconfig'],
+            )
+            if self.only_boot_testing:
+                ppc32_mac_job.make_targets.append('vmlinux')
+            # lib/xor: make xor prototypes more friendly to compiler vectorization
+            # v5.17-rc1-61-g297565aa22cf (Fri Feb 11 20:39:39 2022 +1100)
+            # https://git.kernel.org/linus/297565aa22cfa80ab0f88c3569693aea0b6afb6d
+            if '297565aa22cfa80ab0f88c3569693aea0b6afb6d' not in self.lst.commits:
+                ppc32_mac_job.skip_build_reason = f"missing 297565aa22cfa (from {LinuxVersion(5, 18, 0)}) for https://github.com/ClangBuiltLinux/linux/issues/563"
+            # powerpc/pmac32: enable serial options by default in defconfig
+            # v6.5-rc3-36-g0b5e06e9cb15 (Mon Aug 14 21:54:04 2023 +1000)
+            # https://git.kernel.org/linus/0b5e06e9cb156e7e97bfb4e1ebf6acd62497eaf5
+            if '0b5e06e9cb156e7e97bfb4e1ebf6acd62497eaf5' not in self.lst.commits:
+                ppc32_mac_job.configs += [
+                    'CONFIG_SERIAL_PMACZILOG=y',
+                    'CONFIG_SERIAL_PMACZILOG_CONSOLE=y',
+                ]
+            jobs.append(ppc32_mac_job)
+
+        if (binutils := self.env_info.binutils[KERNEL_ARCH]).location == Path():
+            for job in jobs:
+                if not job.skip_build_reason:
+                    job.skip_build_reason = 'missing binutils'
+        else:
+            for job in jobs:
+                job.make_vars |= {
+                    'CROSS_COMPILE': binutils.tool.replace('gnu-as', 'gnu-'),
+                    'LLVM_IAS': '0',
+                }
+
+        return jobs
+
+
+class PowerPC64Matrix(ArchMatrix):
+    def __init__(
+        self,
+        lst: LinuxSourceTree,
+        env_info: EnvInfo,
+        targets: list[str],
+        only_boot_testing: bool = False,
+        **kwargs,
+    ) -> None:
+        super().__init__(lst, env_info, targets, CLANG_TARGET, 'ppc64', only_boot_testing, **kwargs)
+
+    def _generate_jobs(self) -> list[TestJob]:
+        jobs: list[TestJob] = []
+
+        if self.only_boot_testing:
+            return jobs
+
+        return jobs
+
+
+class PowerPC64LEMatrix(ArchMatrix):
+    def __init__(
+        self,
+        lst: LinuxSourceTree,
+        env_info: EnvInfo,
+        targets: list[str],
+        only_boot_testing: bool = False,
+        **kwargs,
+    ) -> None:
+        super().__init__(lst, env_info, targets, CLANG_TARGET, 'ppc64', only_boot_testing, **kwargs)
+
+    def _generate_jobs(self) -> list[TestJob]:
+        jobs: list[TestJob] = []
+
+        if self.only_boot_testing:
+            return jobs
+
+        return jobs
