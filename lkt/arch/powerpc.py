@@ -138,6 +138,8 @@ class PowerPC64Matrix(ArchMatrix):
     def _generate_jobs(self) -> list[TestJob]:
         jobs: list[TestJob] = []
 
+        elfv2_on_by_default = ppc64_be_defaults_to_elfv2(self.lst)
+
         if 'def' in self.targets:
             jobs.append(
                 TestJob(
@@ -152,6 +154,27 @@ class PowerPC64Matrix(ArchMatrix):
             if not self.only_boot_testing:
                 jobs.append(TestJob(arch=KERNEL_ARCH, configs=['ppc64_defconfig']))
 
+        if not self.only_boot_testing and 'other' in self.targets:
+            # This used to be a dynamic check but stable backported a11334d8327b3f
+            # without its dependencies (breaking that), so just check for the
+            # mainline version that it actually landed in.
+            can_select_elfv2 = self.lst.version >= (lnx_ver_elfv2_select := LinuxVersion(6, 4, 0))
+
+            allmod_job = TestJob(arch=KERNEL_ARCH, configs=['allmodconfig'])
+            if not elfv2_on_by_default and can_select_elfv2:
+                allmod_job.configs.append('CONFIG_PPC64_BIG_ENDIAN_ELF_ABI_V2=y')
+            elif not can_select_elfv2:
+                # powerpc: Allow CONFIG_PPC64_BIG_ENDIAN_ELF_ABI_V2 with ld.lld 15+
+                # v6.3-rc2-10-ga11334d8327b (Wed Mar 15 00:52:10 2023 +1100)
+                # https://git.kernel.org/linus/a11334d8327b3fd7987cbfb38e956a44c722d88f
+                allmod_job.skip_build_reason = f"lack of a11334d8327b (from {lnx_ver_elfv2_select})"
+            jobs.append(allmod_job)
+
+            jobs += [
+                TestJob(arch=KERNEL_ARCH, configs=[config])
+                for config in ('allnoconfig', 'tinyconfig')
+            ]
+
         if (binutils := self.env_info.binutils[KERNEL_ARCH]).location == Path():
             for job in jobs:
                 if not job.skip_build_reason:
@@ -162,7 +185,9 @@ class PowerPC64Matrix(ArchMatrix):
                 # https://github.com/ClangBuiltLinux/linux/issues/1601
                 job.make_vars['CROSS_COMPILE'] = cross_compile
 
-                if not ppc64_be_defaults_to_elfv2(self.lst):
+                if self.lst.version < MIN_IAS_LNX_VER:
+                    job.make_vars['LLVM_IAS'] = '0'
+                if not elfv2_on_by_default:
                     job.make_vars |= {
                         'LD': f"{cross_compile}ld",
                         'LLVM_IAS': '0',
@@ -185,7 +210,30 @@ class PowerPC64LEMatrix(ArchMatrix):
     def _generate_jobs(self) -> list[TestJob]:
         jobs: list[TestJob] = []
 
-        if self.only_boot_testing:
-            return jobs
+        if 'def' in self.targets:
+            jobs += [
+                TestJob(arch=KERNEL_ARCH, configs=['powernv_defconfig']),
+                TestJob(arch=KERNEL_ARCH, configs=['ppc64le_guest_defconfig']),
+            ]
+            for job in jobs:
+                job.bootable = True
+                job.boot_utils_arch = 'ppc64le'
+                if self.only_boot_testing:
+                    job.make_targets.append('zImage.epapr')
+            if not self.only_boot_testing:
+                jobs.append(TestJob(arch=KERNEL_ARCH, configs=['ppc64le_defconfig']))
+
+        if (binutils := self.env_info.binutils[KERNEL_ARCH]).location == Path():
+            for job in jobs:
+                if not job.skip_build_reason:
+                    job.skip_build_reason = 'missing binutils'
+        else:
+            cross_compile = binutils.tool.replace('gnu-as', 'gnu-')
+            for job in jobs:
+                # https://github.com/ClangBuiltLinux/linux/issues/1601
+                job.make_vars['CROSS_COMPILE'] = cross_compile
+
+                if self.lst.version < MIN_IAS_LNX_VER:
+                    job.make_vars['LLVM_IAS'] = '0'
 
         return jobs
