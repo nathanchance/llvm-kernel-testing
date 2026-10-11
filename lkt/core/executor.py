@@ -789,13 +789,13 @@ class Executor:
         if self.lst.version < MINIMUM_SUPPORTED_LINUX_VERSION:
             make_jobs.append(
                 skip_matrix(
-                    f"found Linux version ('{self.lst.version}') is older than the minimum supported version ('{MINIMUM_SUPPORTED_LINUX_VERSION}') of llvm-kernel-testing"
+                    f"found Linux version ('{self.lst.version}') is older than the minimum supported version of llvm-kernel-testing ('{MINIMUM_SUPPORTED_LINUX_VERSION}')"
                 )
             )
         elif self.env_info.clang.version < MINIMUM_SUPPORTED_LLVM_VERSION:
             make_jobs.append(
                 skip_matrix(
-                    f"found LLVM version ('{self.env_info.clang.version}') is older than the minimum supported version ('{MINIMUM_SUPPORTED_LLVM_VERSION}') of llvm-kernel-testing"
+                    f"found LLVM version ('{self.env_info.clang.version}') is older than the minimum supported version of llvm-kernel-testing ('{MINIMUM_SUPPORTED_LLVM_VERSION}')"
                 )
             )
         else:
