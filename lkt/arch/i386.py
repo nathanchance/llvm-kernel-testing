@@ -35,6 +35,7 @@ class I386Matrix(ArchMatrix):
 
             for job in jobs:
                 job.bootable = True
+                job.boot_utils_arch = 'x86'
                 if self.only_boot_testing:
                     job.make_targets.append('bzImage')
 
@@ -53,13 +54,10 @@ class I386Matrix(ArchMatrix):
                 TestJob(
                     arch=KERNEL_ARCH,
                     bootable=True,
-                    configs=[Path(CONFIGS, 'alpine/x86.config')],
-                ),
-                TestJob(
-                    arch=KERNEL_ARCH,
-                    bootable=True,
-                    configs=[Path(CONFIGS, 'opensuse/i386.config')],
-                ),
+                    boot_utils_arch='x86',
+                    configs=[Path(CONFIGS, config_file)],
+                )
+                for config_file in ('alpine/x86.config', 'opensuse/i386.config')
             ]
 
         return jobs
