@@ -743,7 +743,7 @@ class Executor:
             f"+{final_make_cmd} $(LOG_OUTPUT){failed_build_handling}",
             '@echo successful >$(BUILD_RESULT)',
         ]
-        if need_olddefconfig:
+        if need_olddefconfig and make_job_variables['REQUESTED_CONFIGS']:
             chk_cmd = '$(CHKCFG) $(CONFIG_FILE) $(REQUESTED_CONFIGS)'
             make_job_cmds += [
                 gen_log_cmd(chk_cmd),
