@@ -142,14 +142,21 @@ class RISCVMatrix(ArchMatrix):
             ]
 
         if 'distro' in self.targets:
+            extra_make_targets = ['Image']
             for distro in ('alpine', 'debian', 'fedora', 'opensuse'):
-                job = TestJob(arch=KERNEL_ARCH, configs=[Path(CONFIGS, distro, 'riscv64.config')])
+                config_file = Path(CONFIGS, distro, 'riscv64.config')
+                job = TestJob(arch=KERNEL_ARCH, configs=[config_file])
                 # riscv: set default pm_power_off to NULL
                 # v5.15-rc1-6-gf2928e224d85 (Mon Oct 4 14:16:57 2021 -0700)
                 # https://git.kernel.org/linus/f2928e224d85e7cc139009ab17cefdfec2df5d11
                 job.bootable = 'f2928e224d85e7cc139009ab17cefdfec2df5d11' in self.lst.commits
                 if not job.bootable:
                     job.skip_boot_reason = f"lack of f2928e224d85e (from {LinuxVersion(5, 16, 0)})"
+                # Nothing is explicitly wrong with this configuration option but it
+                # changes the default image target, which boot-utils does not expect,
+                # so explicitly add the bootable image target to the end of the command
+                if self.lst.is_config_set(config_file, 'EFI_ZBOOT'):
+                    job.extra_make_targets = extra_make_targets
                 jobs.append(job)
 
         return jobs
