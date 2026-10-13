@@ -5,6 +5,7 @@ from ..core.job import TestJob
 from ..core.matrix import ArchMatrix
 from ..core.source import LinuxSourceTree
 from ..core.version import ClangVersion, LinuxVersion
+from ..utils import CONFIGS
 
 KERNEL_ARCH = 'powerpc'
 CLANG_TARGET = 'powerpc64le-linux-gnu'
@@ -222,6 +223,29 @@ class PowerPC64LEMatrix(ArchMatrix):
                     job.make_targets.append('zImage.epapr')
             if not self.only_boot_testing:
                 jobs.append(TestJob(arch=KERNEL_ARCH, configs=['ppc64le_defconfig']))
+
+        if not self.only_boot_testing and 'distro' in self.targets:
+            configs = [
+                ('alpine', 'ppc64le'),
+                ('debian', 'powerpc64le'),
+                ('fedora', 'ppc64le'),
+                ('opensuse', 'ppc64le'),
+            ]
+            for distro, config_name in configs:
+                skip_build_reason = ''
+                if distro in {'fedora', 'opensuse'} and self.lst.version < (5, 17, 0):
+                    # Drop OpenSUSE's PowerPC configuration from 5.15
+                    skip_build_reason = (
+                        'https://github.com/ClangBuiltLinux/continuous-integration2/pull/775'
+                    )
+                jobs.append(
+                    TestJob(
+                        arch=KERNEL_ARCH,
+                        bootable=True,
+                        configs=[Path(CONFIGS, distro, f"{config_name}.config")],
+                        skip_build_reason=skip_build_reason,
+                    )
+                )
 
         if (binutils := self.env_info.binutils[KERNEL_ARCH]).location == Path():
             for job in jobs:
