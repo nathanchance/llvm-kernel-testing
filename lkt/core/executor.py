@@ -783,6 +783,8 @@ class Executor:
         )
 
     def generate_makefile(self) -> Path:
+        lkt.utils.header('Generating Makefile', end='')
+
         make_jobs: list[MakeJob] = []
         test_jobs: list[TestJob] = []
 
@@ -860,12 +862,13 @@ $(BOOT_UTILS_JSON): prepare
 {'\n'.join(str(job) for job in make_jobs)}
 """
         makefile.write_text(makefile_txt, encoding='utf-8')
+        print(f"[+] Makefile successfully generated in {self.build_folder}")
         return makefile
 
     def run(self) -> None:
-        lkt.utils.header('Running test matrix', end='')
-
         makefile = self.generate_makefile()
+
+        lkt.utils.header('Running test matrix', end='')
         start = time.time()
         make_cmd = ['make', '-f', makefile, f"-kj{os.cpu_count()}"]
         if not self.verbose:
