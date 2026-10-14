@@ -241,6 +241,7 @@ class PowerPC64LEMatrix(ArchMatrix):
                 jobs.append(
                     TestJob(
                         arch=KERNEL_ARCH,
+                        boot_utils_arch='ppc64le',
                         bootable=True,
                         configs=[Path(CONFIGS, distro, f"{config_name}.config")],
                         skip_build_reason=skip_build_reason,
