@@ -783,7 +783,7 @@ class Executor:
         )
 
     def generate_makefile(self) -> Path:
-        lkt.utils.header('Generating Makefile', end='')
+        lkt.utils.header('Generating Makefile')
 
         make_jobs: list[MakeJob] = []
         test_jobs: list[TestJob] = []
