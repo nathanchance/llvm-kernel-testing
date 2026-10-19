@@ -4,7 +4,6 @@ from ..core.env import EnvInfo
 from ..core.job import TestJob
 from ..core.matrix import ArchMatrix
 from ..core.source import LinuxSourceTree
-from ..core.version import ClangVersion, Version
 from ..utils import CONFIGS
 
 KERNEL_ARCH = 'arm64'
@@ -12,17 +11,13 @@ CLANG_TARGET = 'aarch64-linux-gnu'
 QEMU_ARCH = 'aarch64'
 
 
-def can_build_arm64_big_endian(lst: LinuxSourceTree, llvm_version: Version) -> bool:
-    arm64_kconfig_txt = Path(lst.folder, 'arch/arm64/Kconfig').read_text(encoding='utf-8')
+# Detect if big endian support is present and working in the kernel
+def can_build_arm64_big_endian(lst: LinuxSourceTree) -> bool:
+    arm64_kconfig_txt = lst.read_text('arch/arm64/Kconfig')
 
-    # Detect if big endian support is present and working in the kernel
     # arm64: Kconfig: Make CPU_BIG_ENDIAN depend on BROKEN
     # v6.17-rc1-3-g1cf89b6bf660 (Wed Sep 24 16:25:45 2025 +0100)
     # https://git.kernel.org/linus/1cf89b6bf660c2e9fa137b3e160c7b1001937a78
-    # Look for three states:
-    # 1. That commit as it exists in the arm64 tree
-    # 2. That commit with https://lore.kernel.org/aNU-sG84vqPj7p7G@sirena.org.uk/ addressed
-    # 3. A future where CONFIG_CPU_BIG_ENDIAN does not even exist
     state_one = (
         'config CPU_BIG_ENDIAN\n'
         '\tbool "Build big-endian kernel"\n'
@@ -30,18 +25,25 @@ def can_build_arm64_big_endian(lst: LinuxSourceTree, llvm_version: Version) -> b
         '\tdepends on (AS_IS_GNU || AS_VERSION >= 150000) && BROKEN\n'
         '\thelp'
     )
+    # arm64: Remove tautological LLVM Kconfig conditions
+    # v6.17-rc1-4-g23cb0514208d (Thu Aug 28 16:58:44 2025 -0700)
+    # https://git.kernel.org/linus/23cb0514208da70c07b3582ecbbe6b3c633a481f
+    # +
+    # Merge tag 'kbuild-6.18-1' of git://git.kernel.org/pub/scm/linux/kernel/git/kbuild/linux
+    # v6.17-4185-g7f7072574127 (Wed Oct 1 20:58:51 2025 -0700)
+    # https://git.kernel.org/linus/7f7072574127c9e971cad83a0274e86f6275c0d5
     state_two = (
         'config CPU_BIG_ENDIAN\n'
          '\tbool "Build big-endian kernel"\n'
          '\tdepends on BROKEN\n\thelp'
      )  # fmt: skip
     be_broken = state_one in arm64_kconfig_txt or state_two in arm64_kconfig_txt
+    # arm64: Kbuild: Remove vestigial big-endian support
+    # v7.3-rc4-13-g134b0fbc5c24 (Wed Sep 23 18:19:06 2026 +0100)
+    # https://git.kernel.org/linus/134b0fbc5c242d1c785447850e0a0c9ed7bac6c1
     be_exists = 'config CPU_BIG_ENDIAN' in arm64_kconfig_txt
 
-    # arm64: Restrict CPU_BIG_ENDIAN to GNU as or LLVM IAS 15.x or newer
-    # v6.6-rc3-8-g146a15b87335 (Thu Oct 26 16:33:20 2023 +0100)
-    # https://git.kernel.org/linus/146a15b873353f8ac28dc281c139ff611a3c4848
-    return llvm_version >= ClangVersion(15, 0, 0) and not be_broken and be_exists
+    return be_exists and not be_broken
 
 
 class Arm64Matrix(ArchMatrix):
@@ -69,14 +71,14 @@ class Arm64Matrix(ArchMatrix):
         if Path(self.lst.folder, 'kernel/configs/hardening.config').exists():
             jobs.append(TestJob(arch=KERNEL_ARCH, configs=['defconfig', 'hardening.config']))
 
-        be_job = TestJob(
-            arch=KERNEL_ARCH,
-            configs=['defconfig', 'CONFIG_CPU_BIG_ENDIAN=y'],
-            boot_utils_arch='arm64be',
-        )
-        if not can_build_arm64_big_endian(self.lst, self.env_info.clang.version):
-            be_job.skip_build_reason = f"LLVM < 15.0.0 (using '{self.env_info.clang.version}') or no big endian support in Linux"
-        jobs.append(be_job)
+        if can_build_arm64_big_endian(self.lst):
+            jobs.append(
+                TestJob(
+                    arch=KERNEL_ARCH,
+                    configs=['defconfig', 'CONFIG_CPU_BIG_ENDIAN=y'],
+                    boot_utils_arch='arm64be',
+                )
+            )
 
         if self.lst.arch_supports_kcfi(KERNEL_ARCH):
             cfi_y_config = self.lst.get_cfi_y_config()
