@@ -558,7 +558,7 @@ class Executor:
 
         self.duration: str = ''
 
-        makefile_txt = self.lst.folder.joinpath('Makefile').read_text(encoding='utf-8')
+        makefile_txt = self.lst.read_text('Makefile')
         if 'HOSTLDFLAGS += -fuse-ld=lld' not in makefile_txt:
             self.make_vars['HOSTLDFLAGS'] = '-fuse-ld=lld'
 
