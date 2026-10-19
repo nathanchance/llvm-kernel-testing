@@ -45,7 +45,9 @@ class HexagonMatrix(ArchMatrix):
                 self.lst.version < (ffb92ce826fd8_ver := LinuxVersion(5, 16, 0))
                 and 'ffb92ce826fd801acb0f4e15b75e4ddf0d189bde' not in self.lst.commits
             ):
-                job.skip_build_reason = f"lack of ffb92ce826fd8 (from {ffb92ce826fd8_ver})"
+                job.skip_build_reason = (
+                    f"Linux ('{self.lst.version}') missing ffb92ce826fd8 from {ffb92ce826fd8_ver}"
+                )
             # https://github.com/llvm/llvm-project/issues/80185#issuecomment-2187294487
             if self.env_info.clang.version[0] == 19:
                 job.configs.append('CONFIG_FORTIFY_KUNIT_TEST=n')

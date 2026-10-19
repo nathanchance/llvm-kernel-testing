@@ -76,7 +76,7 @@ class PowerPC32Matrix(ArchMatrix):
                 self.env_info.clang.version < (cbl_1679_fixed_ver := ClangVersion(16, 0, 0))
                 and cbl_1814
             ):
-                ppc44x_job.skip_build_reason = f"LLVM < {cbl_1679_fixed_ver} (using '{self.env_info.clang.version}') with 2255411d1d0f0 (from {LinuxVersion(6, 0, 0)}) present (https://github.com/ClangBuiltLinux/linux/issues/1679)"
+                ppc44x_job.skip_build_reason = f"LLVM version ('{self.env_info.clang.version}') < {cbl_1679_fixed_ver} with 2255411d1d0f0 (from {LinuxVersion(6, 0, 0)}) present (https://github.com/ClangBuiltLinux/linux/issues/1679)"
             if self.only_boot_testing:
                 ppc44x_job.make_targets.append('uImage')
             else:
@@ -100,7 +100,7 @@ class PowerPC32Matrix(ArchMatrix):
             # v5.17-rc1-61-g297565aa22cf (Fri Feb 11 20:39:39 2022 +1100)
             # https://git.kernel.org/linus/297565aa22cfa80ab0f88c3569693aea0b6afb6d
             if '297565aa22cfa80ab0f88c3569693aea0b6afb6d' not in self.lst.commits:
-                ppc32_mac_job.skip_build_reason = f"missing 297565aa22cfa (from {LinuxVersion(5, 18, 0)}) for https://github.com/ClangBuiltLinux/linux/issues/563"
+                ppc32_mac_job.skip_build_reason = f"Linux ('{self.lst.version}') missing 297565aa22cfa from {LinuxVersion(5, 18, 0)} (https://github.com/ClangBuiltLinux/linux/issues/563)"
             # powerpc/pmac32: enable serial options by default in defconfig
             # v6.5-rc3-36-g0b5e06e9cb15 (Mon Aug 14 21:54:04 2023 +1000)
             # https://git.kernel.org/linus/0b5e06e9cb156e7e97bfb4e1ebf6acd62497eaf5
@@ -168,7 +168,9 @@ class PowerPC64Matrix(ArchMatrix):
                 # powerpc: Allow CONFIG_PPC64_BIG_ENDIAN_ELF_ABI_V2 with ld.lld 15+
                 # v6.3-rc2-10-ga11334d8327b (Wed Mar 15 00:52:10 2023 +1100)
                 # https://git.kernel.org/linus/a11334d8327b3fd7987cbfb38e956a44c722d88f
-                allmod_job.skip_build_reason = f"lack of a11334d8327b (from {lnx_ver_elfv2_select})"
+                allmod_job.skip_build_reason = (
+                    f"Linux ('{self.lst.version}') missing a11334d8327b from {lnx_ver_elfv2_select}"
+                )
             jobs.append(allmod_job)
 
             jobs += [
@@ -235,9 +237,7 @@ class PowerPC64LEMatrix(ArchMatrix):
                 skip_build_reason = ''
                 if distro in {'fedora', 'opensuse'} and self.lst.version < (5, 17, 0):
                     # Drop OpenSUSE's PowerPC configuration from 5.15
-                    skip_build_reason = (
-                        'https://github.com/ClangBuiltLinux/continuous-integration2/pull/775'
-                    )
+                    skip_build_reason = 'unsupported increase in number of CPUs (https://github.com/ClangBuiltLinux/continuous-integration2/pull/775)'
                 jobs.append(
                     TestJob(
                         arch=KERNEL_ARCH,

@@ -63,28 +63,28 @@ class RISCVMatrix(ArchMatrix):
         lnx_ver = self.lst.version
 
         if llvm_ver < MIN_LLVM_VER_CFI:
-            cfi_skip_reason = f"LLVM < {MIN_LLVM_VER_CFI} (using '{llvm_ver}')"
+            cfi_skip_reason = f"LLVM version ('{llvm_ver}') < {MIN_LLVM_VER_CFI}"
         elif not self.lst.arch_supports_kcfi(KERNEL_ARCH):
-            cfi_skip_reason = f"Linux < {LNX_VER_CFI} (have '{lnx_ver}')"
+            cfi_skip_reason = f"Linux version ('{lnx_ver}') < {LNX_VER_CFI}"
         else:
             cfi_skip_reason = ''
 
         if 'ARCH_SUPPORTS_LTO_CLANG' not in riscv_kconfig_txt:
-            lto_skip_reason = f"Linux < {EXPECTED_LNX_VER_LTO} (have '{lnx_ver}')"
+            lto_skip_reason = f"Linux version ('{lnx_ver}') < {EXPECTED_LNX_VER_LTO}"
             lto_allmod_skip_reason = lto_skip_reason
         elif BROKEN_LTO_START <= llvm_ver < BROKEN_LTO_END:
             lto_skip_reason = ''
             lto_allmod_skip_reason = (
-                f"LLVM between {BROKEN_LTO_START} and {BROKEN_LTO_END} (using '{llvm_ver}')"
+                f"LLVM version ('{llvm_ver}') between {BROKEN_LTO_START} and {BROKEN_LTO_END}"
             )
         else:
             lto_skip_reason = ''
             lto_allmod_skip_reason = ''
 
         if llvm_ver < MIN_LLVM_VER_SCS:
-            scs_skip_reason = f"LLVM < {MIN_LLVM_VER_SCS} (using '{llvm_ver}')"
+            scs_skip_reason = f"LLVM version ('{llvm_ver}') < {MIN_LLVM_VER_SCS}"
         elif 'ARCH_SUPPORTS_SHADOW_CALL_STACK' not in riscv_kconfig_txt:
-            scs_skip_reason = f"Linux < {EXPECTED_LNX_VER_SCS} (using '{lnx_ver}')"
+            scs_skip_reason = f"Linux version ('{lnx_ver}') < {EXPECTED_LNX_VER_SCS}"
         else:
             scs_skip_reason = ''
 

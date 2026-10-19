@@ -76,17 +76,17 @@ class LoongArchMatrix(ArchMatrix):
 
         if (clang_ver := self.env_info.clang.version) < HARD_MIN_LLVM_VER:
             for job in jobs:
-                job.skip_build_reason = f"LLVM < {HARD_MIN_LLVM_VER} (using '{clang_ver}')"
+                job.skip_build_reason = f"LLVM version ('{clang_ver}') < {HARD_MIN_LLVM_VER}"
         elif '65eea6b44a5dd332c50390fdaeda7e197802c484' not in self.lst.commits:
             for job in jobs:
                 job.skip_build_reason = (
-                    f"missing 65eea6b44a5dd from Linux {MIN_LNX_VER} (have '{self.lst.version}')"
+                    f"Linux ('{self.lst.version}') missing 65eea6b44a5dd from Linux {MIN_LNX_VER}"
                 )
 
         if (qemu_ver := self.env_info.qemu[QEMU_ARCH].version) < MIN_QEMU_VER:
             for job in jobs:
                 if job.bootable:
                     job.bootable = False
-                    job.skip_boot_reason = f"QEMU < {MIN_QEMU_VER} (found '{qemu_ver}')"
+                    job.skip_boot_reason = f"QEMU version ('{qemu_ver}') < {MIN_QEMU_VER}"
 
         return jobs

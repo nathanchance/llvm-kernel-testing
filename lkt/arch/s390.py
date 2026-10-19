@@ -117,6 +117,6 @@ class S390Matrix(ArchMatrix):
             for job in jobs:
                 if job.bootable:
                     job.bootable = False
-                    job.skip_boot_reason = f"QEMU < {MIN_QEMU_VER} (found '{qemu_ver}')"
+                    job.skip_boot_reason = f"QEMU version ('{qemu_ver}') < {MIN_QEMU_VER}"
 
         return jobs

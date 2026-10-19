@@ -34,7 +34,7 @@ class ArchMatrix:
         ):
             for job in self.jobs:
                 if not job.skip_build_reason:
-                    job.skip_build_reason = f"LLVM < required version ('{required_llvm_ver}', found '{self.env_info.clang.version}')"
+                    job.skip_build_reason = f"LLVM version ('{self.env_info.clang.version}') < required version ('{required_llvm_ver}')"
 
         if qemu_arch and env_info.qemu[qemu_arch].location == Path():
             for job in self.jobs:

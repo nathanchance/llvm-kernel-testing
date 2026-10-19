@@ -54,9 +54,9 @@ class ArmMatrix(ArchMatrix):
         ]
 
         if not self.lst.arch_supports_kcfi(KERNEL_ARCH):
-            cfi_skip_reason = f"Linux < {LinuxVersion(6, 10, 0)} (have '{self.lst.version}')"
+            cfi_skip_reason = f"Linux version ('{self.lst.version}') < {LinuxVersion(6, 10, 0)}"
         elif self.env_info.clang.version < MIN_LLVM_VER_CFI:
-            cfi_skip_reason = f"LLVM < {MIN_LLVM_VER_CFI} (using '{self.env_info.clang.version}')"
+            cfi_skip_reason = f"LLVM version ('{self.env_info.clang.version}') < {MIN_LLVM_VER_CFI}"
         else:
             cfi_skip_reason = ''
         jobs.append(

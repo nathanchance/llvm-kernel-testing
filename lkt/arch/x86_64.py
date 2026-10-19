@@ -39,9 +39,9 @@ class X8664Matrix(ArchMatrix):
         # v6.0-rc4-5-g89245600941e (Mon Sep 26 10:13:13 2022 -0700)
         # https://git.kernel.org/linus/89245600941e4e0f87d77f60ee269b5e61ef4e49
         if self.env_info.clang.version < MIN_LLVM_VER_CFI:
-            cfi_skip_reason = f"LLVM < {MIN_LLVM_VER_CFI} (using '{self.env_info.clang.version}')"
+            cfi_skip_reason = f"LLVM version ('{self.env_info.clang.version}') < {MIN_LLVM_VER_CFI}"
         elif '89245600941e4e0f87d77f60ee269b5e61ef4e49' not in self.lst.commits:
-            cfi_skip_reason = f"Linux < {LinuxVersion(6, 1, 0)} (have '{self.lst.version}')"
+            cfi_skip_reason = f"Linux version ('{self.lst.version}') < {LinuxVersion(6, 1, 0)}"
         else:
             cfi_skip_reason = ''
         cfi_y_config = self.lst.get_cfi_y_config()
