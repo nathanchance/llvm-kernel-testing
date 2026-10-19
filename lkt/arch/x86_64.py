@@ -59,7 +59,7 @@ class X8664Matrix(ArchMatrix):
             ),
         ]
 
-        if Path(self.lst.folder, 'kernel/configs/hardening.config').exists():
+        if self.lst.path_exists('kernel/configs/hardening.config'):
             jobs.append(TestJob(arch=KERNEL_ARCH, configs=['defconfig', 'hardening.config']))
 
         for job in jobs:

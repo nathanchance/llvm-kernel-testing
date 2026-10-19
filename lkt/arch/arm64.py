@@ -65,10 +65,10 @@ class Arm64Matrix(ArchMatrix):
             TestJob(arch=KERNEL_ARCH, configs=['defconfig', 'CONFIG_LTO_CLANG_THIN=y']),
         ]
 
-        if Path(self.lst.folder, 'arch/arm64/configs/virt.config').exists():
+        if self.lst.path_exists('arch/arm64/configs/virt.config'):
             jobs.append(TestJob(arch=KERNEL_ARCH, configs=['virtconfig']))
 
-        if Path(self.lst.folder, 'kernel/configs/hardening.config').exists():
+        if self.lst.path_exists('kernel/configs/hardening.config'):
             jobs.append(TestJob(arch=KERNEL_ARCH, configs=['defconfig', 'hardening.config']))
 
         if can_build_arm64_big_endian(self.lst):

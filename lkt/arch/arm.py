@@ -31,7 +31,7 @@ class ArmMatrix(ArchMatrix):
         )
 
     def _add_defconfig_jobs(self) -> list[TestJob]:
-        dtb_pfx = 'aspeed/' if Path(self.lst.folder, 'arch/arm/boot/dts/aspeed').is_dir() else ''
+        dtb_pfx = 'aspeed/' if self.lst.dir_exists('arch/arm/boot/dts/aspeed') else ''
         jobs: list[TestJob] = [
             TestJob(
                 arch=KERNEL_ARCH,
