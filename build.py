@@ -8,21 +8,23 @@ import sys
 from argparse import ArgumentParser
 from pathlib import Path
 
-import lkt.arm
-import lkt.arm64
-import lkt.hexagon
-import lkt.i386
-import lkt.loongarch
-import lkt.mips
-import lkt.powerpc
-import lkt.report
-import lkt.riscv
-import lkt.s390
-import lkt.source
 import lkt.utils
-import lkt.x86_64
-from lkt.runner import MakeVars, Result
-from lkt.version import ClangVersion, LinuxVersion
+from lkt.arch.arm import ArmMatrix
+from lkt.arch.arm64 import Arm64Matrix
+from lkt.arch.hexagon import HexagonMatrix
+from lkt.arch.i386 import I386Matrix
+from lkt.arch.loongarch import LoongArchMatrix
+from lkt.arch.mips import MipsELMatrix, MipsMatrix
+from lkt.arch.powerpc import PowerPC32Matrix, PowerPC64LEMatrix, PowerPC64Matrix
+from lkt.arch.riscv import RISCVMatrix
+from lkt.arch.s390 import S390Matrix
+from lkt.arch.x86_64 import X8664Matrix
+from lkt.core.env import EnvInfo
+from lkt.core.executor import Executor
+from lkt.core.matrix import ArchMatrix
+from lkt.core.report import Report
+from lkt.core.source import LinuxSourceTree
+from lkt.core.version import LinuxVersion
 
 # This is the minimum version of Linux that can be used with this test
 # framework due to assumptions made throughout the framework with regards to
@@ -35,75 +37,50 @@ SUPPORTED_TARGETS = [
     'distro',
     'other',
 ]
-SUPPORTED_ARCHITECTURES = [
-    'arm',
-    'arm64',
-    'hexagon',
-    'i386',
-    'loongarch',
-    'mips',
-    'powerpc',
-    'riscv',
-    's390',
-    'x86_64',
-]
-EXPERIMENTAL_ARCHITECTURES = []
+ARCH_TO_MATRIX: dict[str, type | tuple[type, ...]] = {
+    'arm': ArmMatrix,
+    'arm64': Arm64Matrix,
+    'hexagon': HexagonMatrix,
+    'i386': I386Matrix,
+    'loongarch': LoongArchMatrix,
+    'mips': (MipsMatrix, MipsELMatrix),
+    'powerpc': (PowerPC32Matrix, PowerPC64Matrix, PowerPC64LEMatrix),
+    'riscv': RISCVMatrix,
+    's390': S390Matrix,
+    'x86_64': X8664Matrix,
+}
 
 
 def parse_arguments():
     parser = ArgumentParser(description='Build a set of Linux kernels with LLVM')
 
-    parser.add_argument(
+    build_options_group = parser.add_argument_group('options to control aspects of build')
+    build_options_group.add_argument(
         '-a',
         '--architectures',
-        choices=[*SUPPORTED_ARCHITECTURES, *EXPERIMENTAL_ARCHITECTURES],
-        default=SUPPORTED_ARCHITECTURES,
+        choices=ARCH_TO_MATRIX.keys(),
+        default=ARCH_TO_MATRIX.keys(),
         metavar='ARCH',
         nargs='+',
         help='Architectures to build for (default: %(default)s).',
     )
-    parser.add_argument(
-        '-b',
-        '--build-folder',
-        type=str,
-        help="Path to build folder (default: 'build' folder in Linux kernel source folder).",
+    build_options_group.add_argument(
+        '-g',
+        '--generate-makefile-only',
+        action='store_true',
+        help='Only generate Makefile, do not execute it',
     )
-    parser.add_argument(
-        '--binutils-prefix',
-        type=str,
-        help="Path to binutils installation (parent of 'bin' folder, default: Use binutils from PATH).",
-    )
-    parser.add_argument(
-        '--boot-utils-folder',
-        type=str,
-        help='Path to boot-utils folder (default: vendored boot-utils).',
-    )
-    parser.add_argument(
-        '-l',
-        '--linux-folder',
-        required=True,
-        type=str,
-        help='Path to Linux source folder (required).',
-    )
-    parser.add_argument(
-        '--llvm-prefix',
-        type=str,
-        help="Path to LLVM installation (parent of 'bin' folder, default: Use LLVM from PATH).",
-    )
-    parser.add_argument(
-        '--log-folder', type=str, help='Folder to store log files in (default: %(default)s).'
-    )
-    parser.add_argument(
+    build_options_group.add_argument(
         '--only-test-boot',
         action='store_true',
         help='Only build configs that can be booted in QEMU and only build kernel images (no modules)',
     )
-    parser.add_argument(
+    build_options_group.add_argument(
         '--save-objects',
         action='store_true',
         help='Save object files (default: Remove build folder).',
     )
-    parser.add_argument(
+    build_options_group.add_argument(
         '-t',
         '--targets-to-build',
         choices=SUPPORTED_TARGETS,
@@ -112,17 +89,58 @@ def parse_arguments():
         nargs='+',
         help='Testing targets to build (default: %(default)s).',
     )
-    parser.add_argument(
-        '--tc-prefix',
-        type=str,
-        help="Path to toolchain installation (parent of 'bin' folder, default: Use toolchain from PATH).",
-    )
-    parser.add_argument(
+    build_options_group.add_argument(
         '--use-ccache',
         action='store_true',
         help='Use ccache for building (default: Do not use ccache).',
     )
-    parser.add_argument(
+    build_options_group.add_argument(
+        '-v', '--verbose', action='store_true', help='Show executed make commands'
+    )
+
+    folders_group = parser.add_argument_group('options to customize folders')
+    folders_group.add_argument(
+        '-b',
+        '--build-folder',
+        type=str,
+        help="Path to build folder (default: 'build' folder in Linux kernel source folder).",
+    )
+    folders_group.add_argument(
+        '--boot-utils-folder',
+        type=str,
+        help='Path to boot-utils folder (default: vendored boot-utils).',
+    )
+    folders_group.add_argument(
+        '-l',
+        '--linux-folder',
+        required=True,
+        type=str,
+        help='Path to Linux source folder (required).',
+    )
+    folders_group.add_argument(
+        '-o',
+        '--output-folder',
+        type=str,
+        help='Folder to store output files in (default: %(default)s).',
+    )
+
+    prefix_group = parser.add_argument_group('options to control PATH customization')
+    prefix_group.add_argument(
+        '--binutils-prefix',
+        type=str,
+        help="Path to binutils installation (parent of 'bin' folder, default: Use binutils from PATH).",
+    )
+    prefix_group.add_argument(
+        '--llvm-prefix',
+        type=str,
+        help="Path to LLVM installation (parent of 'bin' folder, default: Use LLVM from PATH).",
+    )
+    prefix_group.add_argument(
+        '--tc-prefix',
+        type=str,
+        help="Path to toolchain installation (parent of 'bin' folder, default: Use toolchain from PATH).",
+    )
+    prefix_group.add_argument(
         '--qemu-prefix',
         type=str,
         help="Path to QEMU installation (parent of 'bin' folder, default: Use QEMU from PATH).",
@@ -138,17 +156,34 @@ def interrupt_handler(_signum, _frame):
     sys.exit(130)
 
 
+def modify_path(prefixes: list[Path | None]) -> None:
+    path = os.environ['PATH'].split(os.pathsep)
+    for item in prefixes:
+        if not item:
+            continue
+        if not (prefix := Path(item)).exists():
+            msg = f"Supplied prefix ('{prefix}') does not exist?"
+            raise FileNotFoundError(msg)
+        if not (bin_folder := Path(prefix, 'bin')).exists():
+            msg = f"Supplied prefix ('{prefix}') has no 'bin' folder?"
+            raise FileNotFoundError(msg)
+        if (bin_folder := str(bin_folder)) not in path:
+            path.insert(0, bin_folder)
+    os.environ['PATH'] = os.pathsep.join(path)
+
+
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, interrupt_handler)
 
     args = parse_arguments()
 
-    # Folders
+    # Process supplied Linux folder
     if not (linux_folder := Path(args.linux_folder).resolve()).exists():
         msg = f"Supplied Linux source folder ('{args.linux_folder}') not found?"
         raise FileNotFoundError(msg)
-    lsm = lkt.source.LinuxSourceManager(linux_folder)
+    lst = LinuxSourceTree(linux_folder)
 
+    # Download boot-utils if necessary
     if args.boot_utils_folder:
         boot_utils_folder = Path(args.boot_utils_folder).resolve()
     else:
@@ -164,100 +199,64 @@ if __name__ == '__main__':
             )
         lkt.utils.run(['git', 'pull', '--no-edit'], cwd=boot_utils_folder)
 
+    # Build folder for holding kernel build artifacts
     if args.build_folder:
         build_folder = Path(args.build_folder).resolve()
     else:
         build_folder = Path(linux_folder, 'build')
-    if args.log_folder:
-        log_folder = Path(args.log_folder).resolve()
+    # Output folder for holding build logs and matrix results
+    if args.output_folder:
+        output_folder = Path(args.output_folder).resolve()
     else:
-        log_folder = Path(REPO, 'logs', datetime.datetime.now().strftime('%Y%m%d-%H%M'))  # ruff:ignore[call-datetime-now-without-tzinfo]
-
-    (boot_utils_json := Path(log_folder, '.boot-utils.json')).parent.mkdir(
-        exist_ok=True, parents=True
-    )
-
-    boot_utils_json_cmd = [
-        'curl',
-        '-LSs',
-        '-o',
-        boot_utils_json,
-        'https://api.github.com/repos/ClangBuiltLinux/boot-utils/releases/latest',
-    ]
-    if not (lkt.utils.run_check_rc_zero(boot_utils_json_cmd) or boot_utils_json.exists()):
-        msg = f"{boot_utils_json} failed to download and a previous copy is not available!"
-        raise FileNotFoundError(msg)
+        output_folder = Path(
+            REPO, 'output', datetime.datetime.now(datetime.UTC).strftime('%Y%m%d-%H%M')
+        )
 
     # Add prefixes to PATH if they exist
-    path = os.environ['PATH'].split(':')
-    prefixes = [args.binutils_prefix, args.llvm_prefix, args.tc_prefix, args.qemu_prefix]
-    for item in prefixes:
-        if not item:
-            continue
-        if not (prefix := Path(item)).exists():
-            msg = f"Supplied prefix ('{prefix}') does not exist?"
-            raise FileNotFoundError(msg)
-        if not (bin_folder := Path(prefix, 'bin')).exists():
-            msg = f"Supplied prefix ('{prefix}') has no 'bin' folder?"
-            raise FileNotFoundError(msg)
-        if (bin_folder := str(bin_folder)) not in path:
-            path.insert(0, bin_folder)
-    os.environ['PATH'] = ':'.join(path)
+    modify_path([args.binutils_prefix, args.llvm_prefix, args.tc_prefix, args.qemu_prefix])
 
-    report = lkt.report.LKTReport()
-    report.folders.log = log_folder
-    report.folders.source = linux_folder
-    report.show_env_info()
+    # Get environment information
+    env_info = EnvInfo()
 
-    results: list[Result] = []
+    # Generate full matrix
+    matrices: list[ArchMatrix] = []
+    for arch in args.architectures:
+        if not isinstance(items := ARCH_TO_MATRIX[arch], tuple):
+            items = (items,)
+        matrices.extend(
+            item(
+                lst=lst,
+                env_info=env_info,
+                only_boot_testing=args.only_test_boot,
+                targets=args.targets_to_build,
+            )
+            for item in items
+        )
 
-    if lsm.version < MINIMUM_SUPPORTED_LINUX_VERSION:
-        result = Result()
-        result.name = 'build matrix'
-        result.build = 'skipped'
-        result.reason = f"found Linux version ('{lsm.version}') is older than the minimum supported version ('{MINIMUM_SUPPORTED_LINUX_VERSION}') of llvm-kernel-testing"
-        results.append(result)
-    elif (llvm_ver := ClangVersion()) < (min_llvm_ver := lsm.get_min_llvm_ver()):
-        result = Result()
-        result.name = 'build matrix'
-        result.build = 'skipped'
-        result.reason = f"found LLVM version ('{llvm_ver}') less than minimum LLVM version ('{min_llvm_ver}') for supplied tree"
-        results.append(result)
+    # Build executor
+    executor = Executor(
+        matrices=matrices,
+        lst=lst,
+        env_info=env_info,
+        boot_utils_folder=boot_utils_folder,
+        build_folder=build_folder,
+        output_folder=output_folder,
+        save_objects=args.save_objects,
+        verbose=args.verbose,
+    )
+    if args.use_ccache and shutil.which('ccache'):
+        executor.make_vars['CC'] = 'ccache clang'
+        executor.make_vars['HOSTCC'] = 'ccache clang'
 
-    if len(results) == 0:
-        make_vars: MakeVars = {}
-        if args.use_ccache and shutil.which('ccache'):
-            make_vars['CC'] = 'ccache clang'
-            make_vars['HOSTCC'] = 'ccache clang'
-        if shutil.which('pbzip2'):
-            make_vars['KBZIP2'] = 'pbzip2'
-        if shutil.which('pigz'):
-            make_vars['KGZIP'] = 'pigz'
+    # Print information to user
+    lst.show()
+    env_info.show()
 
-        lkt_runners = {
-            'arm': lkt.arm.ArmLKTRunner,
-            'arm64': lkt.arm64.Arm64LKTRunner,
-            'hexagon': lkt.hexagon.HexagonLKTRunner,
-            'i386': lkt.i386.I386LKTRunner,
-            'loongarch': lkt.loongarch.LoongArchLKTRunner,
-            'mips': lkt.mips.MipsLKTRunner,
-            'powerpc': lkt.powerpc.PowerPCLKTRunner,
-            'riscv': lkt.riscv.RISCVLKTRunner,
-            's390': lkt.s390.S390LKTRunner,
-            'x86_64': lkt.x86_64.X8664LKTRunner,
-        }
-        for arch in sorted(args.architectures):
-            runner = lkt_runners[arch]()
-            runner.folders.boot_utils = boot_utils_folder
-            runner.folders.build = build_folder
-            runner.folders.configs = Path(REPO, 'configs')
-            runner.folders.log = log_folder
-            runner.folders.source = linux_folder
-            runner.lsm = lsm
-            runner.make_vars.update(make_vars)
-            runner.only_test_boot = args.only_test_boot
-            runner.save_objects = args.save_objects
-            runner.targets = args.targets_to_build
-            results += runner.run()
+    # Run test matrix
+    if args.generate_makefile_only:
+        executor.generate_makefile()
+    else:
+        executor.run()
 
-    report.generate_report(results)
+        # Generate report from results of run
+        Report(executor).generate()

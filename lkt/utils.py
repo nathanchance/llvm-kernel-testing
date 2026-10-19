@@ -1,16 +1,39 @@
 import copy
 import os
+import platform
 import shlex
 import subprocess
 import time
 from collections.abc import Sequence
 from pathlib import Path
+from typing import TypedDict
 
-DEFAULT_PATH = Path('/intentionally/does/not/exist')
+CONFIGS = Path(__file__).resolve().parents[1].joinpath('configs')
+HAVE_DEV_KVM_ACCESS = os.access('/dev/kvm', os.R_OK | os.W_OK)
+MACHINE = platform.machine()
+
 PathString = Path | str
 ValidSingleCmd = str | bytes | os.PathLike
 ValidCmd = ValidSingleCmd | Sequence[ValidSingleCmd]
 CmdList = list[ValidSingleCmd]
+
+
+class MakeVars(TypedDict, total=False):
+    ARCH: str
+    CC: str
+    CROSS_COMPILE: str
+    HOSTCC: str
+    HOSTLDFLAGS: str
+    KBZIP2: str
+    KGZIP: str
+    LD: str
+    LIBCLANG_PATH: str
+    LLVM: str
+    LLVM_IAS: str
+    LOCALVERSION: str
+    O: Path  # ruff:ignore[ambiguous-variable-name]
+    OBJCOPY: str
+    OBJDUMP: str
 
 
 def chronic(args: ValidCmd, **kwargs) -> subprocess.CompletedProcess:
@@ -31,30 +54,6 @@ def cmd_str(cmd: ValidCmd) -> str:
     else:
         cmd_to_print = ' '.join(shlex.quote(str(elem)) for elem in cmd)
     return f"$ {cmd_to_print}"
-
-
-def get_config_val(linux: Path, path: Path, config: str) -> str:
-    config_file: Path = path if path.is_file() else Path(path, '.config')
-    if not path.exists():
-        msg = 'Could not find configuration?'
-        raise FileNotFoundError(msg)
-    scripts_config_cmd: CmdList = [
-        Path(linux, 'scripts/config'),
-        '--file',
-        config_file,
-        '-k',
-        '-s',
-        config,
-    ]
-    return chronic(scripts_config_cmd).stdout.strip()
-
-
-def is_modular(*args) -> bool:
-    return get_config_val(*args) == 'm'
-
-
-def is_set(*args) -> bool:
-    return get_config_val(*args) not in {'', 'n', 'undef'}
 
 
 def get_time_diff(start_time: float, end_time: float | None = None) -> str:
@@ -85,10 +84,6 @@ def header(hdr_str: str, end: str = '\n') -> None:
     """
     border = ''.join(['=' for _x in range(len(hdr_str) + 6)])
     print(f"\n\033[1m{border}\n== {hdr_str} ==\n{border}\n\033[0m", end=end, flush=True)
-
-
-def path_is_set(path: Path) -> bool:
-    return path != DEFAULT_PATH
 
 
 def run(args: ValidCmd, **kwargs) -> subprocess.CompletedProcess:

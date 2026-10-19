@@ -1,0 +1,46 @@
+from pathlib import Path
+
+import lkt.utils
+
+from .env import EnvInfo
+from .job import TestJob
+from .source import LinuxSourceTree
+
+
+class ArchMatrix:
+    def __init__(
+        self,
+        lst: LinuxSourceTree,
+        env_info: EnvInfo,
+        targets: list[str],
+        clang_target: str,
+        qemu_arch: str,
+        only_boot_testing: bool = False,
+    ) -> None:
+        self.env_info: EnvInfo = env_info
+        self.lst: LinuxSourceTree = lst
+        self.only_boot_testing: bool = only_boot_testing
+        self.targets: list[str] = targets
+
+        self.jobs: list[TestJob] = self._generate_jobs()
+
+        if not lkt.utils.clang_supports_target(clang_target):
+            for job in self.jobs:
+                if not job.skip_build_reason:
+                    job.skip_build_reason = 'missing clang target'
+
+        if self.env_info.clang.version < (
+            required_llvm_ver := self.lst.get_min_llvm_ver(self.jobs[0].make_vars['ARCH'])
+        ):
+            for job in self.jobs:
+                if not job.skip_build_reason:
+                    job.skip_build_reason = f"LLVM < required version ('{required_llvm_ver}', found '{self.env_info.clang.version}')"
+
+        if qemu_arch and env_info.qemu[qemu_arch].location == Path():
+            for job in self.jobs:
+                if job.bootable and not job.skip_boot_reason:
+                    job.skip_boot_reason = f"missing qemu-system-{qemu_arch}"
+
+    def _generate_jobs(self) -> list[TestJob]:
+        msg = 'jobs generator not implemented!'
+        raise NotImplementedError(msg)
