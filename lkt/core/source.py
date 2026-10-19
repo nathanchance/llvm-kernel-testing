@@ -240,6 +240,9 @@ class LinuxSourceTree:
         arch_kconfig_txt = Path(self.folder, 'arch', srcarch, 'Kconfig').read_text(encoding='utf-8')
         return 'select ARCH_SUPPORTS_CFI' in arch_kconfig_txt
 
+    def dir_exists(self, rel_file: str | Path) -> bool:
+        return Path(self.folder, rel_file).is_dir()
+
     # kcfi: Rename CONFIG_CFI_CLANG to CONFIG_CFI
     # v6.17-rc2-7-g23ef9d439769 (Wed Sep 24 14:29:14 2025 -0700)
     # https://git.kernel.org/linus/23ef9d439769d5f35353650e771c63d13824235b
@@ -279,6 +282,9 @@ class LinuxSourceTree:
 
     def is_config_set(self, *args) -> bool:
         return self.get_config_val(*args) not in {'', 'n', 'undef'}
+
+    def path_exists(self, rel_file: str | Path) -> bool:
+        return Path(self.folder, rel_file).exists()
 
     def read_text(self, rel_file: str | Path) -> str:
         if (file := Path(self.folder, rel_file)).exists():
