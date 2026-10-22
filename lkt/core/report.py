@@ -35,13 +35,19 @@ class Report:
         bad_results: list[str] = []
         skip_results: list[str] = []
 
+        ansi_strip = re.compile(r'(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]')
+
         for result in self.results:
             kernel_result = [f"{result.name} {result.build}"]
+
+            log_text = result.log.read_text(encoding='utf-8')
+            stripped_log_text = ansi_strip.sub('', log_text)
+            result.log.write_text(stripped_log_text, encoding='utf-8')
 
             if result.build.startswith('failed'):
                 issues = [
                     line.replace(f"{self.executor.lst.folder}/", '')
-                    for line in result.log.read_text(encoding='utf-8').splitlines()
+                    for line in stripped_log_text.splitlines()
                     if re.search(r"error:|warning:|undefined", line)
                 ]
                 if issues:
