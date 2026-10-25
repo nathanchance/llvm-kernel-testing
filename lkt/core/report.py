@@ -40,9 +40,9 @@ class Report:
         for result in self.results:
             kernel_result = [f"{result.name} {result.build}"]
 
-            log_text = result.log.read_text(encoding='utf-8')
-            stripped_log_text = ansi_strip.sub('', log_text)
-            result.log.write_text(stripped_log_text, encoding='utf-8')
+            log_text = result.log.read_text(encoding='utf-8') if result.log.exists() else ''
+            if stripped_log_text := ansi_strip.sub('', log_text):
+                result.log.write_text(stripped_log_text, encoding='utf-8')
 
             if result.build.startswith('failed'):
                 issues = [
