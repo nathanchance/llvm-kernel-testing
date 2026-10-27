@@ -24,7 +24,7 @@ class ArchMatrix:
 
         self.jobs: list[TestJob] = self._generate_jobs()
 
-        if not lkt.utils.clang_supports_target(clang_target):
+        if clang_target and not lkt.utils.clang_supports_target(clang_target):
             for job in self.jobs:
                 if not job.skip_build_reason:
                     job.skip_build_reason = 'missing clang target'
