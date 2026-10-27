@@ -31,6 +31,7 @@ class TestJob:
         boot_utils_arch: str = '',
         extra_make_targets: list[str] | None = None,
         make_targets: list[str] | None = None,
+        make_vars: lkt.utils.MakeVars | None = None,
         skip_build_reason: str = '',
         skip_boot_reason: str = '',
     ) -> None:
@@ -48,6 +49,7 @@ class TestJob:
             'LLVM_IAS': '1',
             'LOCALVERSION': '-cbl',
         }
-        self.override_make_vars: lkt.utils.MakeVars = {}
+        if make_vars:
+            self.make_vars |= make_vars
         self.skip_build_reason: str = skip_build_reason
         self.skip_boot_reason: str = skip_boot_reason
