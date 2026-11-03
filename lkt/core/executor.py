@@ -266,6 +266,10 @@ def distro_adjustments(lst: LinuxSourceTree, config: Path) -> list[str]:
         # v5.15-rc1-380-g4b2b5e142ff4 (Fri Oct 22 16:20:23 2021 +0200)
         # https://git.kernel.org/linus/4b2b5e142ff499a2bef2b8db0272bbda1088a3fe
         *[(f"DRM_GEM_{val}_HELPER", 'drivers/gpu/drm/Kconfig') for val in ('CMA', 'SHMEM')],
+        # drm/panel: move to a new module
+        # v7.3-rc4-1487-g667746d16329 (Mon Sep 28 09:04:48 2026 +0200)
+        # https://git.kernel.org/linus/667746d16329d2292bc4d36aad703ddd0279526b
+        ('DRM_PANEL', 'drivers/gpu/drm/panel/Kconfig'),
         # fbdev: Fix recursive dependencies wrt BACKLIGHT_CLASS_DEVICE
         # v6.13-rc1-32-g8fc38062be3f (Tue Dec 17 18:06:10 2024 +0100)
         # https://git.kernel.org/linus/8fc38062be3f692ff8816da84fde71972530bcc4
