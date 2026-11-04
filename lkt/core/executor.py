@@ -546,6 +546,7 @@ class Executor:
         boot_utils_folder: Path,
         build_folder: Path,
         output_folder: Path,
+        jobs: int | str | None = None,
         save_objects: bool = False,
         verbose: bool = False,
     ) -> None:
@@ -557,6 +558,7 @@ class Executor:
         self.logs_folder: Path = Path(output_folder, 'logs')
         self.make_vars: lkt.utils.MakeVars = {}
         self.results_folder: Path = Path(output_folder, 'results')
+        self.jobs: int | str = jobs or os.cpu_count() or 8
         self.save_objects: bool = save_objects
         self.verbose: bool = verbose
 
@@ -875,7 +877,7 @@ $(BOOT_UTILS_JSON): prepare
 
         lkt.utils.header('Running test matrix', end='')
         start = time.time()
-        make_cmd = ['make', '-f', makefile, f"-kj{os.cpu_count()}"]
+        make_cmd = ['make', '-f', makefile, f"-kj{self.jobs}"]
         if not self.verbose:
             make_cmd.append('-s')
         res = lkt.utils.run(make_cmd, check=False, show_cmd=True)

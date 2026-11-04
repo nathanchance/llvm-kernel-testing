@@ -71,6 +71,9 @@ def parse_arguments():
         help='Only generate Makefile, do not execute it',
     )
     build_options_group.add_argument(
+        '-j', '--jobs', type=int, help='Maximum number of jobs (default: number of CPU cores)'
+    )
+    build_options_group.add_argument(
         '--only-test-boot',
         action='store_true',
         help='Only build configs that can be booted in QEMU and only build kernel images (no modules)',
@@ -241,6 +244,7 @@ if __name__ == '__main__':
         boot_utils_folder=boot_utils_folder,
         build_folder=build_folder,
         output_folder=output_folder,
+        jobs=args.jobs,
         save_objects=args.save_objects,
         verbose=args.verbose,
     )
