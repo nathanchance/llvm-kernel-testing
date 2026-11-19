@@ -664,7 +664,7 @@ class Executor:
 
         failed_build_handling = f"; if [ $${{PIPESTATUS[0]}} -ne 0 ]; then echo failed >$(BUILD_RESULT);{' echo skipped >$(BOOT_RESULT);' if job.bootable else ''} exit 1; fi"
         make_job_variables['MAKE_VARIABLES'] = ' '.join(
-            f"{var}={job.make_vars[var]}"  # ty: ignore[invalid-key]
+            f"{var}={job.make_vars[var]}"  # ty: ignore[non-literal-typed-dict-key]
             for var in sorted(job.make_vars)
         )
         make_job_cmds.append("@echo >&2 '[+] Building $(PRETTY_JOB_NAME)'")
