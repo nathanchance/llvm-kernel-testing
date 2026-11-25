@@ -58,7 +58,10 @@ def parse_arguments():
     build_options_group.add_argument(
         '-a',
         '--architectures',
-        choices=ARCH_TO_MATRIX.keys(),
+        choices=[
+            *ARCH_TO_MATRIX.keys(),
+            'x86',  # i386 + x86_64
+        ],
         default=ARCH_TO_MATRIX.keys(),
         metavar='ARCH',
         nargs='+',
@@ -221,9 +224,20 @@ if __name__ == '__main__':
     # Get environment information
     env_info = EnvInfo()
 
+    # Expand shorthands in architectures if necessary
+    architectures = []
+    for arch in args.architectures:
+        if arch == 'x86':
+            if 'i386' not in architectures:
+                architectures.append('i386')
+            if 'x86_64' not in architectures:
+                architectures.append('x86_64')
+        elif arch not in architectures:
+            architectures.append(arch)
+
     # Generate full matrix
     matrices: list[ArchMatrix] = []
-    for arch in args.architectures:
+    for arch in sorted(architectures):
         if not isinstance(items := ARCH_TO_MATRIX[arch], tuple):
             items = (items,)
         matrices.extend(
